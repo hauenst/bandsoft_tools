@@ -21,41 +21,41 @@ BCalorimeter::BCalorimeter(hipo::schema __schema) : hipo::bank(__schema){
 // ==============================================================
 BCalorimeter::~BCalorimeter(){}
 // ==============================================================
-float BCalorimeter::getPcalE (int index)
+float BCalorimeter::getPcalE (int pindex)
 {
 	int nCal = getSize();
 	for(int i = 0 ; i < nCal ; i++){
-		if(BCalorimeter::getIndex(i)==index&&BCalorimeter::getLayer(i)==1){
+		if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==1){
 			return BCalorimeter::getEnergy(i);
 		}
 	}
 	return 0;
 }
 // ==============================================================
-float BCalorimeter::getECinE (int index)
+float BCalorimeter::getECinE (int pindex)
 {
 	int nCal = getSize();
         for(int i = 0 ; i < nCal ; i++){
-                if(BCalorimeter::getIndex(i)==index&&BCalorimeter::getLayer(i)==4){
+                if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==4){
                         return BCalorimeter::getEnergy(i);
                 }
         }
         return 0;
 }
 // ==============================================================
-float BCalorimeter::getECoutE(int index)
+float BCalorimeter::getECoutE(int pindex)
 {
 	int nCal = getSize();
         for(int i = 0 ; i < nCal ; i++){
-                if(BCalorimeter::getIndex(i)==index&&BCalorimeter::getLayer(i)==7){
+                if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==7){
                         return BCalorimeter::getEnergy(i);
                 }
         }
         return 0;
 }
 // ==============================================================
-float BCalorimeter::getTotE  (int index)
+float BCalorimeter::getTotE  (int pindex)
 {
-	return BCalorimeter::getPcalE(index) + BCalorimeter::getECinE(index) + BCalorimeter::getECoutE(index);
+	return BCalorimeter::getPcalE(pindex) + BCalorimeter::getECinE(pindex) + BCalorimeter::getECoutE(pindex);
 }
 // ==============================================================

@@ -46,10 +46,10 @@ class BCalorimeter : public hipo::bank {
 		float getLV      (int index) { return getFloat(lv_order        ,index);}
 		float getLW      (int index) { return getFloat(lw_order        ,index);}
 
-		float getPcalE (int index);
-		float getECinE (int index);
-		float getECoutE(int index);
-		float getTotE  (int index);
+		float getPcalE (int pindex);
+		float getECinE (int pindex);
+		float getECoutE(int pindex);
+		float getTotE  (int pindex);
 };
 
 #endif
