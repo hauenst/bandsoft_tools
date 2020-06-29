@@ -4,7 +4,7 @@
 //Constructor for old hipo files, overloaded with extra input integer
 BBand::BBand(hipo::schema __schema, int __old) : hipo::bank(__schema){
 
-  bool oldfile = true;
+  oldfile = true;
   std::cout << "BBand constructor using old Band::hits structure files " << std::endl;
 	id_order           = __schema.getEntryOrder("id"          );
 	sector_order       = __schema.getEntryOrder("sector"      );
@@ -35,7 +35,7 @@ BBand::BBand(hipo::schema __schema, int __old) : hipo::bank(__schema){
 //STANDARD constructor for new files
 BBand::BBand(hipo::schema __schema) : hipo::bank(__schema){
 
-  bool oldfile = false;
+  oldfile = false;
   std::cout << "BBand constructor using new Band::hits structure files " << std::endl;
 	id_order           = __schema.getEntryOrder("id"          );
 	sector_order       = __schema.getEntryOrder("sector"      );
