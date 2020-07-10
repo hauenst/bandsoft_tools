@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	// 	Neutron info:
 	int nMult		= 0;
-	int barID		[maxNeutrons]= {0};
+	double barID		[maxNeutrons]= {0};
 	double dL_n		[maxNeutrons]= {0.};
 	double theta_n		[maxNeutrons]= {0.};
 	double phi_n		[maxNeutrons]= {0.};
@@ -120,6 +120,7 @@ int main(int argc, char** argv) {
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
+			//if( event_counter > 1000000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);
@@ -143,11 +144,12 @@ int main(int argc, char** argv) {
 				dL_n[n]		= nPath[n].Mag();
 				theta_n[n]	= nPath[n].Theta();
 				phi_n[n]	= nPath[n].Phi();
+				// If there are shifts present, we can calculate momenta of the neutrons
 				if( loadshifts_opt ){
 					double beta = dL_n[n] / (nTime[n]*cAir);
 					p_n[n] = mN / sqrt( 1./pow(beta,2) - 1. );
 				}
-				else{
+				else{ // if not, just set to 0 as it isn't used
 					p_n[n]		= 0.;	// no conversion yet for ToF due to missing calibrations	
 				}
 			}

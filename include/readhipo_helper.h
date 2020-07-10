@@ -25,7 +25,7 @@ bool checkElectron( int pid, TVector3 momentum, TVector3 vertex, double time, in
 void getProtonInfo( BParticle particles, double pid[maxProtons], TVector3 momentum[maxProtons], TVector3 vertex[maxProtons],
 			double time[maxProtons], double charge[maxProtons], double beta[maxProtons], double chi2pid[maxProtons], double status[maxProtons] , int& multiplicity );
 bool checkProton( int pid, TVector3 momentum, TVector3 del_vertex, double time, int charge, double beta, double chi2pid, int status, int mult );
-void getNeutronInfo( BBand band_hits, int& mult, int id[maxNeutrons], double edep[maxNeutrons],
+void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double edep[maxNeutrons],
 			double time[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun);
 bool pointsToBand(double theta,double phi,double z_m);
 

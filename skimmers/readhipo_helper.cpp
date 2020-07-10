@@ -5,7 +5,7 @@ double FADC_RUNBYRUNSHIFT[100000] = {0.};
 double TDC_GLOBSHIFT[600] = {0.};
 double TDC_RUNBYRUNSHIFT[100000] = {0.};
 
-void getNeutronInfo( BBand band_hits, int& mult, int id[maxNeutrons], double edep[maxNeutrons],
+void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double edep[maxNeutrons],
 			double time[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun){
 	
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than 1 BAND hit for now
@@ -13,8 +13,8 @@ void getNeutronInfo( BBand band_hits, int& mult, int id[maxNeutrons], double ede
 		if( band_hits.getLayer(hit) == 6 ) continue; // not interested in a veto hit
 
 		id[hit]		= band_hits.getBarKey(hit);
-		edep[hit]	= sqrt( band_hits.getAdcLcorr(hit) * band_hits.getAdcRcorr(hit) );
-		double tof_fix = (band_hits.getMeantimeTdc(hit) - starttime ) - TDC_GLOBSHIFT[band_hits.getBarKey(hit)] - TDC_RUNBYRUNSHIFT[thisRun];
+		edep[hit]	= band_hits.getEnergy(hit);
+		double tof_fix = (band_hits.getTime(hit) - starttime ) - TDC_GLOBSHIFT[band_hits.getBarKey(hit)] - TDC_RUNBYRUNSHIFT[thisRun];
 		time[hit]	= tof_fix;
 		path[hit].SetXYZ(	band_hits.getX(hit), band_hits.getY(hit), band_hits.getZ(hit) 	);
 
@@ -24,12 +24,11 @@ void getNeutronInfo( BBand band_hits, int& mult, int id[maxNeutrons], double ede
 }
 
 int getRunNumber( string filename ){
-	string parsed = filename.substr( filename.find("inc") );
+	string parsed = filename.substr( filename.find("inc_") );
 	//string parsed = filename.substr( filename.find("_clas") );
 	//string parsed = filename.substr( filename.find("_band") );
-	string moreparse = parsed.substr(6,8);
-	cout << filename << " " << parsed << "\n";
-	cout << moreparse << " " << stoi(moreparse) << "\n\n";
+	string moreparse = parsed.substr(4,6);
+	cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
         return stoi(moreparse);
 }
 
