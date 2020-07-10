@@ -12,3 +12,4 @@ add_definitions(-D__LZ4__)
 # Add directories
 add_subdirectory(banklib)
 add_subdirectory(hipolib)
+add_subdirectory(skimmers)
