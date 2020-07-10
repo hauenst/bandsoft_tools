@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
-	TTree * outTree = new TTree("skim","CLAS and BAND Physics");
+	TTree * outTree = new TTree("neutrons","BAND Neutrons");
 	//	Event info:
 	double Ebeam		= 0;
 	double gated_charge	= 0;
