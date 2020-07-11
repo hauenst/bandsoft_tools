@@ -1,12 +1,34 @@
 #include "readhipo_helper.h"
 
+
+void bandhit::Clear(){
+	sector			= 0;
+	layer			= 0;
+	component		= 0;
+	barID			= 0;
+	edep			= 0;
+	tof			= 0;
+	tof_fadc		= 0;
+	dL			= 0;
+	adcL			= 0;
+	adcR			= 0;
+	ampL			= 0;
+	ampR			= 0;
+	timeL			= 0;
+	timeR			= 0;
+	timecorrL		= 0;
+	timecorrR		= 0;
+	time_fadcL		= 0;
+	time_fadcR		= 0;
+}
+
 double FADC_GLOBSHIFT[600] = {0.};
 double FADC_RUNBYRUNSHIFT[100000] = {0.};
 double TDC_GLOBSHIFT[600] = {0.};
 double TDC_RUNBYRUNSHIFT[100000] = {0.};
 
-void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double edep[maxNeutrons],
-			double time[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun){
+void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, int& mult, double id[maxNeutrons], double edep[maxNeutrons],
+			double time[maxNeutrons], double timefadc[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun){
 	
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than 1 BAND hit for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
@@ -15,9 +37,25 @@ void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double 
 		id[hit]		= band_hits.getBarKey(hit);
 		edep[hit]	= band_hits.getEnergy(hit);
 		double tof_fix = (band_hits.getTime(hit) - starttime ) - TDC_GLOBSHIFT[band_hits.getBarKey(hit)] - TDC_RUNBYRUNSHIFT[thisRun];
+		double tfadc = (band_hits.getTimeFadc(hit) - starttime);
 		time[hit]	= tof_fix;
+		timefadc[hit]	= tfadc;
 		path[hit].SetXYZ(	band_hits.getX(hit), band_hits.getY(hit), band_hits.getZ(hit) 	);
 
+		// Using the band hit struct, get the raw hit PMT information to use later
+		int rawhit_idxL = band_hits.getLpmtindex(hit);
+		int rawhit_idxR = band_hits.getRpmtindex(hit);
+		// 	Get the raw hit information corresponding to the band hit above
+		double adcL = 	band_rawhits.getFloat(5 , rawhit_idxL );
+		double adcR = 	band_rawhits.getFloat(5 , rawhit_idxR );
+		double ampL =	band_rawhits.getFloat(6 , rawhit_idxL );
+		double ampR =	band_rawhits.getFloat(6 , rawhit_idxR );
+		double timeL = 	band_rawhits.getFloat(7 , rawhit_idxL );
+		double timeR = 	band_rawhits.getFloat(7 , rawhit_idxR );
+		double timefadcL = band_rawhits.getFloat(8 , rawhit_idxL );
+		double timefadcR = band_rawhits.getFloat(8 , rawhit_idxR );  
+		double timecorrL = band_rawhits.getFloat(9 , rawhit_idxL );
+		double timecorrR = band_rawhits.getFloat(9 , rawhit_idxR );
 		mult++;
 	}
 	
