@@ -29,6 +29,6 @@ void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double 
 			double time[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun);
 bool pointsToBand(double theta,double phi,double z_m);
 
-void LoadGlobalShift();
+void LoadGlobalShift( string filename_tdc , string filename_fadc );
 void LoadRunByRunShift();
 #endif

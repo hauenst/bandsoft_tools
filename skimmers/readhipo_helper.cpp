@@ -25,8 +25,6 @@ void getNeutronInfo( BBand band_hits, int& mult, double id[maxNeutrons], double 
 
 int getRunNumber( string filename ){
 	string parsed = filename.substr( filename.find("inc_") );
-	//string parsed = filename.substr( filename.find("_clas") );
-	//string parsed = filename.substr( filename.find("_band") );
 	string moreparse = parsed.substr(4,6);
 	cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
         return stoi(moreparse);
@@ -155,12 +153,12 @@ bool pointsToBand(double theta,double phi,double z_m){
 	return 0;
 }
 
-void LoadGlobalShift(){
+void LoadGlobalShift( string filename_tdc , string filename_fadc ){
 	ifstream f;
 	int sector, layer, component, barId;
 	double pol0, height, mean, sig, temp;
 
-	f.open("../include/global_offset_fadc-10082019.txt");
+	f.open(filename_fadc);
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
@@ -175,7 +173,8 @@ void LoadGlobalShift(){
 		f >> temp;
 	}
 	f.close();
-	f.open("../include/global_offset_tdc_1stIter-04132020.txt");
+
+	f.open(filename_tdc);
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
@@ -191,6 +190,7 @@ void LoadGlobalShift(){
 	}
 	f.close();
 }
+
 void LoadRunByRunShift(){
 	ifstream f;
 	int runnum;
