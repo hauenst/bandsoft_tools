@@ -1,61 +1,106 @@
 #include "readhipo_helper.h"
 
+bandhit::bandhit(){}
 
 void bandhit::Clear(){
-	sector			= 0;
-	layer			= 0;
-	component		= 0;
-	barID			= 0;
-	edep			= 0;
-	tof			= 0;
-	tof_fadc		= 0;
-	dL			= 0;
-	adcL			= 0;
-	adcR			= 0;
-	ampL			= 0;
-	ampR			= 0;
-	timeL			= 0;
-	timeR			= 0;
-	timecorrL		= 0;
-	timecorrR		= 0;
-	time_fadcL		= 0;
-	time_fadcR		= 0;
+	Sector		= 0;
+	Layer		= 0;
+	Component	= 0;
+	BarID		= 0;
+	Edep		= 0;
+	Tof		= 0;
+	TofFadc		= 0;
+	Tdiff		= 0;
+	TdiffFadc	= 0;
+	X		= 0;
+	Y		= 0;
+	Z		= 0;
+		
+	RawLtdc		= 0;
+	RawRtdc		= 0;
+	RawLtdccorr	= 0;
+	RawRtdccorr	= 0;
+	RawLtfadc	= 0;
+	RawRtfadc	= 0;
+	RawLamp		= 0;
+	RawRamp		= 0;
+	RawLadc		= 0;
+	RawRadc		= 0;
+		
+	PmtLtdc		= 0;
+	PmtRtdc		= 0;
+	PmtLtfadc	= 0;
+	PmtRtfadc	= 0;
+	PmtLamp		= 0;
+	PmtRamp		= 0;
+	PmtLadc		= 0;
+	PmtRadc		= 0;
+	PmtLped		= 0;
+	PmtRped		= 0;
 }
+bandhit::~bandhit(){}
 
 double FADC_GLOBSHIFT[600] = {0.};
 double FADC_RUNBYRUNSHIFT[100000] = {0.};
 double TDC_GLOBSHIFT[600] = {0.};
 double TDC_RUNBYRUNSHIFT[100000] = {0.};
 
-void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, int& mult, double id[maxNeutrons], double edep[maxNeutrons],
-			double time[maxNeutrons], double timefadc[maxNeutrons], TVector3 path[maxNeutrons] , double starttime , int thisRun){
+void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
+			int& mult, bandhit hits[maxNeutrons],
+			double starttime , int thisRun){
 	
-	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than 1 BAND hit for now
+	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
-		if( band_hits.getLayer(hit) == 6 ) continue; // not interested in a veto hit
+		if( band_hits.getStatus(hit) != 0 ) continue;	// not interested in an event that has a veto hit
 
-		id[hit]		= band_hits.getBarKey(hit);
-		edep[hit]	= band_hits.getEnergy(hit);
-		double tof_fix = (band_hits.getTime(hit) - starttime ) - TDC_GLOBSHIFT[band_hits.getBarKey(hit)] - TDC_RUNBYRUNSHIFT[thisRun];
-		double tfadc = (band_hits.getTimeFadc(hit) - starttime);
-		time[hit]	= tof_fix;
-		timefadc[hit]	= tfadc;
-		path[hit].SetXYZ(	band_hits.getX(hit), band_hits.getY(hit), band_hits.getZ(hit) 	);
+		// Set the hits information
+		hits[hit].setSector		(band_hits.getSector		(hit)			);
+		hits[hit].setLayer		(band_hits.getLayer		(hit)			);
+		hits[hit].setComponent		(band_hits.getComponent		(hit)			);
+		hits[hit].setBarID		(band_hits.getBarKey		(hit)			);
+		hits[hit].setEdep		(band_hits.getEnergy		(hit)			);
+		hits[hit].setTof		(band_hits.getTime		(hit) - starttime	);
+		hits[hit].setTofFadc		(band_hits.getTimeFadc		(hit) - starttime	);
+		hits[hit].setTdiff		(band_hits.getDifftimeTdc	(hit)			);
+		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
+		hits[hit].setX			(band_hits.getX			(hit)			);
+		hits[hit].setY			(band_hits.getY			(hit)			);
+		hits[hit].setZ			(band_hits.getZ			(hit)			);
+
 
 		// Using the band hit struct, get the raw hit PMT information to use later
 		int rawhit_idxL = band_hits.getLpmtindex(hit);
 		int rawhit_idxR = band_hits.getRpmtindex(hit);
 		// 	Get the raw hit information corresponding to the band hit above
-		double adcL = 	band_rawhits.getFloat(5 , rawhit_idxL );
-		double adcR = 	band_rawhits.getFloat(5 , rawhit_idxR );
-		double ampL =	band_rawhits.getFloat(6 , rawhit_idxL );
-		double ampR =	band_rawhits.getFloat(6 , rawhit_idxR );
-		double timeL = 	band_rawhits.getFloat(7 , rawhit_idxL );
-		double timeR = 	band_rawhits.getFloat(7 , rawhit_idxR );
-		double timefadcL = band_rawhits.getFloat(8 , rawhit_idxL );
-		double timefadcR = band_rawhits.getFloat(8 , rawhit_idxR );  
-		double timecorrL = band_rawhits.getFloat(9 , rawhit_idxL );
-		double timecorrR = band_rawhits.getFloat(9 , rawhit_idxR );
+		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) - starttime	);	
+        	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) - starttime	);
+        	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) - starttime	);
+        	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) - starttime	);
+        	hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) - starttime	);
+        	hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) - starttime	);
+        	hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
+        	hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
+        	hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
+        	hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
+
+		// Using the rawhit struct, get the raw PMT information to use later
+		int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
+		int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
+		int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
+		int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
+		//	Get the raw pmt information corresponding to the band hit above
+		hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
+		hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
+		hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
+		hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
+		hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
+		hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
+		hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		); 
+		hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
+		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		); 
+		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		); 
+
+		// Save how many neutron hits we have
 		mult++;
 	}
 	

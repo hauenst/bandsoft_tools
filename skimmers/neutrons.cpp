@@ -49,13 +49,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	// 	Neutron info:
 	int nMult		= 0;
-	double barID		[maxNeutrons]= {0};
-	double dL_n		[maxNeutrons]= {0.};
-	double theta_n		[maxNeutrons]= {0.};
-	double phi_n		[maxNeutrons]= {0.};
-	double p_n		[maxNeutrons]= {0.};
-	double nTime		[maxNeutrons]= {0.};
-	double nEdep		[maxNeutrons]= {0.};
+	bandhit nHit[maxNeutrons];
 	// 	Event branches:
 	outTree->Branch("Ebeam"		,&Ebeam			);
 	outTree->Branch("gated_charge"	,&gated_charge		);
@@ -63,20 +57,14 @@ int main(int argc, char** argv) {
 	outTree->Branch("starttime"	,&starttime		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
-	outTree->Branch("barID"		,&barID			,"barID[nMult]/D"	);
-	outTree->Branch("dL_n"		,&dL_n			,"dL_n[nMult]/D"	);
-	outTree->Branch("theta_n"	,&theta_n		,"theta_n[nMult]/D"	);
-	outTree->Branch("phi_n"		,&phi_n			,"phi_n[nMult]/D"	);
-	outTree->Branch("p_n"		,&p_n			,"p_n[nMult]/D"		);
-	outTree->Branch("nTime"		,&nTime			,"nTime[nMult]/D"	);
-	outTree->Branch("nEdep"		,&nEdep			,"nEdep[nMult]/D"	);
+	outTree->Branch("nHit"		,&nHit			);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
 	if( loadshifts_opt ){
-		LoadGlobalShift();
-		LoadRunByRunShift();
+		//LoadGlobalShift();
+		//LoadRunByRunShift();
 		//LoadResidualShift();
 	}
 
@@ -98,6 +86,9 @@ int main(int argc, char** argv) {
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
 		hipo::event 	readevent;
+		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
+		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
+		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
 		
 		// Loop over all events in file
 		int event_counter = 0;
@@ -109,13 +100,8 @@ int main(int argc, char** argv) {
 			livetime	= 0;
 			starttime 	= 0;
 			nMult		= 0;
-			memset( barID		,0	,sizeof(barID		)	);
-			memset( dL_n		,0	,sizeof(dL_n		)	);
-			memset( theta_n		,0	,sizeof(theta_n		)	);
-			memset( phi_n		,0	,sizeof(phi_n		)	);
-			memset( p_n		,0	,sizeof(p_n		)	);
-			memset( nTime		,0	,sizeof(nTime		)	);
-			memset( nEdep		,0	,sizeof(nEdep		)	);
+			for( int thishit = 0; thishit < maxNeutrons ; thishit++)
+				nHit[thishit].Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -127,6 +113,9 @@ int main(int argc, char** argv) {
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
 			readevent.getStructure(band_hits);
+			readevent.getStructure(band_rawhits);
+			readevent.getStructure(band_adc);
+			readevent.getStructure(band_tdc);
 	
 			// Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
 			livetime 		= 	scaler.getFloat(2,0);
@@ -139,19 +128,10 @@ int main(int argc, char** argv) {
 			
 			// Grab the neutron information:
 			TVector3 nMomentum[maxNeutrons], nPath[maxNeutrons];
-			getNeutronInfo( band_hits, nMult, barID, nEdep, nTime, nPath , starttime , runNum);
+			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
 			for( int n = 0 ; n < nMult ; n++ ){
-				dL_n[n]		= nPath[n].Mag();
-				theta_n[n]	= nPath[n].Theta();
-				phi_n[n]	= nPath[n].Phi();
 				// If there are shifts present, we can calculate momenta of the neutrons
-				if( loadshifts_opt ){
-					double beta = dL_n[n] / (nTime[n]*cAir);
-					p_n[n] = mN / sqrt( 1./pow(beta,2) - 1. );
-				}
-				else{ // if not, just set to 0 as it isn't used
-					p_n[n]		= 0.;	// no conversion yet for ToF due to missing calibrations	
-				}
+				if( loadshifts_opt ) nHit[n].LoadShifts();
 			}
 			
 			// Fill tree based on d(e,e'n)X
