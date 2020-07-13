@@ -1,12 +1,13 @@
 #ifndef __BANDHIT_H__
 #define __BANDHIT_H__
 
+#include "TObject.h"
 
-
-class bandhit {
+class bandhit : public TObject {
 	public:
 		bandhit();
-		virtual ~bandhit(){};
+		~bandhit();
+
 
 		void Clear();
 		void LoadShifts(){return;} // EMPTY FOR NOW -- TODO load shifts and calculate momentum
@@ -83,7 +84,7 @@ class bandhit {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		//ClassDef(bandhit,1);
+		ClassDef(bandhit,1);
 	private:
 		int	Sector		;
 		int 	Layer		;

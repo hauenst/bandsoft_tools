@@ -1,6 +1,9 @@
 #include "bandhit.h"
 
-bandhit::bandhit(void){}
+ClassImp(bandhit);
+
+bandhit::bandhit(){}	// Empty constructor
+bandhit::~bandhit(){}	// Empty destructor
 
 void bandhit::Clear(){
 	Sector		= 0;
@@ -38,4 +41,4 @@ void bandhit::Clear(){
 	PmtLped		= 0;
 	PmtRped		= 0;
 }
-//ClassImp(bandhit);
+

@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("starttime"	,&starttime		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
-	outTree->Branch("nHit"		,&nHit			);
+	outTree->Branch("nHit"		,nHit			);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -71,7 +71,8 @@ int main(int argc, char** argv) {
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
-		int runNum = getRunNumber(argv[i]);
+		//int runNum = getRunNumber(argv[i]);
+		int runNum = 6450;
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 
@@ -106,7 +107,7 @@ int main(int argc, char** argv) {
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
-			//if( event_counter > 1000000 ) break;
+			if( event_counter > 100000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);

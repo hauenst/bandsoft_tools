@@ -33,12 +33,12 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		int rawhit_idxL = band_hits.getLpmtindex(hit);
 		int rawhit_idxR = band_hits.getRpmtindex(hit);
 		// 	Get the raw hit information corresponding to the band hit above
-		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) - starttime	);	
-        	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) - starttime	);
-        	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) - starttime	);
-        	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) - starttime	);
-        	hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) - starttime	);
-        	hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) - starttime	);
+		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);	
+        	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
+        	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
+        	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
+        	hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
+        	hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
         	hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
         	hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
         	hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
