@@ -25,6 +25,7 @@ class bandhit : public TObject {
 		void setX		(double iX		)		{X		= iX		; return;}
 		void setY		(double iY		)		{Y		= iY		; return;}
 		void setZ		(double iZ		)		{Z		= iZ		; return;}
+		void setStatus		(double iStatus		)		{Status		= iStatus	; return;}
                                                                                                                   
 		void setRawLtdc		(double iRawLtdc	)		{RawLtdc	= iRawLtdc	; return;}
 		void setRawRtdc		(double iRawRtdc	)		{RawRtdc	= iRawRtdc	; return;}
@@ -61,6 +62,7 @@ class bandhit : public TObject {
 		double	getX		(void)		{return X		;}
 		double	getY		(void)		{return Y		;}
 		double	getZ		(void)		{return Z		;}
+		double	getStatus	(void)		{return Status		;}
                                                                              
 		double 	getRawLtdc	(void)		{return	RawLtdc		;}	
 		double 	getRawRtdc	(void)		{return	RawRtdc		;}	
@@ -98,6 +100,7 @@ class bandhit : public TObject {
 		double 	X		;
 		double 	Y		;
 		double 	Z		;
+		int	Status		;
 
 		double 	RawLtdc		;
 		double 	RawRtdc		;

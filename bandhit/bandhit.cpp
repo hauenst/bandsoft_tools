@@ -18,6 +18,7 @@ void bandhit::Clear(){
 	X		= 0;
 	Y		= 0;
 	Z		= 0;
+	Status		= 0;
 		
 	RawLtdc		= 0;
 	RawRtdc		= 0;

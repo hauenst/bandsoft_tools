@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
 	TFile * outFile = new TFile(argv[1],"RECREATE");
 	TTree * outTree = new TTree("neutrons","BAND Neutrons");
 	//	Event info:
+	int Runno		= 0;
 	double Ebeam		= 0;
 	double gated_charge	= 0;
 	double livetime		= 0;
@@ -51,6 +52,7 @@ int main(int argc, char** argv) {
 	int nMult		= 0;
 	bandhit nHit[maxNeutrons];
 	// 	Event branches:
+	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
 	outTree->Branch("gated_charge"	,&gated_charge		);
 	outTree->Branch("livetime"	,&livetime		);
@@ -71,8 +73,8 @@ int main(int argc, char** argv) {
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
-		//int runNum = getRunNumber(argv[i]);
-		int runNum = 6450;
+		int runNum = getRunNumber(argv[i]);
+		Runno = runNum;
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 

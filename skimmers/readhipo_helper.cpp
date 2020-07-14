@@ -12,7 +12,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 	
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
-		if( band_hits.getStatus(hit) != 0 ) continue;	// not interested in an event that has a veto hit
+		//if( band_hits.getStatus(hit) != 0 ) continue;	// not interested in an event that has a veto hit
 
 		// Set the hits information
 		hits[hit].setSector		(band_hits.getSector		(hit)			);
@@ -27,6 +27,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setX			(band_hits.getX			(hit)			);
 		hits[hit].setY			(band_hits.getY			(hit)			);
 		hits[hit].setZ			(band_hits.getZ			(hit)			);
+		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
 
 
 		// Using the band hit struct, get the raw hit PMT information to use later

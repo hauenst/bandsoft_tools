@@ -16,7 +16,7 @@
 using namespace std;
 
 const int maxProtons	= 100;
-const int maxNeutrons	= 15;
+const int maxNeutrons	= 200;
 
 // Need to add theta, phi, etc..
 
