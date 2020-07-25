@@ -11,3 +11,8 @@ target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4  bandhit_tree -lmy
 install( TARGETS neutrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 
+add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp )
+target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4  bandhit_tree clashit_tree taghit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS tagged_dis
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+

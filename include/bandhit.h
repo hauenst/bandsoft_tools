@@ -2,6 +2,7 @@
 #define __BANDHIT_H__
 
 #include "TObject.h"
+#include "TVector3.h"
 
 class bandhit : public TObject {
 	public:
@@ -10,8 +11,11 @@ class bandhit : public TObject {
 
 
 		void Clear();
-		void LoadShifts(){return;} // EMPTY FOR NOW -- TODO load shifts and calculate momentum
 		
+		// Some custom get functions
+		TVector3 getDL		(void)		{return TVector3(X,Y,Z)	;}
+
+
 		void setSector		(int	iSector		)		{Sector		= iSector	; return;}
 		void setLayer		(int	iLayer		)		{Layer		= iLayer	; return;}
 		void setComponent	(int	iComponent	)		{Component	= iComponent	; return;}
@@ -86,7 +90,7 @@ class bandhit : public TObject {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		ClassDef(bandhit,1);
+		ClassDef(bandhit,2);
 	private:
 		int	Sector		;
 		int 	Layer		;

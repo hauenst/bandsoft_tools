@@ -1,11 +1,6 @@
 #include "readhipo_helper.h"
 
 
-double FADC_GLOBSHIFT[600] = {0.};
-double FADC_RUNBYRUNSHIFT[100000] = {0.};
-double TDC_GLOBSHIFT[600] = {0.};
-double TDC_RUNBYRUNSHIFT[100000] = {0.};
-
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
 			double starttime , int thisRun){
@@ -80,54 +75,58 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 		cerr << "getEventInfo::NotImplementedFunction\n"; 
 		exit(-1); 
 	}
-	//integrated_charge       += (double)eventInfo.getBCG(0); 	// not calibrated currently
-	//livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
+	integrated_charge       = (double)eventInfo.getBCG(0); 	// not calibrated currently
+	livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
 	starttime		= (double)eventInfo.getSTTime(0);
 	return;
 }
-void getElectronInfo( BParticle particles, int& pid, TVector3& momentum, TVector3& vertex,
-			double& time, int& charge, double& beta, double& chi2pid, int& status ){
-	pid 		= particles.getPid(0);
-	momentum 	= particles.getV3P(0);
-	vertex		= particles.getV3v(0);
-	time		= particles.getVt(0);
-	charge		= particles.getCharge(0);
-	beta		= particles.getBeta(0);
-	chi2pid		= particles.getChi2pid(0);
-	status		= particles.getStatus(0);
-	return;
-}
-void getProtonInfo( BParticle particles, double pid[maxProtons], TVector3 momentum[maxProtons], TVector3 vertex[maxProtons],
-			double time[maxProtons], double charge[maxProtons], double beta[maxProtons], double chi2pid[maxProtons], double status[maxProtons] , int& multiplicity ){
-	// Takes the first proton in the bank
-	multiplicity = 0;
-	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
-		pid[multiplicity] 		= particles.getPid(row);
-		charge[multiplicity]		= particles.getCharge(row);
-		if( charge[multiplicity] == 1 ){
-			momentum 	[multiplicity]	= particles.getV3P(row);
-			vertex		[multiplicity]	= particles.getV3v(row);
-			time		[multiplicity]	= particles.getVt(row);
-			beta		[multiplicity]	= particles.getBeta(row);
-			chi2pid		[multiplicity]	= particles.getChi2pid(row);
-			status		[multiplicity]	= particles.getStatus(row);
-			multiplicity ++;
-		}
-	}
-}
-bool checkElectron( int pid, TVector3 momentum, TVector3 vertex, double time, int charge, double beta, double chi2pid, int status,
-			double lV, double lW , double E_tot){
-			// Anymore fiducial cuts that are needed for the electron:
-			// 	E/p cut
-			// 	vertex cut
-			// 	minimum momentum  cut / maximum  momentum  cut
-			// 	electron ToF cut
-			// 	minimum W cut
-			//	chi2 cut
-			//	pcal energy cut?
-			//
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator,
+			clashit &electron,
+			double starttime , int thisRun , double Ebeam ){
 
-	if( pid != 11 || charge != -1 ) return false;
+	TVector3	momentum = particles.getV3P(0);
+	TVector3	vertex	 = particles.getV3v(0);
+
+	TVector3 	beamVec(0,0,Ebeam);
+	TVector3	qVec; qVec = beamVec - momentum;
+
+
+	electron.setSector		(	calorimeter.getSector(0)				);
+	electron.setPID			(	particles.getPid(0)					);
+	electron.setCharge		(	particles.getCharge(0)					);
+	electron.setStatus		(	particles.getStatus(0)					);
+
+	electron.setTime		(	particles.getVt(0)					);
+	electron.setBeta		(	particles.getBeta(0)					);
+	electron.setChi2		(	particles.getChi2pid(0)					);
+	electron.setEtot		(	calorimeter.getTotE(0)					);
+	electron.setEpcal		(	calorimeter.getPcalE(0)					);
+	electron.setEoP			(	electron.getEtot() / momentum.Mag()			);
+	electron.setTimeScint		(	scintillator.getTime(0)-starttime			);
+	electron.setPathScint		(	scintillator.getPath(0)					);
+	electron.setU			(	calorimeter.getLU(0)					);
+	electron.setV			(	calorimeter.getLV(0)					);
+	electron.setW			(	calorimeter.getLW(0)					);
+	electron.setVtx			(	vertex.X()						);
+	electron.setVty			(	vertex.Y()						);
+	electron.setVtz			(	vertex.Z()						);
+
+	electron.setMomentum		(	momentum.Mag()						);
+	electron.setTheta		(	momentum.Theta()					);
+	electron.setPhi			(	momentum.Phi()						);
+
+	electron.setQ			(	qVec.Mag()						);
+	electron.setThetaQ		(	qVec.Theta()						);
+	electron.setPhiQ		(	qVec.Phi()						);
+
+	electron.setOmega		(	Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )		);
+	electron.setQ2			(	qVec.Mag()*qVec.Mag() - pow(electron.getOmega(),2)	);
+	electron.setXb			(	electron.getQ2()/(2.*mP*electron.getOmega())		);
+	electron.setW2			(	mP*mP - electron.getQ2() + 2.*electron.getOmega()*mP	);
+
+
+
+	//if( pid != 11 || charge != -1 ) return false;
 	//if( lV < 2 || lW < 2 ) return false;
 	//if( momentum.Mag() < 1 || momentum.Mag() > 4.2 ) return false;
 	//if( chi2pid == 0 || chi2pid > 1 ) return false;
@@ -139,71 +138,81 @@ bool checkElectron( int pid, TVector3 momentum, TVector3 vertex, double time, in
 	//if( momentum.Mag() < 2 || momentum.Mag() > 10.6 ) return false;
 	//if( E_tot / momentum.Mag() < 0.15 || E_tot / momentum.Mag() > 0.3 ) return false;
 
-	return true;
+	return;
 }
-bool checkProton( int pid, TVector3 momentum, TVector3 del_vertex, double time, int charge, double beta, double chi2pid, int status, int mult ){
-	//if( momentum.Mag() == 0 || momentum.Mag() > 4.2 ) return false;
-	//if( beta <= 0 || beta > 1 ) return false;
-	//if( mult != 1 ) return false;
-	//if( momentum.Theta() == 0 ) return false;
-	//if( beta <= 0 ) return false;
-	//if( del_vertex.Z() < 0 || del_vertex.Z() > 5 ) return false;
-	//if( chi2pid < -3 || chi2pid > 3 ) return false;
+
+void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
+		double Ebeam , int nMult ){
 	
-	
-	return true;
+	TVector3 	beamVec(0,0,Ebeam);
+	TVector3	eVec; eVec.SetMagThetaPhi( eHit.getMomentum(), eHit.getTheta(), eHit.getPhi() );
+	TVector3	qVec; qVec = beamVec - eVec;
+
+	// Loop over all neutrons to combine with the electron
+	for( int hit = 0 ; hit < nMult ; hit++ ){
+
+		TVector3	nVec; 
+		nVec = (nHit[hit].getDL()).Unit();
+
+
+		TVector3 norm_scatter = qVec.Cross( beamVec );
+		norm_scatter 	= norm_scatter.Unit();
+
+		TVector3 norm_reaction = qVec.Cross( nVec );
+		norm_reaction 	= norm_reaction.Unit();
+
+		double phi_nq 		= norm_scatter.Angle( norm_reaction );
+		double theta_nq 	= nVec.Angle( qVec );
+		double CosTheta_nq 	= cos(theta_nq);
+
+		TVector3 direction = norm_scatter.Cross(norm_reaction);
+		if( direction.Z() > 0 ){ // this means the phi_rq should be between 0 and pi
+		}
+		else if( direction.Z() < 0 ){ // this means the phi_rq should be between -pi and 0
+			phi_nq *= (-1);
+		}
+
+		double beta = nHit[hit].getDL().Mag() / (nHit[hit].getTofFadc()*cAir);
+		double p_n = mN / sqrt( 1./pow(beta,2) - 1. );
+		nVec.SetMagThetaPhi(p_n,nHit[hit].getDL().Theta(),nHit[hit].getDL().Phi());
+
+		double E_n 	= sqrt( mN*mN + p_n*p_n );
+		double W_primeSq = mD*mD - eHit.getQ2() + mN*mN + 2.*mD*(eHit.getOmega()-E_n) - 2.*eHit.getOmega()*E_n + 2.*eHit.getQ()*p_n*cos(theta_nq);
+		double Wp = sqrt(W_primeSq);
+		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
+		double As = (E_n - p_n*CosTheta_nq)/mN;
+
+		tag[hit].setMomentumE	(eVec 		);
+		tag[hit].setMomentumN	(nVec		);
+		tag[hit].setMomentumQ	(qVec		);
+		tag[hit].setMomentumB	(beamVec	);
+
+		tag[hit].setPhiNQ	(phi_nq		);
+		tag[hit].setThetaNQ	(theta_nq	);
+		tag[hit].setWp		(Wp		);
+		tag[hit].setXp		(Xp		);
+		tag[hit].setAs		(As		);
+	}
+
+	//beta = dL / (ToF*cAir);
+	//p_n = mN / sqrt( 1./pow(beta,2) - 1. );
+	//nVec.SetMagThetaPhi(p_n,theta_n,phi_n);
+	//E_n 	= sqrt( mN*mN + p_n*p_n );
+	//double W_primeSq = mD*mD - Q2 + mN*mN + 2.*mD*(nu-E_n) - 2.*nu*E_n + 2.*q*p_n*cos(theta_nq);
+	//Wp = sqrt(W_primeSq);
+	//Xp = Q2/(2.*( nu*(mD-E_n) + p_n*q*CosTheta_nq));
+	//As = (E_n - p_n*CosTheta_nq)/mN;
+
+
+	return;
 }
 
-bool pointsToBand(double theta,double phi,double z_m){
-	//double z = z_m*100; // from m to cm
-	double z = z_m;
-
-	// Numbers taken from band/src/main/java/org/jlab/rec/band/constants/Parameters.java
-	double thickness  = 7.2;                                // thickness of each bar (cm)
-	double layerGap[] = {7.94, 7.62, 7.94, 7.62, 7.3};      // gap between center of neighbouring layers (cm), 1-2, 2-3, 3-4, 4-5, 5-6
-
-	// Numbers taken from clas-band-calib/bin/src/org/clas/fcmon/band/BANDConstants.java
-	double bandlen[]  = {163.7,201.9,51.2,51.2,201.9};
-
-	// Distance from ideal target to upstream end of BAND
-	// (from BAND survey report, 02/18/2019)
-	double zUpst = (-302.69-302.69-302.57-302.64)/4.; // [cm]
-
-	// Distance from ideal target to downstream end of layer 5
-	double zDown = (zUpst + 5*thickness) - z_m;
-
-	double rho   = zDown/cos(theta);
-	double xDown = rho*sin(theta)*cos(phi);
-	double yDown = rho*sin(theta)*sin(phi);
-
-	double globalX = (-240.5-240.5+241.0+243.7)/4.; // [cm] --> Not using this yet (need to make sure we have the right coordinate system)
-	double globalY = (-211.0+228.1-210.6+228.1)/4.; // [cm]
-
-	// Sector boundaries
-	double topSec1  = globalY + 13*thickness;
-	double topSec2  = globalY + 10*thickness;
-	double topSec34 = globalY +  3*thickness;
-	double topSec5  = globalY -  3*thickness;
-	double downSec5 = globalY -  5*thickness;
-
-	if( yDown >= topSec1 || yDown <= downSec5 ) return 0;
-
-	if(             (yDown < topSec1  && yDown >= topSec2  && fabs(xDown) < bandlen[0]/2. )||
-			(yDown < topSec2  && yDown >= topSec34 && fabs(xDown) < bandlen[1]/2. )||
-			(yDown < topSec34 && yDown >= topSec5  && fabs(xDown) < bandlen[1]/2. && fabs(xDown) > bandlen[1]/2.-bandlen[2])||
-			(yDown < topSec5  && yDown >= downSec5 && fabs(xDown) < bandlen[4]/2. )
-	  )
-		return 1;
-
-	return 0;
-}
-
-void LoadGlobalShift( string filename_tdc , string filename_fadc ){
+void shiftsReader::LoadInitBar( string filename ){
 	ifstream f;
 	int sector, layer, component, barId;
 	double pol0, height, mean, sig, temp;
 
-	f.open(filename_fadc);
+	f.open(filename);
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
@@ -213,57 +222,79 @@ void LoadGlobalShift( string filename_tdc , string filename_fadc ){
 		f >> height;
 		f >> mean;
 		f >> sig;
-		FADC_GLOBSHIFT[barId] = mean;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-
-	f.open(filename_tdc);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		barId = 100*sector + 10*layer + component;
-		f >> pol0;
-		f >> height;
-		f >> mean;
-		f >> sig;
-		TDC_GLOBSHIFT[barId] = mean;
+		InitBar[barId] = mean;
 		f >> temp;
 		f >> temp;
 	}
 	f.close();
 }
-
-void LoadRunByRunShift(){
+void shiftsReader::LoadInitBarFadc( string filename ){
 	ifstream f;
-	int runnum;
+	int sector, layer, component, barId;
 	double pol0, height, mean, sig, temp;
 
-	f.open("../include/runByrun_offset_fadc-10082019.txt");
+	f.open(filename);
 	while(!f.eof()){
-		f >> runnum;
+		f >> sector;
+		f >> layer;
+		f >> component;
+		barId = 100*sector + 10*layer + component;
 		f >> pol0;
 		f >> height;
 		f >> mean;
 		f >> sig;
-		FADC_RUNBYRUNSHIFT[runnum] = mean;
+		InitBarFadc[barId] = mean;
 		f >> temp;
 		f >> temp;
 	}
 	f.close();
-	f.open("../include/runByrun_offset_tdc_firstIter-04132020.txt");
+}
+void shiftsReader::LoadInitRun( string filename ){
+	ifstream f;
+	int runno;
+	double pol0, height, mean, sig, temp;
+
+	f.open(filename);
 	while(!f.eof()){
-		f >> runnum;
+		f >> runno;
 		f >> pol0;
 		f >> height;
 		f >> mean;
 		f >> sig;
-		TDC_RUNBYRUNSHIFT[runnum] = mean;
+		InitRun[runno] = mean;
+		f >> temp;
+		f >> temp;
+	}
+	f.close();
+}
+void shiftsReader::LoadInitRunFadc( string filename ){
+	ifstream f;
+	int runno;
+	double pol0, height, mean, sig, temp;
+
+	f.open(filename);
+	while(!f.eof()){
+		f >> runno;
+		f >> pol0;
+		f >> height;
+		f >> mean;
+		f >> sig;
+		InitRunFadc[runno] = mean;
 		f >> temp;
 		f >> temp;
 	}
 	f.close();
 }
 
+double * shiftsReader::getInitBar(void){
+	return InitBar;
+}
+double * shiftsReader::getInitBarFadc(void){
+	return InitBarFadc;
+}
+double * shiftsReader::getInitRun(void){
+	return InitRun;
+}
+double * shiftsReader::getInitRunFadc(void){
+	return InitRunFadc;
+}

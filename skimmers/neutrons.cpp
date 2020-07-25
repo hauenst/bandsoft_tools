@@ -78,6 +78,13 @@ int main(int argc, char** argv) {
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 
+		auto current = connection.GetCondition( runNum, "beam_current");
+
+		//std::time_t end_tt = std::chrono::system_clock::to_time_t(end);
+  		//std::cout << "time_point tp is: " << ctime(&end_tt);
+		//std::time_t start_tt = std::chrono::system_clock::to_time_t(start);
+  		//std::cout << "time_point tp is: " << ctime(&start_tt);
+
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
 		hipo::reader reader;
@@ -121,20 +128,19 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_tdc);
 	
 			// Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
-			livetime 		= 	scaler.getFloat(2,0);
-			gated_charge 		= 	scaler.getFloat(0,0) * 0.001; // [microC] -- this seems to be ~10-20% accurate
+			//livetime 		= 	scaler.getFloat(2,0);
+			//gated_charge 		= 	scaler.getFloat(0,0) * 0.001; // [microC] -- this seems to be ~10-20% accurate
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
-
 			
 			// Grab the neutron information:
 			TVector3 nMomentum[maxNeutrons], nPath[maxNeutrons];
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
 			for( int n = 0 ; n < nMult ; n++ ){
 				// If there are shifts present, we can calculate momenta of the neutrons
-				if( loadshifts_opt ) nHit[n].LoadShifts();
+				//if( loadshifts_opt ) nHit[n].LoadShifts();
 			}
 			
 			// Fill tree based on d(e,e'n)X

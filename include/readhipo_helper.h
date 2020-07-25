@@ -12,31 +12,41 @@
 #include "BEvent.h"
 #include "bank.h"
 #include "bandhit.h"
+#include "clashit.h"
+#include "taghit.h"
 
 using namespace std;
 
 const int maxProtons	= 100;
 const int maxNeutrons	= 200;
 
-// Need to add theta, phi, etc..
 
+class shiftsReader {
+	public:
+		void LoadInitBar( string filename );
+		void LoadInitBarFadc( string filename );
+		void LoadInitRun( string filename );
+		void LoadInitRunFadc( string filename );
+		double * getInitBar(void);
+		double * getInitBarFadc(void);
+		double * getInitRun(void);
+		double * getInitRunFadc(void);
+	private:
+		double InitBar[600] = {0.};
+		double InitBarFadc[600] = {0.};
+		double InitRun[100000] = {0.};
+		double InitRunFadc[100000] = {0.};
+};
 
 
 int getRunNumber( string filename );
 void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime );
-void getElectronInfo( BParticle particles, int& pid, TVector3& momentum, TVector3& vertex, 
-			double& time, int& charge, double& beta, double& chi2pid, int& status );
-bool checkElectron( int pid, TVector3 momentum, TVector3 vertex, double time, int charge, double beta, double chi2pid, int status,
-			double lV, double lW , double E_tot);
-void getProtonInfo( BParticle particles, double pid[maxProtons], TVector3 momentum[maxProtons], TVector3 vertex[maxProtons],
-			double time[maxProtons], double charge[maxProtons], double beta[maxProtons], double chi2pid[maxProtons], double status[maxProtons] , int& multiplicity );
-bool checkProton( int pid, TVector3 momentum, TVector3 del_vertex, double time, int charge, double beta, double chi2pid, int status, int mult );
-
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
 			double starttime , int thisRun);
-bool pointsToBand(double theta,double phi,double z_m);
-
-void LoadGlobalShift( string filename_tdc , string filename_fadc );
-void LoadRunByRunShift();
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator,
+			clashit &electron,
+			double starttime , int thisRun , double Ebeam );
+void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
+		double Ebeam , int nMult );
 #endif
