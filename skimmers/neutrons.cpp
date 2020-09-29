@@ -95,9 +95,9 @@ int main(int argc, char** argv) {
 		hipo::dictionary  factory;      
 		hipo::schema	  schema;
 		reader.readDictionary(factory); 
-		//BEvent		event_info		(factory.getSchema("REC::Event"		));
+		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
-		//hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
 		hipo::event 	readevent;
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
@@ -119,12 +119,12 @@ int main(int argc, char** argv) {
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
-			//if( event_counter > 100000 ) break;
+			if( event_counter > 100000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);
-			//readevent.getStructure(event_info);
-			//readevent.getStructure(scaler);
+			readevent.getStructure(event_info);
+			readevent.getStructure(scaler);
 			// band struct
 			readevent.getStructure(band_hits);
 			readevent.getStructure(band_rawhits);
@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_tdc);
 	
 			// Get integrated charge, livetime and start-time from REC::Event
-			//if( event_info.getRows() == 0 ) continue;
-			//getEventInfo( event_info, gated_charge, livetime, starttime );
+			if( event_info.getRows() == 0 ) continue;
+			getEventInfo( event_info, gated_charge, livetime, starttime );
 			
 			// Grab the neutron information:
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
