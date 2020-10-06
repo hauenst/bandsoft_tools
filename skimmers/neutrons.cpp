@@ -80,12 +80,12 @@ int main(int argc, char** argv) {
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
-		//int runNum = getRunNumber(argv[i]);
-		int runNum = 11;
+		int runNum = getRunNumber(argv[i]);
+		//int runNum = 11;
 		Runno = runNum;
-		//auto cnd = connection.GetCondition(runNum, "beam_energy");
-		//Ebeam = cnd->ToDouble() / 1000.; // [GeV]
-		//current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+		auto cnd = connection.GetCondition(runNum, "beam_energy");
+		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
+		current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 
 
 		// Setup hipo reading for this file
