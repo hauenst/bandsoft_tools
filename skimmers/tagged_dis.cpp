@@ -10,6 +10,7 @@
 #include "TVector3.h"
 #include "TH2.h"
 #include "TH1.h"
+#include "TClonesArray.h"
 
 #include "reader.h"
 #include "bank.h"
@@ -51,11 +52,13 @@ int main(int argc, char** argv) {
 	double current		= 0;
 	// 	Neutron info:
 	int nMult		= 0;
-	bandhit nHit[maxNeutrons];
+	TClonesArray * nHits = new TClonesArray("bandhit");
+	TClonesArray &saveHit = *nHits;
 	//	Electron info:
 	clashit eHit;
 	//	Tagged info:
-	taghit	tag[maxNeutrons];
+	TClonesArray * tags = new TClonesArray("taghit");
+	TClonesArray &saveTags = *tags;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -65,11 +68,11 @@ int main(int argc, char** argv) {
 	outTree->Branch("current"	,&current		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
-	outTree->Branch("nHit"		,nHit			);
+	outTree->Branch("nHits"		,&nHits			);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
 	//	Tagged branches:
-	outTree->Branch("tag"		,tag			);
+	outTree->Branch("tag"		,&tags			);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -123,11 +126,14 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			// Neutron
 			nMult		= 0;
-			for( int thishit = 0; thishit < maxNeutrons ; thishit++){
-				nHit[thishit].Clear();
-				tag[thishit].Clear();
-			}
+			bandhit nHit[maxNeutrons];
+			nHits->Clear();
+			// Tag
+			taghit tag[maxNeutrons];
+			tags->Clear();
+			// Electron
 			eHit.Clear();
 
 			// Count events
@@ -169,6 +175,16 @@ int main(int argc, char** argv) {
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			if( loadshifts_opt ){
 				getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
+			}
+
+			// Store the neutrons in TClonesArray
+			for( int n = 0 ; n < nMult ; n++ ){
+				new(saveHit[n]) bandhit;
+				saveHit[n] = &nHit[n];
+			}
+			for( int n = 0 ; n < nMult ; n++ ){
+				new(saveTags[n]) taghit;
+				saveTags[n] = &tag[n];
 			}
 
 			// Fill tree based on d(e,e'n)X
