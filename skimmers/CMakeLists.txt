@@ -12,7 +12,7 @@ install( TARGETS neutrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 
 add_executable(electrons electrons.cpp readhipo_helper.cpp )
-target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS electrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 

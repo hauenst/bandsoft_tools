@@ -10,6 +10,7 @@
 #include "TVector3.h"
 #include "TH2.h"
 #include "TH1.h"
+#include "TClonesArray.h"
 
 #include "reader.h"
 #include "bank.h"
@@ -48,7 +49,8 @@ int main(int argc, char** argv) {
 	double current		= 0;
 	// 	Neutron info:
 	int nMult		= 0;
-	bandhit nHit[maxNeutrons];
+	TClonesArray * nHits = new TClonesArray("bandhit");
+	TClonesArray &saveHit = *nHits;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("current"	,&current		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
-	outTree->Branch("nHit"		,nHit			);
+	outTree->Branch("nHits"		,&nHits			);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
 		int runNum = getRunNumber(argv[i]);
+		//int runNum = 11;
 		Runno = runNum;
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
@@ -110,9 +113,8 @@ int main(int argc, char** argv) {
 			livetime	= 0;
 			starttime 	= 0;
 			nMult		= 0;
-			for( int thishit = 0; thishit < maxNeutrons ; thishit++){
-				nHit[thishit].Clear();
-			}
+			bandhit nHit[maxNeutrons];
+			nHits->Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -134,8 +136,8 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 			
 			// Grab the neutron information:
-			TVector3 nMomentum[maxNeutrons], nPath[maxNeutrons];
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
+
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
 					nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()] - FADC_INITRUN[Runno] );
@@ -144,6 +146,10 @@ int main(int argc, char** argv) {
 			}
 
 			// Fill tree based on d(e,e'n)X
+			for( int n = 0 ; n < nMult ; n++ ){
+				new(saveHit[n]) bandhit;
+				saveHit[n] = &nHit[n];
+			}
 			if( nMult != 0 ) outTree->Fill();
 
 		} // end loop over events
