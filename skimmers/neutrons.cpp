@@ -51,6 +51,9 @@ int main(int argc, char** argv) {
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
 	TClonesArray &saveHit = *nHits;
+	//	MC info:
+	TVector3 * MC_V = NULL;
+	TVector3 * MC_P = NULL;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -61,6 +64,9 @@ int main(int argc, char** argv) {
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
+	//	MC branches:
+	outTree->Branch("MC_V"		,&MC_V			);
+	outTree->Branch("MC_P"		,&MC_P			);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -80,12 +86,12 @@ int main(int argc, char** argv) {
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
-		int runNum = getRunNumber(argv[i]);
-		//int runNum = 11;
+		//int runNum = getRunNumber(argv[i]);
+		int runNum = 11;
 		Runno = runNum;
-		auto cnd = connection.GetCondition(runNum, "beam_energy");
-		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
-		current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+		//auto cnd = connection.GetCondition(runNum, "beam_energy");
+		//Ebeam = cnd->ToDouble() / 1000.; // [GeV]
+		//current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 
 
 		// Setup hipo reading for this file
@@ -95,13 +101,14 @@ int main(int argc, char** argv) {
 		hipo::dictionary  factory;      
 		hipo::schema	  schema;
 		reader.readDictionary(factory); 
-		BEvent		event_info		(factory.getSchema("REC::Event"		));
+		//BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
-		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		//hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
 		hipo::event 	readevent;
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
+		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
 		
 		// Loop over all events in file
 		int event_counter = 0;
@@ -115,6 +122,8 @@ int main(int argc, char** argv) {
 			nMult		= 0;
 			bandhit nHit[maxNeutrons];
 			nHits->Clear();
+			MC_V->Clear();
+			MC_P->Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -123,18 +132,33 @@ int main(int argc, char** argv) {
 
 			// Load data structure for this event:
 			reader.read(readevent);
-			readevent.getStructure(event_info);
-			readevent.getStructure(scaler);
+			//readevent.getStructure(event_info);
+			//readevent.getStructure(scaler);
 			// band struct
 			readevent.getStructure(band_hits);
 			readevent.getStructure(band_rawhits);
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
+			readevent.getStructure(mc_particle);
 	
 			// Get integrated charge, livetime and start-time from REC::Event
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
+			//if( event_info.getRows() == 0 ) continue;
+			//getEventInfo( event_info, gated_charge, livetime, starttime );
 			
+			// Should only be 1 particle for MC for now
+			for( int hit = 0 ; hit < mc_particle.getRows() ; hit++ ){
+				double px = mc_particle.getFloat( 1 , hit );
+				double py = mc_particle.getFloat( 2 , hit );
+				double pz = mc_particle.getFloat( 3 , hit );
+				double vx = mc_particle.getFloat( 4 , hit );
+				double vy = mc_particle.getFloat( 5 , hit );
+				double vz = mc_particle.getFloat( 6 , hit );
+				double vt = mc_particle.getFloat( 7 , hit );
+				MC_V->SetXYZ( vx ,vy, vz );
+				MC_P->SetXYZ( px, py, pz );
+				starttime = vt;
+			}
+
 			// Grab the neutron information:
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
 

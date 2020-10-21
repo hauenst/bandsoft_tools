@@ -3,6 +3,7 @@
 
 #include "TObject.h"
 #include "TVector3.h"
+#include "constants.h"
 
 class bandhit : public TObject {
 	public:
@@ -14,6 +15,13 @@ class bandhit : public TObject {
 		
 		// Some custom get functions
 		TVector3 getDL		(void)		{return TVector3(X,Y,Z)	;}
+		double getBeta		(void)		{return TVector3(X,Y,Z).Mag() / Tof / cAir; }
+		TVector3 getMomentumN	(void){
+			double beta = TVector3(X,Y,Z).Mag() / Tof / cAir;
+			double mom = mN / sqrt(1./pow(beta,2) - 1.);
+			TVector3 momN; momN.SetMagThetaPhi(mom,TVector3(X,Y,Z).Theta(),TVector3(X,Y,Z).Phi() );
+			return momN;
+		}
 
 
 		void setSector		(int	iSector		)		{Sector		= iSector	; return;}
