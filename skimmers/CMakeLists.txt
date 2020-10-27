@@ -21,3 +21,8 @@ add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp )
 target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4  bandhit_tree clashit_tree taghit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS tagged_dis
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
+add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
+target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4  bandhit_tree clashit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS quasielastic
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
