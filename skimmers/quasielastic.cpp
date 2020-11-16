@@ -232,9 +232,9 @@ int main(int argc, char** argv) {
 	shiftsReader shifts;
 	double * FADC_BARSHIFTS;
 	double * TDC_BARSHIFTS;
-	shifts.LoadInitBarFadc("../include/FADC_pass1v0_initbar.txt");
+	shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
 	FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
-	shifts.LoadInitBar("../include/FADC_pass1v0_initbar.txt");
+	shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
 	TDC_BARSHIFTS = (double*) shifts.getInitBar();
 
 	/*
@@ -475,8 +475,8 @@ int main(int argc, char** argv) {
 				nTof[n]				= nHit[n].getTof() -  TDC_BARSHIFTS[barID[n]];
 				nTofFADC[n]		= nHit[n].getTofFadc() -  FADC_BARSHIFTS[barID[n]];
 				n_bandx[n]		= nHit[n].getX();
-				n_bandy[n] 		= nHit[n].getX();
-				n_bandz[n] 		= nHit[n].getX();
+				n_bandy[n] 		= nHit[n].getY();
+				n_bandz[n] 		= nHit[n].getZ();
 	      nPath[n].SetXYZ(n_bandx[n],n_bandy[n],n_bandz[n]);
 				dL_n[n]				= nPath[n].Mag();
 				theta_n[n]		= nPath[n].Theta();
