@@ -13,6 +13,7 @@
 
 #include "reader.h"
 #include "bank.h"
+#include "clas12fiducial.h"
 
 #include "BParticle.h"
 #include "BCalorimeter.h"
@@ -29,11 +30,17 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 2 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile]\n\n";
+	if( argc < 3 ){
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [apply fiducial: 0 = n, 1 = y] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
+		cerr << "\t\t[apply fiducial = <0, 1> \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
+	}
+
+	bool applyFiducial = false;
+	if (atoi(argv[2]) == 1) {
+		applyFiducial = true;
 	}
 
 	// Create output tree
@@ -61,9 +68,11 @@ int main(int argc, char** argv) {
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
+	// Get CLAS12 fiducials
+	clas12fiducial* fFiducial = new clas12fiducial();
 
 	// Load input file
-	for( int i = 2 ; i < argc ; i++ ){
+	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
 		int runNum = getRunNumber(argv[i]);
 		Runno = runNum;
@@ -118,7 +127,17 @@ int main(int argc, char** argv) {
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
 
-			outTree->Fill();
+			bool eAccept = true;
+			if(applyFiducial) {
+				int sect = fFiducial->GetElectronAcceptance(eHit.getTheta(), eHit.getPhi(), eHit.getMomentum());
+				if(sect < 0) {
+					eAccept = false;
+				}	
+			}
+
+			if(eAccept) {
+				outTree->Fill();
+			}
 
 		} // end loop over events
 	}// end loop over files
