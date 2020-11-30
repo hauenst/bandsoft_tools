@@ -101,6 +101,8 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	electron.setChi2		(	particles.getChi2pid(0)					);
 	electron.setEtot		(	calorimeter.getTotE(0)					);
 	electron.setEpcal		(	calorimeter.getPcalE(0)					);
+	electron.setEecin		(	calorimeter.getECinE(0)					);
+	electron.setEecout		(	calorimeter.getECoutE(0)       				);
 	electron.setEoP			(	electron.getEtot() / momentum.Mag()			);
 	electron.setTimeScint		(	scintillator.getTime(0)-starttime			);
 	electron.setPathScint		(	scintillator.getPath(0)					);

@@ -16,6 +16,8 @@ void clashit::Clear(){
 	Chi2		= 0;
 	Etot		= 0;
 	Epcal		= 0;
+	Eecin		= 0;
+	Eecout		= 0;
 	EoP		= 0;
 	TimeScint	= 0;
 	PathScint	= 0;
