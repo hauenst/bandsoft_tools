@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
@@ -157,6 +158,7 @@ int main(int argc, char** argv) {
 			eHit.Clear();
 			// MC
 			genMult = 0;
+			weight = 1;
 			genpart mcPart[maxGens];
 			mcParts->Clear();
 
@@ -189,6 +191,7 @@ int main(int argc, char** argv) {
 
 			if( MC_DATA_OPT == 0){
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
+				weight = 1; // override for our tagged generator
 			}
 			
 			// Grab the neutron information:
