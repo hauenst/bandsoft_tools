@@ -10,6 +10,7 @@
 #include "TVector3.h"
 #include "TH2.h"
 #include "TH1.h"
+#include "TClonesArray.h"
 
 #include "reader.h"
 #include "bank.h"
@@ -30,18 +31,15 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 3 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [apply fiducial: 0 = n, 1 = y] [inputFile] \n\n";
+	if( argc < 4 ){
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
-		cerr << "\t\t[apply fiducial = <0, 1> \n";
+		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
 
-	bool applyFiducial = false;
-	if (atoi(argv[2]) == 1) {
-		applyFiducial = true;
-	}
+	int MC_DATA_OPT = atoi(argv[2]);
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
@@ -53,6 +51,11 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	double weight		= 0;
+	//	MC info:
+	int genMult		= 0;
+	TClonesArray * mcParts = new TClonesArray("genpart");
+	TClonesArray &saveMC = *mcParts;
 	//	Electron info:
 	clashit eHit;
 	// 	Event branches:
@@ -62,8 +65,12 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("weight"	,&weight		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
+	//	MC branches:
+	outTree->Branch("genMult"	,&genMult		);
+	outTree->Branch("mcParts"	,&mcParts		);
 	
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -74,11 +81,20 @@ int main(int argc, char** argv) {
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
-		int runNum = getRunNumber(argv[i]);
-		Runno = runNum;
-		auto cnd = connection.GetCondition(runNum, "beam_energy");
-		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
-		current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+		if( MC_DATA_OPT == 0){
+			int runNum = 11;
+			Runno = runNum;
+			Ebeam = 10.2;
+		}
+		else if( MC_DATA_OPT == 1){
+			int runNum = getRunNumber(argv[i]);
+			auto cnd = connection.GetCondition(runNum, "beam_energy");
+			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
+			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+		}
+		else{
+			exit(-1);
+		}
 
 
 		// Setup hipo reading for this file
@@ -94,6 +110,8 @@ int main(int argc, char** argv) {
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
+		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
 		
 		// Loop over all events in file
 		int event_counter = 0;
@@ -104,17 +122,24 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			weight		= 1;
 			eHit.Clear();
+			// MC
+			genMult = 0;
+			genpart mcPart[maxGens];
+			mcParts->Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
-			//if( event_counter > 100000 ) break;
+			if( event_counter > 1000000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(mc_event_info);
+			readevent.getStructure(mc_particle);
 			// electron struct
 			readevent.getStructure(particles);
 			readevent.getStructure(calorimeter);
@@ -127,12 +152,23 @@ int main(int argc, char** argv) {
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
 
+			// For simulated events, get the weight for the event		
+			if( MC_DATA_OPT == 0){
+				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
+			}
+
 			bool eAccept = true;
-			if(applyFiducial) {
-				int sect = fFiducial->GetElectronAcceptance(eHit.getTheta(), eHit.getPhi(), eHit.getMomentum());
-				if(sect < 0) {
-					eAccept = false;
-				}	
+			//if(applyFiducial) {
+			//	int sect = fFiducial->GetElectronAcceptance(eHit.getTheta(), eHit.getPhi(), eHit.getMomentum());
+			//	if(sect < 0) {
+			//		eAccept = false;
+			//	}	
+			//}
+
+			// Store the mc particles in TClonesArray
+			for( int n = 0 ; n < maxGens ; n++ ){
+				new(saveMC[n]) genpart;
+				saveMC[n] = &mcPart[n];
 			}
 
 			if(eAccept) {

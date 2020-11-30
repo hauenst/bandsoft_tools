@@ -14,11 +14,13 @@
 #include "bandhit.h"
 #include "clashit.h"
 #include "taghit.h"
+#include "genpart.h"
 
 using namespace std;
 
 const int maxProtons	= 100;
 const int maxNeutrons	= 200;
+const int maxGens	= 10;
 
 
 class shiftsReader {
@@ -49,4 +51,6 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 			double starttime , int thisRun , double Ebeam );
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );
+void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] , 
+		double &starttime, double &weight, double Ebeam , int &genMult );
 #endif

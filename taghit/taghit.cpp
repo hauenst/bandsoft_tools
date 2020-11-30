@@ -16,4 +16,6 @@ void taghit::Clear(){
 	Wp		= 0;
 	Xp		= 0;
 	As		= 0;
+	Pt.Clear();
+	Xp2		= 0;
 }
