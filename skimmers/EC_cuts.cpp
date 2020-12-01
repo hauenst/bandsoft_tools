@@ -59,16 +59,8 @@ double SFs1[6] = {0.01904,
 		  0.01767,
 		  0.01632};
 
-double mu_SF(double E, double sf1, double sf3, double sf4){
-  return sf1 * (1 + (sf3/E) + (sf4/(E*E)) ); 
-}
-
-double max_SF(double E, double sf1, double sf3, double sf4, double sfs1){
-  return mu_SF(E, sf1, sf3, sf4) + 5 * sfs1;
-}
-
-double min_SF(double E, double sf1, double sf3, double sf4, double sfs1){
-  return mu_SF(E, sf1, sf3, sf4) - 5 * sfs1;
+double FF(double E, double sf1, double sf2, double sf3, double sf4){
+  return sf1 * (sf2 + (sf3/E) + (sf4/(E*E)) ); 
 }
 
 double diag(double x, double C){
@@ -84,17 +76,29 @@ double step(double x, double step){
 
 int main(int argc, char** argv) {
 
-	if( argc != 3 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile] \n\n";
-		return -1;
-	}
- 
+  if( argc != 4 ){
+    cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile] [inputTextFile] \n\n";
+    return -1;
+  }
+  
+  //Take in values
+  double params[6][8];
+  ifstream inTextFile(string(argv[3]).c_str());
+  for(int i = 0; i < 6; i++){
+    inTextFile >> params[i][0]
+	       >> params[i][1]
+	       >> params[i][2]
+	       >> params[i][3]
+	       >> params[i][4]
+	       >> params[i][5]
+	       >> params[i][6]
+	       >> params[i][7];
+  }
   
   //Define Variables
   int Runno;
   double Ebeam, gated_charge, livetime, starttime, current;
   clashit * eHit = new clashit;
-
  //Creat input tree
   TFile * inFile = new TFile(argv[2]);
   TTree * inTree = (TTree*)inFile->Get("electrons");
@@ -136,8 +140,9 @@ int main(int argc, char** argv) {
   TH2D * h2_SF_Etot[6];
   //Comparing elements of ECal
   TH2D * h2_SFpcal_SFecin[6];
-  TH2D * h2_SFpcal_SFecin_wCut[6];
-  TH2D * h2_SFpcal_SFecout[6];
+  TH2D * h2_SFpcal_SFecin_bin[6];
+  //TH2D * h2_SFpcal_SFecin_wCut[6];
+  //H2D * h2_SFpcal_SFecout[6];
 
   char temp[100];
 
@@ -149,43 +154,43 @@ int main(int argc, char** argv) {
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_V_Wide_sec%d",i);
-    h2_SF_V_Wide[i] = new TH2D(temp,"SF_v_V_Wide;V;SF;Events",400,0,400,120,0.05,0.35);
+    h2_SF_V_Wide[i] = new TH2D(temp,"SF_v_V_Wide;V;SF;Events",400,0,400,150,0.05,0.40);
     hist_list.push_back(h2_SF_V_Wide[i]);
   }  
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_V_Narrow_sec%d",i);
-    h2_SF_V_Narrow[i] = new TH2D(temp,"SF_v_V_Narrow;V;SF;Events",60,0,30,120,0.05,0.35);
+    h2_SF_V_Narrow[i] = new TH2D(temp,"SF_v_V_Narrow;V;SF;Events",60,0,30,150,0.05,0.40);
     hist_list.push_back(h2_SF_V_Narrow[i]);
   }  
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_W_Wide_sec%d",i);
-    h2_SF_W_Wide[i] = new TH2D(temp,"SF_v_W_Wide;W;SF;Events",400,0,400,120,0.05,0.35);
+    h2_SF_W_Wide[i] = new TH2D(temp,"SF_v_W_Wide;W;SF;Events",400,0,400,150,0.05,0.40);
     hist_list.push_back(h2_SF_W_Wide[i]);
   }  
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_W_Narrow_sec%d",i);
-    h2_SF_W_Narrow[i] = new TH2D(temp,"SF_v_W_Narrow;W;SF;Events",60,0,30,120,0.05,0.35);
+    h2_SF_W_Narrow[i] = new TH2D(temp,"SF_v_W_Narrow;W;SF;Events",60,0,30,150,0.05,0.40);
     hist_list.push_back(h2_SF_W_Narrow[i]);
   }  
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_Epcal_sec%d",i);
-    h2_SF_Epcal[i] = new TH2D(temp,"SF_v_Epcal;Epcal;SF;Events",250,0,1.7,120,0.05,0.35);
+    h2_SF_Epcal[i] = new TH2D(temp,"SF_v_Epcal;Epcal;SF;Events",250,0,1.7,150,0.05,0.40);
     hist_list.push_back(h2_SF_Epcal[i]);
   }
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_p_sec%d",i);
-    h2_SF_p[i] = new TH2D(temp,"SF_v_p;p;SF;Events",250,0,10,120,0.05,0.35);
+    h2_SF_p[i] = new TH2D(temp,"SF_v_p;p;SF;Events",250,0,10,150,0.05,0.40);
     hist_list.push_back(h2_SF_p[i]);
   }
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_Etot_sec%d",i);
-    h2_SF_Etot[i] = new TH2D(temp,"SF_v_Etot;Etot;SF;Events",200,0,2.5,120,0.05,0.35);
+    h2_SF_Etot[i] = new TH2D(temp,"SF_v_Etot;Etot;SF;Events",200,0,2.5,150,0.05,0.40);
     hist_list.push_back(h2_SF_Etot[i]);
   }
 
@@ -195,7 +200,13 @@ int main(int argc, char** argv) {
     hist_list.push_back(h2_SFpcal_SFecin[i]);
   }
 
-  for(int i = 0; i<6; i++){
+  for(int i = 0; i<4; i++){
+    sprintf(temp,"SFpcal_v_SFecin_sec4_bin%d",i);
+    h2_SFpcal_SFecin_bin[i] = new TH2D(temp,"SFpcal_v_SFecin_binned;SFecin;SFpcal;Events",350,0.001,0.15,350,0.0,0.35);
+    hist_list.push_back(h2_SFpcal_SFecin_bin[i]);
+  }
+
+  /*  for(int i = 0; i<6; i++){
     sprintf(temp,"SFpcal_v_SFecin_wCut_sec%d",i);
     h2_SFpcal_SFecin_wCut[i] = new TH2D(temp,"SFpcal_v_SFecin_wCut;SFecin_wCut;SFpcal;Events",350,0.001,0.15,350,0.0,0.35);
     hist_list.push_back(h2_SFpcal_SFecin_wCut[i]);
@@ -205,7 +216,7 @@ int main(int argc, char** argv) {
     sprintf(temp,"SFpcal_v_SFecout_sec%d",i);
     h2_SFpcal_SFecout[i] = new TH2D(temp,"SFpcal_v_SFecout;SFecout;SFpcal;Events",350,0.001,0.15,350,0.0,0.35);
     hist_list.push_back(h2_SFpcal_SFecout[i]);
-  }
+    }*/
  
   int fin = inTree->GetEntries();
   int lowP = 0;
@@ -219,12 +230,18 @@ int main(int argc, char** argv) {
       cerr << (i*100.)/fin <<"% complete \n";
     }
 
-    //cout<<"PID = "<<eHit->getPID()<<"\n";
-    //cout<<"Charge = "<<eHit->getCharge()<<"\n";
     if(eHit->getPID() != 11){continue;}
     if(eHit->getCharge() != -1){continue;}
-    
+    if(eHit->getV() < 14){ continue; }
+    if(eHit->getW() < 14){ continue; }
     int sector = eHit->getSector() - 1;
+    double muSF = FF(eHit->getEpcal(),params[sector][0],params[sector][1],params[sector][2],params[sector][3]);
+    double sigSF = FF(eHit->getEpcal(),params[sector][4],params[sector][5],params[sector][6],params[sector][7]);
+    double minSF = muSF - 3.5 * sigSF;
+    double maxSF = muSF + 3.5 * sigSF;
+    if(eHit->getEoP() < minSF){ continue; }
+    if(eHit->getEoP() > maxSF){ continue; }
+    
     double p = eHit->getMomentum();
     h2_Eec_Epcal[sector]->Fill(eHit->getEpcal(),eHit->getEecin() + eHit->getEecout());
     h2_SF_V_Wide[sector]->Fill(eHit->getV(),eHit->getEoP());
@@ -235,18 +252,35 @@ int main(int argc, char** argv) {
     h2_SF_p[sector]->Fill(p,eHit->getEoP());
     h2_SF_Etot[sector]->Fill(eHit->getEtot(),eHit->getEoP());
     h2_SFpcal_SFecin[sector]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
-    h2_SFpcal_SFecout[sector]->Fill(eHit->getEecout()/p,eHit->getEpcal()/p);
+    //h2_SFpcal_SFecout[sector]->Fill(eHit->getEecout()/p,eHit->getEpcal()/p);
     
+    if(sector == 3){
+      if(p < 2.5){
+	h2_SFpcal_SFecin_bin[0]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
+      }
+      else if(p < 4.5){
+	h2_SFpcal_SFecin_bin[1]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
+      }
+      else if(p < 7){
+	h2_SFpcal_SFecin_bin[2]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
+      }
+      else{
+	h2_SFpcal_SFecin_bin[3]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
+      }
+
+    }
+
     lowP++;
     if(eHit->getEpcal()>0.07){highP++;}
 
-    double SFpi = (eHit->getEpcal() + eHit->getEecin()) / p;
-    if((p>4.5) && (SFpi<0.2)){continue;}
-    h2_SFpcal_SFecin_wCut[sector]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
+    //double SFpi = (eHit->getEpcal() + eHit->getEecin()) / p;
+    //if((p>4.5) && (SFpi<0.2)){continue;}
+    //h2_SFpcal_SFecin_wCut[sector]->Fill(eHit->getEecin()/p,eHit->getEpcal()/p);
     //outTree->Fill();
 
   }
 
+  /*
   TF1 * Pos_Step1 = new TF1("step",[&](double *x, double *p){ return step(x[0],p[0]); }, 0.0,30,1 );
   Pos_Step1->SetLineColor(1);
   TF1 * Pos_Step2 = new TF1("step",[&](double *x, double *p){ return step(x[0],p[0]); }, 0.0,30,1 );
@@ -293,12 +327,12 @@ int main(int argc, char** argv) {
   }
 
 
-
+  
   TF1 * SF_mu = new TF1("SF_mu",[&](double *x, double *p){ return mu_SF(x[0],p[0],p[1],p[2]); }, 0.01,1.7,3 );
   SF_mu->SetLineColor(1);
   TF1 * SF_max = new TF1("SF_max",[&](double *x, double *p){ return max_SF(x[0],p[0],p[1],p[2],p[3]); }, 0.01,1.7,4 );
   TF1 * SF_min = new TF1("SF_min",[&](double *x, double *p){ return min_SF(x[0],p[0],p[1],p[2],p[3]); }, 0.01,1.7,4 );
-    
+  
 
   for(int i = 0; i<6; i++){
     sprintf(temp,"SF_v_Epcal_sec%d",i);
@@ -306,6 +340,7 @@ int main(int argc, char** argv) {
     c1->cd();
     h2_SF_Epcal[i]->Draw("colz");
 
+    
     SF_mu->SetParameter(0,SF1[i]);
     SF_mu->SetParameter(1,SF3[i]);
     SF_mu->SetParameter(2,SF4[i]);
@@ -322,11 +357,11 @@ int main(int argc, char** argv) {
     SF_min->SetParameter(2,SF4[i]);
     SF_min->SetParameter(3,SFs1[i]);
     SF_min->Draw("SAME");
-
+    
     sprintf(temp,"SF_v_Epcal_sec%d.pdf",i);
     c1->SaveAs(temp);
   }
-
+  
   TF1 * SF_diag1 = new TF1("diag",[&](double *x, double *p){ return diag(x[0],p[0]); }, 0.001,1.5,1 );
   SF_diag1->SetLineColor(1);
   TF1 * SF_diag2 = new TF1("diag",[&](double *x, double *p){ return diag(x[0],p[0]); }, 0.001,1.5,1 );
@@ -362,7 +397,7 @@ int main(int argc, char** argv) {
     sprintf(temp,"SFpcal_v_SFecin_wCut_sec%d.pdf",i);
     c1->SaveAs(temp);
   }
-
+  */
   cout<< ((double)lowP - (double)highP) * 100 / (double)lowP << "% survival\n";
 
   inFile->Close();
