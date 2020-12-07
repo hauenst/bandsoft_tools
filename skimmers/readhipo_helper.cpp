@@ -82,13 +82,15 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 }
 
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] , 
-		double &starttime, double &weight, double Ebeam , int &genMult ){
+		double &starttime, double &weight, double &Ebeam , int &genMult ){
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	eVec; 
 	bool setElectron = false;
 
 	// Grab the weight for the event:
-	weight = gen_info.getFloat(3,0);
+	weight 	= gen_info.getFloat(9,0);
+	// Grab the beam energy for this generated file:
+	Ebeam 	= gen_info.getFloat(6,0);
 
 	// Loop over all generated particles and find the electron to put that one first
 	for( int hit = 0 ; hit < gen_particles.getRows() ; hit++ ){

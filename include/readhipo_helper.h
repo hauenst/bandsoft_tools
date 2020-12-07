@@ -52,5 +52,5 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] , 
-		double &starttime, double &weight, double Ebeam , int &genMult );
+		double &starttime, double &weight, double &Ebeam , int &genMult );
 #endif

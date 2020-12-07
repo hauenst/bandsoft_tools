@@ -7,7 +7,7 @@ include_directories(${INCLUDES})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 add_executable(neutrons neutrons.cpp readhipo_helper.cpp )
-target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4  bandhit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4 bandhit_tree genpart_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS neutrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 

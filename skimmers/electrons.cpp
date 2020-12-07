@@ -80,11 +80,9 @@ int main(int argc, char** argv) {
 
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
-		// Using run number of current file, grab the beam energy from RCDB
 		if( MC_DATA_OPT == 0){
 			int runNum = 11;
 			Runno = runNum;
-			Ebeam = 10.2;
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -125,7 +123,7 @@ int main(int argc, char** argv) {
 			weight		= 1;
 			eHit.Clear();
 			// MC
-			genMult = 0;
+			genMult 	= 0;
 			genpart mcPart[maxGens];
 			mcParts->Clear();
 
@@ -144,25 +142,17 @@ int main(int argc, char** argv) {
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 	
-			// Get integrated charge, livetime and start-time from REC::Event
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
-			
-			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
-
 			// For simulated events, get the weight for the event		
 			if( MC_DATA_OPT == 0){
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 
-			bool eAccept = true;
-			//if(applyFiducial) {
-			//	int sect = fFiducial->GetElectronAcceptance(eHit.getTheta(), eHit.getPhi(), eHit.getMomentum());
-			//	if(sect < 0) {
-			//		eAccept = false;
-			//	}	
-			//}
+			// Get integrated charge, livetime and start-time from REC::Event
+			if( event_info.getRows() == 0 ) continue;
+			getEventInfo( event_info, gated_charge, livetime, starttime );
+
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
 
 			// Store the mc particles in TClonesArray
 			for( int n = 0 ; n < maxGens ; n++ ){
@@ -170,9 +160,7 @@ int main(int argc, char** argv) {
 				saveMC[n] = &mcPart[n];
 			}
 
-			if(eAccept) {
-				outTree->Fill();
-			}
+			outTree->Fill();
 
 		} // end loop over events
 	}// end loop over files

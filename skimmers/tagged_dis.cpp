@@ -106,7 +106,6 @@ int main(int argc, char** argv) {
 		if( MC_DATA_OPT == 0){
 			int runNum = 11;
 			Runno = runNum;
-			Ebeam = 10.2;
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -166,7 +165,6 @@ int main(int argc, char** argv) {
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
-			//if( event_counter > 100000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);
@@ -184,18 +182,20 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
+
+			// For simulated events, get the weight for the event		
+			if( MC_DATA_OPT == 0){
+				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
+			}
 	
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
-			if( MC_DATA_OPT == 0){
-				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
-				weight = 1; // override for our tagged generator
-			}
-			
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
+
 			// Grab the neutron information:
-			TVector3 nMomentum[maxNeutrons], nPath[maxNeutrons];
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
@@ -203,9 +203,6 @@ int main(int argc, char** argv) {
 					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
 				}
 			}
-			
-			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
 
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
