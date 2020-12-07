@@ -44,7 +44,7 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
 			double starttime , int thisRun);
-void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator,
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam );
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
