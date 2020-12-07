@@ -16,6 +16,7 @@
 #include "reader.h"
 #include "bank.h"
 #include "clas12fiducial.h"
+#include "e_pid.h"
 
 #include "BParticle.h"
 #include "BCalorimeter.h"
@@ -28,37 +29,6 @@
 #include "readhipo_helper.h"
 
 using namespace std;
-
-//Define Constants for SF
-double SF1[6] = {0.24466,
-		 0.24534,
-		 0.24480,
-		 0.24530,
-		 0.24645,
-		 0.24402};
-
-
-double SF3[6] = {-0.01150,
-		 -0.01645,
-		 -0.01585,
-		 -0.02168,
-		 -0.01837,
-		 -0.01500};
-
-double SF4[6] = {-0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010};
-
-double SFs1[6] = {0.01904,
-		  0.01924,
-		  0.01794,
-		  0.01661,
-		  0.01767,
-		  0.01632};
-
 double FF(double E, double sf1, double sf2, double sf3, double sf4){
   return sf1 * (sf2 + (sf3/E) + (sf4/(E*E)) ); 
 }
@@ -67,34 +37,14 @@ double diag(double x, double C){
   return C - x;
 }
 
-double step(double x, double step){
-  if(x<step){
-    return -100;
-  }
-  return 100;
-}
-
 int main(int argc, char** argv) {
 
-  if( argc != 4 ){
-    cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile] [inputTextFile] \n\n";
+  if( argc != 3 ){
+    cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile] \n\n";
     return -1;
   }
   
-  //Take in values
-  double params[6][8];
-  ifstream inTextFile(string(argv[3]).c_str());
-  for(int i = 0; i < 6; i++){
-    inTextFile >> params[i][0]
-	       >> params[i][1]
-	       >> params[i][2]
-	       >> params[i][3]
-	       >> params[i][4]
-	       >> params[i][5]
-	       >> params[i][6]
-	       >> params[i][7];
-  }
-  
+
   //Define Variables
   int Runno;
   double Ebeam, gated_charge, livetime, starttime, current;
@@ -221,6 +171,12 @@ int main(int argc, char** argv) {
   int fin = inTree->GetEntries();
   int lowP = 0;
   int highP = 0;
+  
+  //Initiallize PID with beam energy
+  inTree->GetEntry(0);
+  e_pid eHitPID;
+  eHitPID.setParamsRGB(Ebeam); 
+
   for(int i = 0; i < fin; i++){
     eHit->Clear();
     inTree->GetEntry(i);
@@ -230,18 +186,12 @@ int main(int argc, char** argv) {
       cerr << (i*100.)/fin <<"% complete \n";
     }
 
-    if(eHit->getPID() != 11){continue;}
-    if(eHit->getCharge() != -1){continue;}
+    //Do ECal Fid and PID cuts
     if(eHit->getV() < 14){ continue; }
     if(eHit->getW() < 14){ continue; }
+    if(!eHitPID.isElectron(eHit)){ continue; }
+
     int sector = eHit->getSector() - 1;
-    double muSF = FF(eHit->getEpcal(),params[sector][0],params[sector][1],params[sector][2],params[sector][3]);
-    double sigSF = FF(eHit->getEpcal(),params[sector][4],params[sector][5],params[sector][6],params[sector][7]);
-    double minSF = muSF - 3.5 * sigSF;
-    double maxSF = muSF + 3.5 * sigSF;
-    if(eHit->getEoP() < minSF){ continue; }
-    if(eHit->getEoP() > maxSF){ continue; }
-    
     double p = eHit->getMomentum();
     h2_Eec_Epcal[sector]->Fill(eHit->getEpcal(),eHit->getEecin() + eHit->getEecout());
     h2_SF_V_Wide[sector]->Fill(eHit->getV(),eHit->getEoP());

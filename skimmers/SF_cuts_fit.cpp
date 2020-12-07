@@ -34,36 +34,6 @@ using namespace std;
 
 double Epcal_max=1.2;
 
-//Define Constants for SF
-double SF1[6] = {0.24466,
-		 0.24534,
-		 0.24480,
-		 0.24530,
-		 0.24645,
-		 0.24402};
-
-
-double SF3[6] = {-0.01150,
-		 -0.01645,
-		 -0.01585,
-		 -0.02168,
-		 -0.01837,
-		 -0.01500};
-
-double SF4[6] = {-0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010
-		 -0.00010};
-
-double SFs1[6] = {0.01904,
-		  0.01924,
-		  0.01794,
-		  0.01661,
-		  0.01767,
-		  0.01632};
-
 double FF(double E, double sf1, double sf2, double sf3, double sf4){
   return sf1 * (sf2 + (sf3/E) + (sf4/(E*E)) ); 
 }
@@ -198,6 +168,7 @@ int main(int argc, char** argv) {
   f1_min->SetLineColor(2);
 
   //These functions will be used to compare with the RGA values
+  /*
   TF1 * f1_mu_rga = new TF1("f1_mu_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
   f1_mu_rga->SetLineColor(3);
   TF1 * f1_sigma_rga = new TF1("f1_sigma_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
@@ -206,7 +177,7 @@ int main(int argc, char** argv) {
   f1_max_rga->SetLineColor(3);
   TF1 * f1_min_rga = new TF1("f1_min_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]) - 5*FF(x[0],p[4],p[5],p[6],p[7]); },0.06,1.6,8);
   f1_min_rga->SetLineColor(3);
-
+  */
   //Give some estimates
   f1_mu->SetParameter(0,0.25);
   f1_mu->SetParameter(1,1.00);
@@ -225,6 +196,7 @@ int main(int argc, char** argv) {
     tg_mu[i]->Draw("SAME");
     
     //Start with RGA
+    /*
     f1_mu_rga->SetParameter(0,SF1[i]);
     f1_mu_rga->SetParameter(1,1.00);
     f1_mu_rga->SetParameter(2,SF3[i]);
@@ -251,10 +223,11 @@ int main(int argc, char** argv) {
     f1_min_rga->SetParameter(5,1.00);
     f1_min_rga->SetParameter(6,0.00);
     f1_min_rga->SetParameter(7,0.00);
-
+    
     f1_mu_rga->Draw("SAME");
     f1_max_rga->Draw("SAME");
     f1_min_rga->Draw("SAME");
+    */
 
     //Now do fit
     TFitResultPtr muPoint = tg_mu[i]->Fit(f1_mu,"qeSrn","",0.06,Epcal_max);
@@ -298,7 +271,7 @@ int main(int argc, char** argv) {
     sprintf(temp,"Canvas_Sigma_sec%d",i);
     TCanvas * c2 = new TCanvas(temp,temp,1200,1000);
     tg_sigma[i]->Draw();
-    f1_sigma_rga->Draw("SAME");
+    //f1_sigma_rga->Draw("SAME");
     f1_sigma->Draw("SAME");
     sprintf(temp,"Canvas_Sigma_sec%d.pdf",i);
     c2->SaveAs(temp);
