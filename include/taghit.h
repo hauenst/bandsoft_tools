@@ -38,7 +38,7 @@ class taghit : public TObject {
 		TVector3 getPt		(void)	{return Pt	;}
 		double getXp2		(void)	{return Xp2	;}
 
-		ClassDef(taghit,1);
+		ClassDef(taghit,2);
 	private:
 		TVector3	MomentumE;
 		TVector3	MomentumN;

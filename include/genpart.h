@@ -54,7 +54,7 @@ class genpart : public TObject {
 		double	getXb		(void)		{return Xb		;}
 		double	getW2		(void)		{return W2		;}
 
-		ClassDef(genpart,1);
+		ClassDef(genpart,2);
 	private:
 		int 	PID		;
 

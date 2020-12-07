@@ -98,7 +98,7 @@ class bandhit : public TObject {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		ClassDef(bandhit,2);
+		ClassDef(bandhit,3);
 	private:
 		int	Sector		;
 		int 	Layer		;

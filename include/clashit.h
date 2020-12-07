@@ -79,7 +79,7 @@ class clashit : public TObject {
 		double	getXb		(void)		{return Xb		;}
 		double	getW2		(void)		{return W2		;}
 
-		ClassDef(clashit,1);
+		ClassDef(clashit,2);
 	private:
 		int	Sector		;
 		int 	PID		;
