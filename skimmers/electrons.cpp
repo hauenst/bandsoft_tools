@@ -94,7 +94,6 @@ int main(int argc, char** argv) {
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
-		//hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		
 		// Loop over all events in file
 		int event_counter = 0;

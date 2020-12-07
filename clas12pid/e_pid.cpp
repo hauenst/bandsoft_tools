@@ -99,10 +99,6 @@ bool e_pid::isElectron(clashit * eHit){
 
 }
 
-TF1 e_pid::getMeanFunction(){
-  TF1 function = new TF1
-}
-
 bool e_pid::SF_Epcal_Cut(int sector, double SF, double Epcal){
   if(SF < minSF(sector,Epcal)){
     return false;
