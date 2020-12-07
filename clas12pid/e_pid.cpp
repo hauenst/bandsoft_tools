@@ -16,7 +16,6 @@ using namespace std;
 e_pid::e_pid(){
 
   interval = 3.5;
-  color = 1;
 }
 
 e_pid::~e_pid(){
