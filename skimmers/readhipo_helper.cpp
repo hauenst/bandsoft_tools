@@ -80,7 +80,7 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 	starttime		= (double)eventInfo.getSTTime(0);
 	return;
 }
-void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator,
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam ){
 
@@ -124,6 +124,74 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	electron.setXb			(	electron.getQ2()/(2.*mP*electron.getOmega())		);
 	electron.setW2			(	mP*mP - electron.getQ2() + 2.*electron.getOmega()*mP	);
 
+
+        //Adding Tracking bank
+
+	int Ntrack = DC_Track.getRows();
+	int index = -1;
+	int count =0;
+	for(int i =0; i < Ntrack; i++){
+	  int pindex   = DC_Track.getInt(1,i);
+	  int detector = DC_Track.getInt(2,i);
+	 
+	  if (pindex ==0 && detector ==6 )
+	    {index = i;
+	     count ++;
+	   }
+	}
+
+	//At this point I only use 1 track event
+	//The check show around 4% mul_track events
+	
+	if (index != -1 && count ==1) {
+	  electron.setDC_chi2             (       DC_Track.getFloat(6, index)                                 );
+	  electron.setDC_NDF              (       DC_Track.getInt(7, index)                                   );
+          electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
+	  
+	}
+
+
+	//Adding Traj bank, Structure is more complicated
+	//Also only consider the traj of 1-track event
+
+	int NTraj = DC_Traj.getRows();
+	int index_traj = -1;
+      
+	for(int i =0; i <NTraj; i++){
+          int pindex   = DC_Traj.getInt(0, i);
+	  int detector = DC_Traj.getInt(2,i);
+	  int layer    = DC_Traj.getInt(3,i);
+
+	  if(pindex ==0 && detector ==6 && layer ==6 && count ==1)
+
+	     {
+	       electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
+	       electron.setDC_y1        (  DC_Traj.getFloat(5, i)                                           );
+	       electron.setDC_z1        (  DC_Traj.getFloat(6, i)                                           );
+	                                                  
+	     }
+
+	  if(pindex ==0 && detector == 6 && layer ==18 && count ==1)
+
+	    {
+	       electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
+	       electron.setDC_y2        (  DC_Traj.getFloat(5, i)                                           );
+	       electron.setDC_z2        (  DC_Traj.getFloat(6, i)                                           );
+	      
+
+	    }
+
+	  if(pindex ==0 && detector == 6 && layer ==36 && count ==1)
+
+	    {
+	       electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );
+	       electron.setDC_y3        (  DC_Traj.getFloat(5, i)                                           );
+	       electron.setDC_z3        (  DC_Traj.getFloat(6, i)                                           );
+	      
+	    }
+	
+
+	}
 
 
 	//if( pid != 11 || charge != -1 ) return false;

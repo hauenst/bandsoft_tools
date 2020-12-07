@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("current"	,&current		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
-	
+
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
@@ -75,11 +75,10 @@ int main(int argc, char** argv) {
 	for( int i = 3 ; i < argc ; i++ ){
 		// Using run number of current file, grab the beam energy from RCDB
 		int runNum = getRunNumber(argv[i]);
-		Runno = runNum;
+	        Runno = runNum;
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 		current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
-
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
@@ -90,6 +89,8 @@ int main(int argc, char** argv) {
 		reader.readDictionary(factory); 
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
+		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
@@ -99,6 +100,12 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
+
+                //int count = 0;
+
+                //int count1 =0;
+                //int count_mul =0;
+
 		while(reader.next()==true){
 			// Clear all branches
 			gated_charge	= 0;
@@ -107,7 +114,7 @@ int main(int argc, char** argv) {
 			eHit.Clear();
 
 			// Count events
-			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
+			if(event_counter%1000000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
 			//if( event_counter > 100000 ) break;
 
@@ -119,13 +126,34 @@ int main(int argc, char** argv) {
 			readevent.getStructure(particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
+			readevent.getStructure(DC_Track);
+			readevent.getStructure(DC_Traj);
 	
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
-			
+
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
+
+
+			//I want to get the track information here to test
+                        //int count_track = 0;
+
+			//int test_Ntrack = DC_Track.getRows();
+		        //for(int i =0; i <test_Ntrack; i++){
+	                //    int pindex = DC_Track.getInt(1,i);
+	                //    int detector = DC_Track.getInt(2,i);
+
+	                //    if (pindex ==0 && detector ==6)
+			//      {	count_track ++;}
+
+			//}
+                        //
+                        //if(count_track ==1){count1++;}
+                        //if(count_track >1){count_mul++;}
+
+			//Done checking tracking information
 
 			bool eAccept = true;
 			if(applyFiducial) {
@@ -136,8 +164,12 @@ int main(int argc, char** argv) {
 			}
 
 			if(eAccept) {
-				outTree->Fill();
+			    outTree->Fill();
 			}
+
+			//count ++;
+
+			 //if (count == 1000000) break;
 
 		} // end loop over events
 	}// end loop over files
