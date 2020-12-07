@@ -16,6 +16,8 @@ void clashit::Clear(){
 	Chi2		= 0;
 	Etot		= 0;
 	Epcal		= 0;
+	Eecin		= 0;
+	Eecout		= 0;
 	EoP		= 0;
 	TimeScint	= 0;
 	PathScint	= 0;
@@ -38,4 +40,20 @@ void clashit::Clear(){
 	Omega		= 0;
 	Xb		= 0;
 	W2		= 0;
+
+	DC_chi2         = -999;
+	DC_NDF          = -999;
+	DC_sector       = -999;
+
+	DC_x1           = -999;
+	DC_y1           = -999;
+	DC_z1           = -999;
+
+	DC_x2           = -999;
+	DC_y2           = -999;
+	DC_z2           = -999;
+
+	DC_x3           = -999;
+	DC_y3           = -999;
+	DC_z3           = -999;
 }
