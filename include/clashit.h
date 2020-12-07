@@ -98,6 +98,7 @@ class clashit : public TObject {
 		double	getXb		(void)		{return Xb		;}
 		double	getW2		(void)		{return W2		;}
 
+
                 double  getDC_chi2      (void)          {return DC_chi2         ;}
                 int     getDC_NDF       (void)          {return DC_NDF          ;}
                 int     getDC_sector    (void)          {return DC_sector       ;}
@@ -114,7 +115,8 @@ class clashit : public TObject {
                 double  getDC_y3        (void)          {return DC_y3           ;}
                 double  getDC_z3        (void)          {return DC_z3           ;}
 
-		  ClassDef(clashit,1);
+		  ClassDef(clashit,2);
+
 	private:
 		int	Sector		;
 		int 	PID		;

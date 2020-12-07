@@ -22,6 +22,8 @@ class taghit : public TObject {
 		void setWp		(double		iWp		)	{Wp		= iWp		; return;}
 		void setXp		(double		iXp		)	{Xp		= iXp		; return;}
 		void setAs		(double		iAs		)	{As		= iAs		; return;}
+		void setPt		(TVector3	iPt		)	{Pt		= iPt		; return;}
+		void setXp2		(double		iXp2		)	{Xp2		= iXp2		; return;}
 
 		TVector3 getMomentumE	(void)	{return MomentumE;}
 		TVector3 getMomentumN	(void)	{return MomentumN;}
@@ -33,8 +35,10 @@ class taghit : public TObject {
 		double getWp		(void)	{return Wp	;}
 		double getXp		(void)	{return Xp	;}
 		double getAs		(void)	{return As	;}
+		TVector3 getPt		(void)	{return Pt	;}
+		double getXp2		(void)	{return Xp2	;}
 
-		ClassDef(taghit,1);
+		ClassDef(taghit,2);
 	private:
 		TVector3	MomentumE;
 		TVector3	MomentumN;
@@ -46,6 +50,8 @@ class taghit : public TObject {
 		double		Wp;
 		double 		Xp;
 		double		As;
+		TVector3	Pt;
+		double		Xp2;
 };
 
 

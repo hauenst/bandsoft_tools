@@ -80,7 +80,88 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 	starttime		= (double)eventInfo.getSTTime(0);
 	return;
 }
+
+void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] , 
+		double &starttime, double &weight, double &Ebeam , int &genMult ){
+	TVector3 	beamVec(0,0,Ebeam);
+	TVector3	eVec; 
+	bool setElectron = false;
+
+	// Grab the weight for the event:
+	weight 	= gen_info.getFloat(9,0);
+	// Grab the beam energy for this generated file:
+	Ebeam 	= gen_info.getFloat(6,0);
+
+	// Loop over all generated particles and find the electron to put that one first
+	for( int hit = 0 ; hit < gen_particles.getRows() ; hit++ ){
+		int pid	= gen_particles.getInt( 0 , hit );
+		if( pid == 11 && setElectron == false ){
+			double px = gen_particles.getFloat( 1 , hit );
+			double py = gen_particles.getFloat( 2 , hit );
+			double pz = gen_particles.getFloat( 3 , hit );
+			double vx = gen_particles.getFloat( 4 , hit );
+			double vy = gen_particles.getFloat( 5 , hit );
+			double vz = gen_particles.getFloat( 6 , hit );
+			double vt = gen_particles.getFloat( 7 , hit );
+			eVec.SetXYZ( px, py, pz );
+			TVector3	vertex; vertex.SetXYZ( vx, vy, vz );
+			TVector3	qVec; qVec = beamVec - eVec;
+			starttime = vt;
+
+			mcParts[genMult].setPID		( pid 							);
+			mcParts[genMult].setMomentum	( eVec.Mag()					);
+			mcParts[genMult].setTheta	( eVec.Theta()					);
+			mcParts[genMult].setPhi		( eVec.Phi()					);
+
+			mcParts[genMult].setQ		( qVec.Mag()						);
+			mcParts[genMult].setThetaQ	( qVec.Theta()						);
+			mcParts[genMult].setPhiQ	( qVec.Phi()						);
+
+			mcParts[genMult].setOmega	( Ebeam - sqrt( pow(eVec.Mag(),2) + mE*mE )		);
+			mcParts[genMult].setQ2		( qVec.Mag()*qVec.Mag() - pow(mcParts[genMult].getOmega(),2)	);
+			mcParts[genMult].setXb		( mcParts[genMult].getQ2()/(2.*mP*mcParts[genMult].getOmega())		);
+			mcParts[genMult].setW2		( mP*mP - mcParts[genMult].getQ2() + 2.*mcParts[genMult].getOmega()*mP	);
+
+			mcParts[genMult].setVtx		(vertex.X()						);
+			mcParts[genMult].setVty		(vertex.Y()						);
+			mcParts[genMult].setVtz		(vertex.Z()						);
+
+			setElectron = true;
+			genMult++;
+		}
+		else if( pid != 11 && setElectron == true ){
+			double px = gen_particles.getFloat( 1 , hit );
+			double py = gen_particles.getFloat( 2 , hit );
+			double pz = gen_particles.getFloat( 3 , hit );
+			double vx = gen_particles.getFloat( 4 , hit );
+			double vy = gen_particles.getFloat( 5 , hit );
+			double vz = gen_particles.getFloat( 6 , hit );
+			double vt = gen_particles.getFloat( 7 , hit );
+
+			TVector3	momentum; 	momentum.SetXYZ( px, py, pz );
+			TVector3	vertex; 	vertex.SetXYZ( vx, vy, vz );
+
+			mcParts[genMult].setPID		( pid 							);
+			mcParts[genMult].setMomentum	( momentum.Mag()					);
+			mcParts[genMult].setTheta	( momentum.Theta()					);
+			mcParts[genMult].setPhi		( momentum.Phi()					);
+
+			mcParts[genMult].setVtx		(vertex.X()						);
+			mcParts[genMult].setVty		(vertex.Y()						);
+			mcParts[genMult].setVtz		(vertex.Z()						);
+
+			genMult++;
+		}
+	}
+
+
+
+	return;
+}
+
+
 void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
+
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam ){
 
@@ -251,6 +332,11 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		double Wp = sqrt(W_primeSq);
 		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
 		double As = (E_n - p_n*CosTheta_nq)/mN;
+		double Xp2 = eHit.getQ2()/(W_primeSq - mN*mN + eHit.getQ2());
+
+		TVector3 Pt;
+		TVector3 pN_par_q = nVec.Dot(qVec) / (qVec.Mag2()) * qVec;
+		Pt = nVec - pN_par_q;
 
 		tag[hit].setMomentumE	(eVec 		);
 		tag[hit].setMomentumN	(nVec		);
@@ -262,6 +348,8 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		tag[hit].setWp		(Wp		);
 		tag[hit].setXp		(Xp		);
 		tag[hit].setAs		(As		);
+		tag[hit].setPt		(Pt		);
+		tag[hit].setXp2		(Xp2		);
 	}
 
 	//beta = dL / (ToF*cAir);
