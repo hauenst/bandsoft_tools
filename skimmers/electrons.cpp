@@ -132,7 +132,6 @@ int main(int argc, char** argv) {
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			event_counter++;
-			if( event_counter > 1000000 ) break;
 
 			// Load data structure for this event:
 			reader.read(readevent);
