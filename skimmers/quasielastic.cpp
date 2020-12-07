@@ -266,6 +266,8 @@ int main(int argc, char** argv) {
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
+		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		//new BAND banks in file with new cook F.H. 28/09/2020
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
@@ -368,6 +370,8 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_rawhits);
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
+			readevent.getStructure(DC_Track);
+			readevent.getStructure(DC_Traj);
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
@@ -376,8 +380,9 @@ int main(int argc, char** argv) {
 
 			// Get electron from particle bank REC::Particle
 			TVector3 eVertex, eMomentum;
-			//Returns first entry of particle bank but does not check for PID
-			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
+
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
 
 			ePid 			= eHit.getPID();
 			eTime 		= eHit.getTime();

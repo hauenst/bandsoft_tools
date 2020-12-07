@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
-	
+
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
@@ -92,9 +92,9 @@ int main(int argc, char** argv) {
 		TString inputFile = argv[i];
 		hipo::reader reader;
 		reader.open(inputFile);
-		hipo::dictionary  factory;      
+		hipo::dictionary  factory;
 		hipo::schema	  schema;
-		reader.readDictionary(factory); 
+		reader.readDictionary(factory);
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		
+
 		// Loop over all events in file
 		int event_counter = 0;
 		gated_charge = 0;
@@ -130,11 +130,11 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_rawhits);
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
-	
+
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
-			
+
 			// Grab the neutron information:
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
 
@@ -154,13 +154,10 @@ int main(int argc, char** argv) {
 
 		} // end loop over events
 	}// end loop over files
-	
+
 	outFile->cd();
 	outTree->Write();
 	outFile->Close();
 
 	return 0;
 }
-
-
-

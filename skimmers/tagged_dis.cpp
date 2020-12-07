@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("eHit"		,&eHit			);
 	//	Tagged branches:
 	outTree->Branch("tag"		,&tags			);
-	
+
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
@@ -103,12 +103,14 @@ int main(int argc, char** argv) {
 		TString inputFile = argv[i];
 		hipo::reader reader;
 		reader.open(inputFile);
-		hipo::dictionary  factory;      
+		hipo::dictionary  factory;
 		hipo::schema	  schema;
-		reader.readDictionary(factory); 
+		reader.readDictionary(factory);
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
+		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
@@ -116,7 +118,7 @@ int main(int argc, char** argv) {
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
-		
+
 		// Loop over all events in file
 		int event_counter = 0;
 		gated_charge = 0;
@@ -154,11 +156,13 @@ int main(int argc, char** argv) {
 			readevent.getStructure(particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
-	
+			readevent.getStructure(DC_Track);
+			readevent.getStructure(DC_Traj);
+
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
-			
+
 			// Grab the neutron information:
 			TVector3 nMomentum[maxNeutrons], nPath[maxNeutrons];
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
@@ -168,9 +172,10 @@ int main(int argc, char** argv) {
 					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
 				}
 			}
-			
+
+
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
 
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			if( loadshifts_opt ){
@@ -192,13 +197,10 @@ int main(int argc, char** argv) {
 
 		} // end loop over events
 	}// end loop over files
-	
+
 	outFile->cd();
 	outTree->Write();
 	outFile->Close();
 
 	return 0;
 }
-
-
-
