@@ -22,6 +22,8 @@ class clashit : public TObject {
 		void setChi2		(double	iChi2		)		{Chi2		= iChi2		; return;}
 		void setEtot		(double	iEtot		)		{Etot		= iEtot		; return;}
 		void setEpcal		(double	iEpcal		)		{Epcal		= iEpcal	; return;}
+		void setEecin		(double	iEecin		)		{Eecin		= iEecin	; return;}
+		void setEecout		(double	iEecout		)		{Eecout		= iEecout	; return;}
 		void setEoP		(double	iEoP		)		{EoP		= iEoP		; return;}
 		void setTimeScint	(double	iTimeScint	)		{TimeScint	= iTimeScint	; return;}
 		void setPathScint	(double	iPathScint	)		{PathScint	= iPathScint	; return;}
@@ -71,6 +73,8 @@ class clashit : public TObject {
 		double	getChi2		(void)		{return Chi2		;}
 		double	getEtot		(void)		{return Etot		;}
 		double	getEpcal	(void)		{return Epcal		;}
+		double	getEecin	(void)		{return Eecin		;}
+		double	getEecout	(void)		{return Eecout		;}
 		double	getEoP		(void)		{return EoP		;}
 		double	getTimeScint	(void)		{return TimeScint	;}
 		double	getPathScint	(void)		{return PathScint	;}
@@ -122,6 +126,8 @@ class clashit : public TObject {
 		double	Chi2		;
 		double	Etot		;
 		double	Epcal		;
+		double	Eecin		;
+		double	Eecout		;
 		double	EoP		;
 		double	TimeScint	;
 		double	PathScint	;
