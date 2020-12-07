@@ -3,6 +3,9 @@
 
 #include "TObject.h"
 #include "constants.h"
+#include "clashit.h"
+#include "bandhit.h"
+#include "taghit.h"
 
 class genpart : public TObject {
 	public:
@@ -71,6 +74,10 @@ class genpart : public TObject {
 		double 	Omega		;
 		double	Xb		;
 		double	W2		;
+
+		clashit	electron	;
+		bandhit	neutron		;
+		taghit	tag		;
 };
 
 
