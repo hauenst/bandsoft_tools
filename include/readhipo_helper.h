@@ -14,11 +14,13 @@
 #include "bandhit.h"
 #include "clashit.h"
 #include "taghit.h"
+#include "genpart.h"
 
 using namespace std;
 
 const int maxProtons	= 100;
 const int maxNeutrons	= 200;
+const int maxGens	= 10;
 const double thresBANDhit = 5.;
 const double time_thresBANDhit = 300;
 const double adctoMeVee_data = 2300; //conversion for data
@@ -54,4 +56,6 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex);
+void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
+		double &starttime, double &weight, double &Ebeam , int &genMult );
 #endif
