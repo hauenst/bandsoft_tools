@@ -259,14 +259,6 @@ int main(int argc, char** argv) {
 
 
 
-			// Fill tree based on d(e,e'n)X
-			if( nMult !=0 ) outTree->Fill();
-
-=======
-
-
-
-
 		} // end loop over events
 	}// end loop over files
 
