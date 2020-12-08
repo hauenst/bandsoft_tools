@@ -19,6 +19,10 @@ using namespace std;
 
 const int maxProtons	= 100;
 const int maxNeutrons	= 200;
+const double thresBANDhit = 5.;
+const double time_thresBANDhit = 300;
+const double adctoMeVee_data = 2300; //conversion for data
+const double adctoMeVee_sim = 1E4;//conversion for simulation
 
 
 class shiftsReader {
@@ -49,4 +53,5 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 			double starttime , int thisRun , double Ebeam );
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );
+bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex);
 #endif

@@ -4,7 +4,7 @@
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
 			double starttime , int thisRun){
-	
+
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
 		//if( band_hits.getStatus(hit) != 0 ) continue;	// not interested in an event that has a veto hit
@@ -29,7 +29,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		int rawhit_idxL = band_hits.getLpmtindex(hit);
 		int rawhit_idxR = band_hits.getRpmtindex(hit);
 		// 	Get the raw hit information corresponding to the band hit above
-		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);	
+		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
         	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
         	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
         	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
@@ -52,16 +52,108 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
 		hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
 		hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
-		hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		); 
+		hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
 		hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
-		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		); 
-		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		); 
+		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
+		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
 
 		// Save how many neutron hits we have
 		mult++;
 	}
-	
+
 }
+
+bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex){
+
+	double thres = thresBANDhit; //5
+	double time_thres = time_thresBANDhit; //300
+
+	bool vetoHit = false;
+	bool thresPass = false;
+	bool accept = false;
+ //if sim or data
+	double adctoMeVee = adctoMeVee_data; //adctoMeVee_sim
+
+	// Loop over all hits in BAND and get the earliest hit in time
+	// but filter out hits that have low Edep
+	double fastestTime = 1E5;
+	int fastestTimeIdx = -1;
+	for( int thishit = 0; thishit < nMult ; thishit++){
+			bandhit neutron = hits[thishit];
+			//just simulation
+			//if( neutron.getPmtLadc()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
+			//for data
+			if( neutron.getEdep()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
+
+					if( neutron.getTof() < fastestTime ){
+						fastestTime = neutron.getTof();
+						fastestTimeIdx = thishit;
+					}
+	}
+
+	// Once we have the fastest hit, ask how many other hits there
+	// are in the same event and flag how far in time they are,
+	// but keep this earliest hit.
+	// Accept the event based on if there is another hit > 300ps
+	if( fastestTimeIdx != -1 ){
+			accept = true;
+			for( int thishit = 0; thishit < nMult ; thishit++){
+
+						bandhit neutron = hits[thishit];
+						// if we have a veto bar hit and if the Edep is > 0.25MeVee, need to use getPmtLADC because no Edep
+						if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
+
+
+						//SIM if this bar does not have > 2MeVee, do not count the hit, just simulation
+					//	if( neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
+						//for data
+						if( neutron.getEdep()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
+
+
+						// if this bar does not have > X MeVee, do not count the hit (X = threshold set by user)
+						//Just SIM
+					//	if( neutron.getPmtLadc()/adctoMeVee > thres ) thresPass = true;
+						//data
+						if( neutron.getEdep()/adctoMeVee > thres ) thresPass = true;
+
+
+
+						double tdiff = neutron.getTof() - fastestTime;
+						if( tdiff == 0 ){
+							continue;
+						}
+						bool adjLayer = false;
+						bool adjComp = false;
+						bool adjSpace = false;
+						bandhit lead = hits[thishit];
+
+						int layerDiff = lead.getLayer() - neutron.getLayer();
+						if( fabs(layerDiff) <= 1 ) adjLayer = true;
+						if( lead.getSector() == neutron.getSector() ){
+						// if hits are in the same sector, then just ask for comp diff
+							int compDiff = lead.getComponent() - neutron.getComponent();
+							if( fabs(compDiff) <= 1 ) adjComp = true;
+						}
+						else{
+						// have to implement some fancy component check due to sec comp differences
+							int yDiff = lead.getY() - neutron.getY();
+							if( fabs(yDiff) <= 10 ) adjComp = true;
+						}
+						if( adjComp && adjLayer ) adjSpace = true;
+
+						if( tdiff < time_thres && tdiff != 0 ) accept = false;
+						if( tdiff < time_thres && tdiff != 0 && adjSpace ) accept = true;
+			}
+		}
+
+		leadindex = fastestTimeIdx ;
+
+		return accept && !vetoHit && thresPass;
+
+}
+
+
+
 
 int getRunNumber( string filename ){
 	string parsed = filename.substr( filename.find("inc_") );
@@ -71,9 +163,9 @@ int getRunNumber( string filename ){
 }
 
 void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime ){
-	if( eventInfo.getRows() != 1 ){ 
-		cerr << "getEventInfo::NotImplementedFunction\n"; 
-		exit(-1); 
+	if( eventInfo.getRows() != 1 ){
+		cerr << "getEventInfo::NotImplementedFunction\n";
+		exit(-1);
 	}
 	integrated_charge       = (double)eventInfo.getBCG(0); 	// not calibrated currently
 	livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
@@ -135,7 +227,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	for(int i =0; i < Ntrack; i++){
 	  int pindex   = DC_Track.getInt(1,i);
 	  int detector = DC_Track.getInt(2,i);
-	 
+
 	  if (pindex ==0 && detector ==6 )
 	    {index = i;
 	     count ++;
@@ -144,12 +236,12 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	//At this point I only use 1 track event
 	//The check show around 4% mul_track events
-	
+
 	if (index != -1 && count ==1) {
 	  electron.setDC_chi2             (       DC_Track.getFloat(6, index)                                 );
 	  electron.setDC_NDF              (       DC_Track.getInt(7, index)                                   );
           electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
-	  
+
 	}
 
 
@@ -158,7 +250,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	int NTraj = DC_Traj.getRows();
 	int index_traj = -1;
-      
+
 	for(int i =0; i <NTraj; i++){
           int pindex   = DC_Traj.getInt(0, i);
 	  int detector = DC_Traj.getInt(2,i);
@@ -170,7 +262,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	       electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
 	       electron.setDC_y1        (  DC_Traj.getFloat(5, i)                                           );
 	       electron.setDC_z1        (  DC_Traj.getFloat(6, i)                                           );
-	                                                  
+
 	     }
 
 	  if(pindex ==0 && detector == 6 && layer ==18 && count ==1)
@@ -179,7 +271,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	       electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
 	       electron.setDC_y2        (  DC_Traj.getFloat(5, i)                                           );
 	       electron.setDC_z2        (  DC_Traj.getFloat(6, i)                                           );
-	      
+
 
 	    }
 
@@ -189,9 +281,9 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	       electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );
 	       electron.setDC_y3        (  DC_Traj.getFloat(5, i)                                           );
 	       electron.setDC_z3        (  DC_Traj.getFloat(6, i)                                           );
-	      
+
 	    }
-	
+
 
 	}
 
@@ -213,7 +305,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult ){
-	
+
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	eVec; eVec.SetMagThetaPhi( eHit.getMomentum(), eHit.getTheta(), eHit.getPhi() );
 	TVector3	qVec; qVec = beamVec - eVec;
@@ -221,7 +313,7 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 	// Loop over all neutrons to combine with the electron
 	for( int hit = 0 ; hit < nMult ; hit++ ){
 
-		TVector3	nVec; 
+		TVector3	nVec;
 		nVec = (nHit[hit].getDL()).Unit();
 
 

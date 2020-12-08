@@ -50,6 +50,8 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	bool goodneutron = false;
+	int nleadindex = -1;
 	// 	Neutron info:
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
@@ -69,10 +71,14 @@ int main(int argc, char** argv) {
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
+	//Branches to store if good Neutron event and leadindex
+	outTree->Branch("goodneutron"		,&goodneutron	);
+	outTree->Branch("nleadindex"		,&nleadindex			);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
 	//	Tagged branches:
 	outTree->Branch("tag"		,&tags			);
+
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -130,6 +136,8 @@ int main(int argc, char** argv) {
 			starttime 	= 0;
 			// Neutron
 			nMult		= 0;
+			nleadindex = -1;
+			goodneutron = false;
 			bandhit nHit[maxNeutrons];
 			nHits->Clear();
 			// Tag
@@ -192,8 +200,19 @@ int main(int argc, char** argv) {
 				saveTags[n] = &tag[n];
 			}
 
+
+			if (nMult == 1) {
+				goodneutron =  true;
+				nleadindex = 0;
+			}
+			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
+			if (nMult > 1) {
+				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex);
+			}
 			// Fill tree based on d(e,e'n)X
-			if( nMult != 0 ) outTree->Fill();
+			if( nMult !=0 ) outTree->Fill();
+
 
 		} // end loop over events
 	}// end loop over files
