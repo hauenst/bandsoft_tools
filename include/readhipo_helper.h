@@ -55,7 +55,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 			double starttime , int thisRun , double Ebeam );
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );
-bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex);
+bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect);
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult );
 #endif

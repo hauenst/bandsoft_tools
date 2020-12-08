@@ -63,7 +63,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 }
 
-bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex){
+bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect){
 
 	double thres = thresBANDhit; //5
 	double time_thres = time_thresBANDhit; //300
@@ -71,8 +71,12 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex){
 	bool vetoHit = false;
 	bool thresPass = false;
 	bool accept = false;
- //if sim or data
-	double adctoMeVee = adctoMeVee_data; //adctoMeVee_sim
+	double adctoMeVee = 0;
+	if (mcdataselect == 0) //MC
+		adctoMeVee = adctoMeVee_sim;
+	else  { //Data
+		adctoMeVee = adctoMeVee_data;
+	}
 
 	// Loop over all hits in BAND and get the earliest hit in time
 	// but filter out hits that have low Edep
@@ -80,15 +84,16 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex){
 	int fastestTimeIdx = -1;
 	for( int thishit = 0; thishit < nMult ; thishit++){
 			bandhit neutron = hits[thishit];
-			//just simulation
-			//if( neutron.getPmtLadc()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
-			//for data
-			if( neutron.getEdep()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
+			//if the Edep in this PMT is less than 2MeVee, do not count it
+			//MC
+			if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2) 	continue;
+			//Data
+			if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
 
-					if( neutron.getTof() < fastestTime ){
-						fastestTime = neutron.getTof();
-						fastestTimeIdx = thishit;
-					}
+			if( neutron.getTof() < fastestTime ){
+					fastestTime = neutron.getTof();
+					fastestTimeIdx = thishit;
+			}
 	}
 
 	// Once we have the fastest hit, ask how many other hits there
@@ -100,23 +105,22 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex){
 			for( int thishit = 0; thishit < nMult ; thishit++){
 
 						bandhit neutron = hits[thishit];
-						// if we have a veto bar hit and if the Edep is > 0.25MeVee, need to use getPmtLADC because no Edep
+						// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
 						if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
 
+						//if this bar does not have > 2MeVee, do not count the hit
+						//MC
+						if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
+						//Data
+						if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
 
-						//SIM if this bar does not have > 2MeVee, do not count the hit, just simulation
-					//	if( neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
-						//for data
-						if( neutron.getEdep()/adctoMeVee < 2 ) continue; // if the Edep in this PMT is less than 2MeVee, do not count it
 
 
 						// if this bar does not have > X MeVee, do not count the hit (X = threshold set by user)
-						//Just SIM
-					//	if( neutron.getPmtLadc()/adctoMeVee > thres ) thresPass = true;
-						//data
-						if( neutron.getEdep()/adctoMeVee > thres ) thresPass = true;
-
-
+						//MC
+						if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee > thres ) thresPass = true;
+						//Data
+						if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee > thres ) thresPass = true;
 
 						double tdiff = neutron.getTof() - fastestTime;
 						if( tdiff == 0 ){
@@ -173,10 +177,10 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 	return;
 }
 
-void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] , 
+void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult ){
 	TVector3 	beamVec(0,0,Ebeam);
-	TVector3	eVec; 
+	TVector3	eVec;
 	bool setElectron = false;
 
 	// Grab the weight for the event:
