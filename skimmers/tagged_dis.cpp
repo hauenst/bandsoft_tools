@@ -60,7 +60,6 @@ int main(int argc, char** argv) {
 	int genMult		= 0;
 	TClonesArray * mcParts = new TClonesArray("genpart");
 	TClonesArray &saveMC = *mcParts;
-
 	// 	Neutron info:
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
@@ -192,7 +191,6 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
-
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
@@ -250,7 +248,7 @@ int main(int argc, char** argv) {
 			}
 
 			// Fill tree based on d(e,e'n)X for data
-			if( (nMult != 0 || (nMult == 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
+			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
 			else if( MC_DATA_OPT == 0 ){
