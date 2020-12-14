@@ -50,15 +50,17 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	bool goodneutron = false;
+	int nleadindex = -1;
 	double weight		= 0;
-	// 	Neutron info:
-	int nMult		= 0;
-	TClonesArray * nHits = new TClonesArray("bandhit");
-	TClonesArray &saveHit = *nHits;
 	//	MC info:
 	int genMult		= 0;
 	TClonesArray * mcParts = new TClonesArray("genpart");
 	TClonesArray &saveMC = *mcParts;
+	// 	Neutron info:
+	int nMult		= 0;
+	TClonesArray * nHits = new TClonesArray("bandhit");
+	TClonesArray &saveHit = *nHits;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -70,6 +72,9 @@ int main(int argc, char** argv) {
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
+	//Branches to store if good Neutron event and leadindex
+	outTree->Branch("goodneutron"		,&goodneutron	);
+	outTree->Branch("nleadindex"		,&nleadindex			);
 	//	MC branches:
 	outTree->Branch("genMult"	,&genMult		);
 	outTree->Branch("mcParts"	,&mcParts		);
@@ -122,7 +127,6 @@ int main(int argc, char** argv) {
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
 
-
 		// Loop over all events in file
 		int event_counter = 0;
 		gated_charge = 0;
@@ -134,6 +138,8 @@ int main(int argc, char** argv) {
 			starttime 	= 0;
 			// Neutron
 			nMult		= 0;
+			nleadindex = -1;
+			goodneutron = false;
 			bandhit nHit[maxNeutrons];
 			nHits->Clear();
 			// MC
@@ -182,17 +188,26 @@ int main(int argc, char** argv) {
 				new(saveHit[n]) bandhit;
 				saveHit[n] = &nHit[n];
 			}
-
 			// Store the mc particles in TClonesArray
 			for( int n = 0 ; n < maxGens ; n++ ){
 				new(saveMC[n]) genpart;
 				saveMC[n] = &mcPart[n];
 			}
 
-			// Fill tree based on d(e,n)X for data
-			if( nMult != 0 && MC_DATA_OPT == 1 ){
+			if (nMult == 1) {
+				goodneutron =  true;
+				nleadindex = 0;
+			}
+			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
+			if (nMult > 1) {
+				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT);
+			}
+
+			// Fill tree based on d(e,e'n)X for data
+			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
-			} // else fill tree on d(e)nX for MC
+			} // else fill tree on d(en,)enX for MC
 			else if( MC_DATA_OPT == 0 ){
 				outTree->Fill();
 			}
