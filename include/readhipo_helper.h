@@ -25,7 +25,7 @@ const double thresBANDhit = 5.;
 const double time_thresBANDhit = 300;
 const double adctoMeVee_data = 2300; //conversion for data
 const double adctoMeVee_sim = 1E4;//conversion for simulation
-
+const double VERTEX_OFFSET = -3; // [cm]
 
 class shiftsReader {
 	public:
