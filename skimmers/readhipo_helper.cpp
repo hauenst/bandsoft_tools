@@ -21,7 +21,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
 		hits[hit].setX			(band_hits.getX			(hit)			);
 		hits[hit].setY			(band_hits.getY			(hit)			);
-		hits[hit].setZ			(band_hits.getZ			(hit)			);
+		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
 
 
