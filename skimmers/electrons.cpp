@@ -89,6 +89,7 @@ int main(int argc, char** argv) {
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
+			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
