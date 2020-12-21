@@ -84,14 +84,17 @@ int main(int argc, char** argv) {
 
 	shiftsReader shifts;
 	double * FADC_INITBAR;
-	double * FADC_INITRUN;
+	double * TDC_INITBAR;
 	if( loadshifts_opt ){
 		// Load bar shifts
-		shifts.LoadInitBarFadc("../include/FADC_pass1v0_initbar.txt");
+		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
 		FADC_INITBAR = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+		TDC_INITBAR = (double*) shifts.getInitBar();
 		// Load run-by-run shifts
-		shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		FADC_INITRUN = (double*) shifts.getInitRunFadc();
+		// 	for 10.2 these are not needed
+		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
+		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
 
 	// Load input file
@@ -179,8 +182,8 @@ int main(int argc, char** argv) {
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()] - FADC_INITRUN[Runno] );
-					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
+					//nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()]  );
+					nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()]  );
 				}
 			}
 
