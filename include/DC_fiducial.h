@@ -10,7 +10,13 @@ class DCFiducial {
   virtual ~DCFiducial();
 
   TVector3 rotate(double x, double y, int sector) const;
-  bool DC_e_fid(double x, double y, int sectior, int layer, bool bending) const;
+  bool DC_e_fid(double x, double y, int sector, int layer, bool bending) const;
+
+  TF1 *get_fmin_in(int sector, int layer) const;
+  TF1 *get_fmax_in(int sector, int layer) const;
+  TF1 *get_fmin_out(int sector, int layer) const;
+  TF1 *get_fmax_out(int sector, int layer) const;
+  
  
   
  protected:

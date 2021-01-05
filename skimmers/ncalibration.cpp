@@ -15,6 +15,9 @@
 #include "reader.h"
 #include "bank.h"
 
+#include "BParticle.h"
+#include "BCalorimeter.h"
+#include "BScintillator.h"
 #include "BBand.h"
 #include "BEvent.h"
 
@@ -42,7 +45,7 @@ int main(int argc, char** argv) {
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
-	TTree * outTree = new TTree("neutrons","BAND Neutrons and CLAS Electrons");
+	TTree * outTree = new TTree("calib","BAND Neutrons and CLAS Electrons");
 	//	Event info:
 	int Runno		= 0;
 	double Ebeam		= 0;
@@ -50,17 +53,14 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
-	bool goodneutron = false;
-	int nleadindex = -1;
-	double weight		= 0;
-	//	MC info:
-	int genMult		= 0;
-	TClonesArray * mcParts = new TClonesArray("genpart");
-	TClonesArray &saveMC = *mcParts;
+	bool goodneutron 	= false;
+	int nleadindex 		= -1;
 	// 	Neutron info:
 	int nMult		= 0;
-	TClonesArray * nHits = new TClonesArray("bandhit");
-	TClonesArray &saveHit = *nHits;
+	TClonesArray * nHits 	= new TClonesArray("bandhit");
+	TClonesArray &saveHit 	= *nHits;
+	//	Electron info:
+	clashit eHit;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -68,42 +68,33 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
-	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
 	//Branches to store if good Neutron event and leadindex
 	outTree->Branch("goodneutron"		,&goodneutron	);
 	outTree->Branch("nleadindex"		,&nleadindex			);
-	//	MC branches:
-	outTree->Branch("genMult"	,&genMult		);
-	outTree->Branch("mcParts"	,&mcParts		);
+	//	Electron branches:
+	outTree->Branch("eHit"		,&eHit			);
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
 	shiftsReader shifts;
 	double * FADC_INITBAR;
-	double * TDC_INITBAR;
+	double * FADC_INITRUN;
 	if( loadshifts_opt ){
 		// Load bar shifts
-		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
+		shifts.LoadInitBarFadc("../include/FADC_pass1v0_initbar.txt");
 		FADC_INITBAR = (double*) shifts.getInitBarFadc();
-		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-		TDC_INITBAR = (double*) shifts.getInitBar();
 		// Load run-by-run shifts
-		// 	for 10.2 these are not needed
-		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
+		shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
+		FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
-		if( MC_DATA_OPT == 0){
-			int runNum = 11;
-			Runno = runNum;
-		}
-		else if( MC_DATA_OPT == 1){
+		if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
 			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
@@ -124,12 +115,16 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
+		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
-		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
+		BParticle	particles		(factory.getSchema("REC::Particle"	));
+		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
+		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+
 
 		// Loop over all events in file
 		int event_counter = 0;
@@ -146,11 +141,9 @@ int main(int argc, char** argv) {
 			goodneutron = false;
 			bandhit nHit[maxNeutrons];
 			nHits->Clear();
-			// MC
-			genMult = 0;
-			weight = 1;
-			genpart mcPart[maxGens];
-			mcParts->Clear();
+			// Electron
+			eHit.Clear();
+
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -165,25 +158,50 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_rawhits);
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
-			// monte carlo struct
-			readevent.getStructure(mc_event_info);
-			readevent.getStructure(mc_particle);
-
-			// For simulated events, get the weight for the event
-			if( MC_DATA_OPT == 0){
-				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
-			}
+			// electron struct
+			readevent.getStructure(particles);
+			readevent.getStructure(calorimeter);
+			readevent.getStructure(scintillator);
+			readevent.getStructure(DC_Track);
+			readevent.getStructure(DC_Traj);
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
+			// Skim the event so we only have a single electron and NO other particles:
+			int nElectrons = 0;
+			int nOthers = 0;
+			for( int part = 0 ; part < particles.getRows() ; part++ ){
+				int PID 	= particles.getPid(part);
+				int charge 	= particles.getCharge(part);
+				if( PID == 11 && charge == -1 ) nElectrons++;
+				else{ nOthers++; }
+			}
+			if( nElectrons != 1 ) 	continue;
+			//if( nOthers != 0 )	continue;
+
+
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
+			
+			// Further skim the event so that the trigger electron passes basic fiducial requirements
+			if( eHit.getPID() != 11 					) continue;
+			if( eHit.getCharge() != -1					) continue; 
+			if( eHit.getEoP() < 0.17 || eHit.getEoP() > 0.3			) continue;
+			if( eHit.getEpcal() < 0.07					) continue;
+			if( eHit.getV() < 15 || eHit.getW() < 15			) continue;
+			if( eHit.getVtz() < -8 || eHit.getVtz() > 3			) continue;
+			if( eHit.getMomentum() < 3 || eHit.getMomentum() > 10.6		) continue;
+			if( eHit.getQ2() < 2 || eHit.getQ2() > 10			) continue;
+			if( eHit.getW2() < 2*2						) continue;
+
 			// Grab the neutron information:
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
-					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
+					nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()] - FADC_INITRUN[Runno] );
+					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
 				}
 			}
 
@@ -191,11 +209,6 @@ int main(int argc, char** argv) {
 			for( int n = 0 ; n < nMult ; n++ ){
 				new(saveHit[n]) bandhit;
 				saveHit[n] = &nHit[n];
-			}
-			// Store the mc particles in TClonesArray
-			for( int n = 0 ; n < maxGens ; n++ ){
-				new(saveMC[n]) genpart;
-				saveMC[n] = &mcPart[n];
 			}
 
 			if (nMult == 1) {
@@ -211,10 +224,9 @@ int main(int argc, char** argv) {
 			// Fill tree based on d(e,e'n)X for data
 			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
-			} // else fill tree on d(en,)enX for MC
-			else if( MC_DATA_OPT == 0 ){
-				outTree->Fill();
-			}
+			} 
+
+
 
 		} // end loop over events
 	}// end loop over files

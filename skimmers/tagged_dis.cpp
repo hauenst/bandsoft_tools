@@ -60,7 +60,6 @@ int main(int argc, char** argv) {
 	int genMult		= 0;
 	TClonesArray * mcParts = new TClonesArray("genpart");
 	TClonesArray &saveMC = *mcParts;
-
 	// 	Neutron info:
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
@@ -97,14 +96,17 @@ int main(int argc, char** argv) {
 
 	shiftsReader shifts;
 	double * FADC_INITBAR;
-	double * FADC_INITRUN;
+	double * TDC_INITBAR;
 	if( loadshifts_opt ){
 		// Load bar shifts
-		shifts.LoadInitBarFadc("../include/FADC_pass1v0_initbar.txt");
+		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
 		FADC_INITBAR = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+		TDC_INITBAR = (double*) shifts.getInitBar();
 		// Load run-by-run shifts
-		shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		FADC_INITRUN = (double*) shifts.getInitRunFadc();
+		// 	for 10.2 these are not needed
+		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
+		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
 
 	// Load input file
@@ -115,6 +117,7 @@ int main(int argc, char** argv) {
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
+			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
@@ -192,7 +195,6 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
-
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
@@ -210,8 +212,8 @@ int main(int argc, char** argv) {
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()] - FADC_INITRUN[Runno] );
-					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
+					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
+					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
 				}
 			}
 
@@ -250,7 +252,7 @@ int main(int argc, char** argv) {
 			}
 
 			// Fill tree based on d(e,e'n)X for data
-			if( (nMult != 0 || (nMult == 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
+			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
 			else if( MC_DATA_OPT == 0 ){
