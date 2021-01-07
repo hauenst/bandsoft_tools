@@ -285,11 +285,10 @@ int main(int argc, char** argv) {
 			if( !ePass ) continue;*/
 
 
-
-			// Grab the information for a positive particle:
+			// Grab the information for other charged particle:
 			TVector3 pVertex[maxParticles], pMomentum[maxParticles];
 			getParticleInfo( particles, pPid, pMomentum, pVertex, pTime ,pCharge, pBeta, pChi2pid, pStatus, pIndex, pMult);
-			//Fill the information for all positive particles
+			//Fill the information for other charged particles
 			for( int p = 0 ; p < pMult ; p++ ){
 				p_vtx[p]		= pVertex[p].X();
 				p_vty[p]		= pVertex[p].Y();
