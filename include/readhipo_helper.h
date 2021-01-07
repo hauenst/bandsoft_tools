@@ -21,6 +21,8 @@ using namespace std;
 const int maxProtons	= 100;
 const int maxNeutrons	= 200;
 const int maxGens	= 10;
+const int maxParticles	= 100;
+const int maxScinHits = 100;
 const double thresBANDhit = 5.;
 const double time_thresBANDhit = 300;
 const double adctoMeVee_data = 2300; //conversion for data
@@ -58,4 +60,10 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect);
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult );
+void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
+			    TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits);
+void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],
+								double time[maxParticles], double charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], double status[maxParticles] , int index[maxParticles], int& multiplicity );
+
+
 #endif

@@ -461,6 +461,46 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 	return;
 }
 
+void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
+	 TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
+	scinHits = 0;
+	for( int row = 0 ; row < scintillator.getRows() ; row++ ){
+		for ( int i = 0 ; i < posMult ; i++) { //loop over all other particles
+      if (scintillator.getPindex(row) == posIndex[i]) { //check if hit Pindex corresponds to particle index = row from REC::Particles bank
+				pindex[scinHits ] 		= scintillator.getPindex(row);
+			  detid[scinHits ] 		= scintillator.getDetector(row);
+				energy[scinHits ] 		= scintillator.getEnergy(row);
+				time[scinHits ] 		= scintillator.getTime(row);
+				path[scinHits ] 		= scintillator.getPath(row);
+				posVector[scinHits].SetXYZ(	scintillator.getX(row), scintillator.getY(row), scintillator.getZ(row) 	);
+				status		[scinHits]	= scintillator.getStatus(row);
+				scinHits ++;
+			}
+		}
+	}
+}
+
+void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],	double time[maxParticles],
+	double charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], double status[maxParticles] , int index[maxParticles], int& multiplicity ){
+	// Takes all particles in REC::Particles other than leading particle
+	multiplicity = 0;
+	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
+			if( particles.getCharge(row) == 1 || particles.getCharge(row) == -1 ){ //checks for positive and negative charge
+			pid[multiplicity] 		= particles.getPid(row);
+			charge[multiplicity]		= particles.getCharge(row);
+			momentum 	[multiplicity]	= particles.getV3P(row);
+			vertex		[multiplicity]	= particles.getV3v(row);
+			time		[multiplicity]	= particles.getVt(row);
+			beta		[multiplicity]	= particles.getBeta(row);
+			chi2pid		[multiplicity]	= particles.getChi2pid(row);
+			status		[multiplicity]	= particles.getStatus(row);
+			index [multiplicity] = row;
+			multiplicity ++;
+		}
+	}
+}
+
+
 void shiftsReader::LoadInitBar( string filename ){
 	ifstream f;
 	int sector, layer, component, barId;

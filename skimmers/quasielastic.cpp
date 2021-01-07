@@ -28,17 +28,9 @@
 
 using namespace std;
 
-const int maxPositive	= 100;
-const int maxScinHits = 100;
+//from readhipo_helper maxParticles	= 100;
+//from readhipo_helper maxScinHits = 100;
 //from readhipo_helper maxNeutrons = 200;
-
-
-bool checkElectron( int pid, TVector3 momentum, TVector3 vertex, double time, int charge, double beta, double chi2pid, int status,
-			double lV, double lW , double E_tot);
-void getPositiveInfo( BParticle particles, double pid[maxPositive], TVector3 momentum[maxPositive], TVector3 vertex[maxPositive],
-			double time[maxPositive], double charge[maxPositive], double beta[maxPositive], double chi2pid[maxPositive], double status[maxPositive] , int index[maxPositive], int& multiplicity );
-void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-	    TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxPositive], int posMult, int &scinHits);
 
 
 int main(int argc, char** argv) {
@@ -74,20 +66,20 @@ int main(int argc, char** argv) {
 
 	// 	Positive Particles info:
 	int pMult		= 0;
-	int pIndex		[maxPositive]= {0};
-	double pPid		[maxPositive]= {0.};
-	double pCharge		[maxPositive]= {0.};
-	double pStatus		[maxPositive]= {0.};
-	double pTime		[maxPositive]= {0.};
-	double pBeta		[maxPositive]= {0.};
-	double pChi2pid		[maxPositive]= {0.};
-	double p_vtx		[maxPositive]= {0.};
-	double p_vty		[maxPositive]= {0.};
-	double p_vtz		[maxPositive]= {0.};
-	double p_p		[maxPositive]= {0.};
-	double theta_p		[maxPositive]= {0.};
-	double phi_p		[maxPositive]= {0.};
-	double theta_pq		[maxPositive]= {0.};
+	int pIndex		[maxParticles]= {0};
+	double pPid		[maxParticles]= {0.};
+	double pCharge		[maxParticles]= {0.};
+	double pStatus		[maxParticles]= {0.};
+	double pTime		[maxParticles]= {0.};
+	double pBeta		[maxParticles]= {0.};
+	double pChi2pid		[maxParticles]= {0.};
+	double p_vtx		[maxParticles]= {0.};
+	double p_vty		[maxParticles]= {0.};
+	double p_vtz		[maxParticles]= {0.};
+	double p_p		[maxParticles]= {0.};
+	double theta_p		[maxParticles]= {0.};
+	double phi_p		[maxParticles]= {0.};
+	double theta_pq		[maxParticles]= {0.};
 
  // Information from REC::Scintillator for positive Particles
   int scinHits = 0;
@@ -295,8 +287,8 @@ int main(int argc, char** argv) {
 
 
 			// Grab the information for a positive particle:
-			TVector3 pVertex[maxPositive], pMomentum[maxPositive];
-			getPositiveInfo( particles, pPid, pMomentum, pVertex, pTime ,pCharge, pBeta, pChi2pid, pStatus, pIndex, pMult);
+			TVector3 pVertex[maxParticles], pMomentum[maxParticles];
+			getParticleInfo( particles, pPid, pMomentum, pVertex, pTime ,pCharge, pBeta, pChi2pid, pStatus, pIndex, pMult);
 			//Fill the information for all positive particles
 			for( int p = 0 ; p < pMult ; p++ ){
 				p_vtx[p]		= pVertex[p].X();
@@ -306,7 +298,6 @@ int main(int argc, char** argv) {
 				theta_p[p]	= pMomentum[p].Theta();
 				phi_p[p]		= pMomentum[p].Phi();
 			//	theta_pq[p]	= qMomentum.Angle(pMomentum[p]);
-
 			}
 
 			TVector3 hitVector[maxScinHits];
@@ -318,9 +309,7 @@ int main(int argc, char** argv) {
 			}
 
 			// Grab the neutron information:
-			// Grab the neutron information:
 			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
-
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
@@ -338,8 +327,7 @@ int main(int argc, char** argv) {
 				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, 1);
 			}
 
-			// Fill tree based on d(e,e'n)X for data
-		//	if( (nMult == 1 || (nMult > 1 && goodneutron) ) ){
+			// Fill tree based on d(e,e') for data with all neutron and other particle information
 				outTree->Fill();
 		//	}
 
@@ -355,44 +343,4 @@ int main(int argc, char** argv) {
 	outFile->Close();
 
 	return 0;
-}
-
-
-void getPositiveInfo( BParticle particles, double pid[maxPositive], TVector3 momentum[maxPositive], TVector3 vertex[maxPositive],	double time[maxPositive],
-	double charge[maxPositive], double beta[maxPositive], double chi2pid[maxPositive], double status[maxPositive] , int index[maxPositive], int& multiplicity ){
-	// Takes all positive particles in REC::Particles
-	multiplicity = 0;
-	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
-			if( particles.getCharge(row) == 1 ){
-			pid[multiplicity] 		= particles.getPid(row);
-			charge[multiplicity]		= particles.getCharge(row);
-			momentum 	[multiplicity]	= particles.getV3P(row);
-			vertex		[multiplicity]	= particles.getV3v(row);
-			time		[multiplicity]	= particles.getVt(row);
-			beta		[multiplicity]	= particles.getBeta(row);
-			chi2pid		[multiplicity]	= particles.getChi2pid(row);
-			status		[multiplicity]	= particles.getStatus(row);
-			index [multiplicity] = row;
-			multiplicity ++;
-		}
-	}
-}
-
-void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-	 TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxPositive], int posMult, int &scinHits) {
-	scinHits = 0;
-	for( int row = 0 ; row < scintillator.getRows() ; row++ ){
-		for ( int i = 0 ; i < posMult ; i++) { //loop over all positive particles
-      if (scintillator.getPindex(row) == posIndex[i]) { //check if hit Pindex corresponds to positive particle index = row from REC::Particles bank
-				pindex[scinHits ] 		= scintillator.getPindex(row);
-			  detid[scinHits ] 		= scintillator.getDetector(row);
-				energy[scinHits ] 		= scintillator.getEnergy(row);
-				time[scinHits ] 		= scintillator.getTime(row);
-				path[scinHits ] 		= scintillator.getPath(row);
-				posVector[scinHits].SetXYZ(	scintillator.getX(row), scintillator.getY(row), scintillator.getZ(row) 	);
-				status		[scinHits]	= scintillator.getStatus(row);
-				scinHits ++;
-			}
-		}
-	}
 }
