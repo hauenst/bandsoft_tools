@@ -34,8 +34,8 @@ using namespace std;
 
 double Epcal_max=1.2;
 
-double FF(double E, double sf1, double sf2, double sf3, double sf4){
-  return sf1 * (sf2 + (sf3/E) + (sf4/(E*E)) ); 
+double NF(double E, double sf1, double sf2, double sf3){
+  return sf1 + (sf2/sqrt(E)) + (sf3/E) ; 
 }
 
 int main(int argc, char** argv) {
@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
   
   // Create output tree
   TFile * outFile = new TFile(argv[1],"RECREATE");
+  
   /*
   TTree * outTree = new TTree("electrons","CLAS Electrons");
   // 	Event branches:
@@ -147,7 +148,9 @@ int main(int argc, char** argv) {
 	  if((mu>0.0) && (mu<0.4)){
 	    //Write out x vs y and x vs s
 	    tg_mu[i]->SetPoint(tg_mu[i]->GetN(),x,mu);
-	    tg_sigma[i]->SetPoint(tg_sigma[i]->GetN(),x,sigma);
+	    if(sigma>0){
+	      tg_sigma[i]->SetPoint(tg_sigma[i]->GetN(),x,sigma);
+	    }
 	  }
 	}
       }
@@ -156,78 +159,38 @@ int main(int argc, char** argv) {
   
   cout<<"Now fit the SF\n";
   //The first two are the two functions I will fit to
-  TF1 * f1_mu = new TF1("f1_mu",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
+  TF1 * f1_mu = new TF1("f1_mu",[&](double *x, double *p){ return NF(x[0],p[0],p[1],p[2]); },0.001,1.6,3);
   f1_mu->SetLineColor(2);
-  TF1 * f1_sigma = new TF1("f1_sigma",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
+  TF1 * f1_sigma = new TF1("f1_sigma",[&](double *x, double *p){ return NF(x[0],p[0],p[1],p[2]); },0.001,1.6,3);
   f1_sigma->SetLineColor(2);
   
   //These are the functions that will show the maximum and minimum defined by the fit
-  TF1 * f1_max = new TF1("f1_max",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]) + 5*FF(x[0],p[4],p[5],p[6],p[7]); },0.06,1.6,8);
+  TF1 * f1_max = new TF1("f1_max",[&](double *x, double *p){ return NF(x[0],p[0],p[1],p[2]) + 3.5*NF(x[0],p[3],p[4],p[5]); },0.001,1.6,6);
   f1_max->SetLineColor(2);
-  TF1 * f1_min = new TF1("f1_min",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]) - 5*FF(x[0],p[4],p[5],p[6],p[7]); },0.06,1.6,8);
+  TF1 * f1_min = new TF1("f1_min",[&](double *x, double *p){ return NF(x[0],p[0],p[1],p[2]) - 3.5*NF(x[0],p[3],p[4],p[5]); },0.001,1.6,6);
   f1_min->SetLineColor(2);
 
-  //These functions will be used to compare with the RGA values
-  /*
-  TF1 * f1_mu_rga = new TF1("f1_mu_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
-  f1_mu_rga->SetLineColor(3);
-  TF1 * f1_sigma_rga = new TF1("f1_sigma_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]); },0.06,1.6,4);
-  f1_sigma_rga->SetLineColor(3);
-  TF1 * f1_max_rga = new TF1("f1_max_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]) + 5*FF(x[0],p[4],p[5],p[6],p[7]); },0.06,1.6,8);
-  f1_max_rga->SetLineColor(3);
-  TF1 * f1_min_rga = new TF1("f1_min_rga",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2],p[3]) - 5*FF(x[0],p[4],p[5],p[6],p[7]); },0.06,1.6,8);
-  f1_min_rga->SetLineColor(3);
-  */
-  //Give some estimates
-  f1_mu->SetParameter(0,0.25);
-  f1_mu->SetParameter(1,1.00);
-  f1_mu->SetParameter(2,-0.02);
-  f1_mu->SetParameter(3,-0.0001);
-  f1_sigma->SetParameter(0,0.018);
-  f1_sigma->SetParameter(1,1.00);
-  f1_sigma->SetParameter(2,0.0);
-  f1_sigma->SetParameter(3,0.0);
+  char fileName[100];
+  sprintf(fileName,"SF_Fit_Runno%d.pdf[",Runno);
+  TCanvas * myCanvas = new TCanvas("My_Canvas","My_Canvas",1200,1000);
+  myCanvas->SaveAs(fileName);
 
+  f1_mu->SetParameter(0,0.25);
+  f1_mu->SetParameter(1,0.00);
+  f1_mu->SetParameter(2,0.00);
+  f1_sigma->SetParameter(0,0.018);
+  f1_sigma->SetParameter(1,0.00);
+  f1_sigma->SetParameter(2,-0.01);
+  f1_sigma->SetParLimits(2,-10,-0.001);
+
+  sprintf(fileName,"SF_Fit_Runno%d.pdf",Runno);
   for(int i = 0; i<6; i++){
-    sprintf(temp,"Canvas_sec%d",i);
     TCanvas * c1 = new TCanvas(temp,temp,1200,1000);
     c1->cd();
     h2[i]->Draw("colz");
     tg_mu[i]->Draw("SAME");
     
     //Start with RGA
-    /*
-    f1_mu_rga->SetParameter(0,SF1[i]);
-    f1_mu_rga->SetParameter(1,1.00);
-    f1_mu_rga->SetParameter(2,SF3[i]);
-    f1_mu_rga->SetParameter(3,SF4[i]);
-    f1_sigma_rga->SetParameter(0,SFs1[i]);
-    f1_sigma_rga->SetParameter(1,1.00);
-    f1_sigma_rga->SetParameter(2,0.00);
-    f1_sigma_rga->SetParameter(3,0.00);
-
-    f1_max_rga->SetParameter(0,SF1[i]);
-    f1_max_rga->SetParameter(1,1.00);
-    f1_max_rga->SetParameter(2,SF3[i]);
-    f1_max_rga->SetParameter(3,SF4[i]);
-    f1_max_rga->SetParameter(4,SFs1[i]);
-    f1_max_rga->SetParameter(5,1.00);
-    f1_max_rga->SetParameter(6,0.00);
-    f1_max_rga->SetParameter(7,0.00);
-
-    f1_min_rga->SetParameter(0,SF1[i]);
-    f1_min_rga->SetParameter(1,1.00);
-    f1_min_rga->SetParameter(2,SF3[i]);
-    f1_min_rga->SetParameter(3,SF4[i]);
-    f1_min_rga->SetParameter(4,SFs1[i]);
-    f1_min_rga->SetParameter(5,1.00);
-    f1_min_rga->SetParameter(6,0.00);
-    f1_min_rga->SetParameter(7,0.00);
-    
-    f1_mu_rga->Draw("SAME");
-    f1_max_rga->Draw("SAME");
-    f1_min_rga->Draw("SAME");
-    */
 
     //Now do fit
     TFitResultPtr muPoint = tg_mu[i]->Fit(f1_mu,"qeSrn","",0.06,Epcal_max);
@@ -237,35 +200,28 @@ int main(int argc, char** argv) {
     f1_max->SetParameter(0,muPoint->Parameter(0));
     f1_max->SetParameter(1,muPoint->Parameter(1));
     f1_max->SetParameter(2,muPoint->Parameter(2));
-    f1_max->SetParameter(3,muPoint->Parameter(3));
-    f1_max->SetParameter(4,sigmaPoint->Parameter(0));
-    f1_max->SetParameter(5,sigmaPoint->Parameter(1));
-    f1_max->SetParameter(6,sigmaPoint->Parameter(2));
-    f1_max->SetParameter(7,sigmaPoint->Parameter(3));
+    f1_max->SetParameter(3,sigmaPoint->Parameter(0));
+    f1_max->SetParameter(4,sigmaPoint->Parameter(1));
+    f1_max->SetParameter(5,sigmaPoint->Parameter(2));
     f1_max->Draw("SAME");
 
     f1_min->SetParameter(0,muPoint->Parameter(0));
     f1_min->SetParameter(1,muPoint->Parameter(1));
     f1_min->SetParameter(2,muPoint->Parameter(2));
-    f1_min->SetParameter(3,muPoint->Parameter(3));
-    f1_min->SetParameter(4,sigmaPoint->Parameter(0));
-    f1_min->SetParameter(5,sigmaPoint->Parameter(1));
-    f1_min->SetParameter(6,sigmaPoint->Parameter(2));
-    f1_min->SetParameter(7,sigmaPoint->Parameter(3));
+    f1_min->SetParameter(3,sigmaPoint->Parameter(0));
+    f1_min->SetParameter(4,sigmaPoint->Parameter(1));
+    f1_min->SetParameter(5,sigmaPoint->Parameter(2));
     f1_min->Draw("SAME");
 
-    sprintf(temp,"Canvas_sec%d.pdf",i);
-    c1->SaveAs(temp);
+    c1->SaveAs(fileName);
 
     //Quickly write out
     cutFile << muPoint->Parameter(0) << " "
 	    << muPoint->Parameter(1) << " "
 	    << muPoint->Parameter(2) << " "
-	    << muPoint->Parameter(3) << " "
 	    << sigmaPoint->Parameter(0) << " "
 	    << sigmaPoint->Parameter(1) << " "
-	    << sigmaPoint->Parameter(2) << " "
-	    << sigmaPoint->Parameter(3) << "\n";
+	    << sigmaPoint->Parameter(2) << "\n";
 
     //Now do sigma pdf
     sprintf(temp,"Canvas_Sigma_sec%d",i);
@@ -273,10 +229,12 @@ int main(int argc, char** argv) {
     tg_sigma[i]->Draw();
     //f1_sigma_rga->Draw("SAME");
     f1_sigma->Draw("SAME");
-    sprintf(temp,"Canvas_Sigma_sec%d.pdf",i);
-    c2->SaveAs(temp);
+    c2->SaveAs(fileName);
   }
-  
+  TCanvas * endCanvas = new TCanvas("End_Canvas","End_Canvas",1200,1000);
+  sprintf(fileName,"SF_Fit_Runno%d.pdf]",Runno);
+  myCanvas->SaveAs(fileName);
+
 
 
   inFile->Close();
