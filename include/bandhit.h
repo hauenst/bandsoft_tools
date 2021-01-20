@@ -15,11 +15,19 @@ class bandhit : public TObject {
 		
 		// Some custom get functions
 		TVector3 getDL		(void)		{return TVector3(X,Y,Z)	;}
+		TVector3 getDLFadc	(void)		{return TVector3(XFadc,Y,Z);}
 		double getBeta		(void)		{return TVector3(X,Y,Z).Mag() / Tof / cAir; }
+		double getBetaFadc	(void)		{return TVector3(XFadc,Y,Z).Mag() / Tof / cAir; }
 		TVector3 getMomentumN	(void){
 			double beta = TVector3(X,Y,Z).Mag() / Tof / cAir;
 			double mom = mN / sqrt(1./pow(beta,2) - 1.);
 			TVector3 momN; momN.SetMagThetaPhi(mom,TVector3(X,Y,Z).Theta(),TVector3(X,Y,Z).Phi() );
+			return momN;
+		}
+		TVector3 getMomentumNFadc(void){
+			double beta = TVector3(XFadc,Y,Z).Mag() / Tof / cAir;
+			double mom = mN / sqrt(1./pow(beta,2) - 1.);
+			TVector3 momN; momN.SetMagThetaPhi(mom,TVector3(XFadc,Y,Z).Theta(),TVector3(XFadc,Y,Z).Phi() );
 			return momN;
 		}
 
@@ -35,6 +43,7 @@ class bandhit : public TObject {
 		void setTdiff		(double iTdiff		)		{Tdiff		= iTdiff	; return;}
 		void setTdiffFadc	(double iTdiffFadc	)		{TdiffFadc	= iTdiffFadc	; return;}
 		void setX		(double iX		)		{X		= iX		; return;}
+		void setXFadc		(double iXFadc		)		{XFadc		= iXFadc	; return;}
 		void setY		(double iY		)		{Y		= iY		; return;}
 		void setZ		(double iZ		)		{Z		= iZ		; return;}
 		void setStatus		(double iStatus		)		{Status		= iStatus	; return;}
@@ -72,6 +81,7 @@ class bandhit : public TObject {
 		double	getTdiff	(void)		{return Tdiff		;}
 		double	getTdiffFadc	(void)		{return TdiffFadc	;}
 		double	getX		(void)		{return X		;}
+		double	getXFadc	(void)		{return XFadc		;}
 		double	getY		(void)		{return Y		;}
 		double	getZ		(void)		{return Z		;}
 		double	getStatus	(void)		{return Status		;}
@@ -98,7 +108,7 @@ class bandhit : public TObject {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		ClassDef(bandhit,3);
+		ClassDef(bandhit,5);
 	private:
 		int	Sector		;
 		int 	Layer		;
@@ -110,6 +120,7 @@ class bandhit : public TObject {
 		double 	Tdiff		;
 		double 	TdiffFadc	;
 		double 	X		;
+		double 	XFadc		;
 		double 	Y		;
 		double 	Z		;
 		int	Status		;

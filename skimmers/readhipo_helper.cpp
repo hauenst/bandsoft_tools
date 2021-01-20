@@ -3,7 +3,10 @@
 
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun){
+			double starttime , int thisRun, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
+			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
+			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
+	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel	){
 
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
@@ -19,7 +22,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setTofFadc		(band_hits.getTimeFadc		(hit) - starttime	);
 		hits[hit].setTdiff		(band_hits.getDifftimeTdc	(hit)			);
 		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
-		hits[hit].setX			(band_hits.getX			(hit)			);
+		hits[hit].setX			(band_hits.getX			(hit)			);	// have a flag with standard value to not f everything else up
 		hits[hit].setY			(band_hits.getY			(hit)			);
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
@@ -57,6 +60,43 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
 		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
 
+		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs 
+		int id 			= band_hits.getBarKey(hit);
+		if( hotfix == 1 ){
+			double old_tdiff_fadc 	= band_hits.getDifftimeFadc(hit);
+			double old_tdiff_tdc	= band_hits.getDifftimeTdc(hit);
+
+
+			// Shift the TDIFF_TDC by the residual correction for 10.2 GeV data
+			// and recalculate x-position to get the global offset corrections. 
+			// Then we can use NEW effective velocity tables to calculate a correct x-position,
+			// only for data and only for 10.2 GeV data
+			double old_x_fadc 		= (-1./2) * old_tdiff_fadc * s6200_fadc_effvel[id];
+			double old_x_tdc		= (-1./2) * old_tdiff_tdc  * s6200_tdc_effvel[id];
+
+			// recoX = x_tdc + globX
+			// reco_offset = recoX - x_tdc = globX
+			double fadc_reco_offset	= band_hits.getX(hit) - old_x_fadc;
+			double tdc_reco_offset	= band_hits.getX(hit) - old_x_tdc;
+
+			// Now calculate the real x-position with better FADC/TDC effective velocity
+			// newX = x_tdc + reco_offset
+			double new_tdiff_fadc 	= band_hits.getDifftimeFadc(hit) + s6200_fadc_lroffset[id] - s6291_fadc_lroffset[id];
+			double new_tdiff_tdc	= band_hits.getDifftimeTdc(hit)	 + s6200_tdc_lroffset[id]  - s6291_tdc_lroffset[id];
+			double new_x_fadc 	= (-1./2) * new_tdiff_fadc * s6291_fadc_effvel[id];
+			double new_x_tdc	= (-1./2) * new_tdiff_tdc  * s6291_tdc_effvel[id];
+
+			new_x_fadc 	= new_x_fadc 	+ fadc_reco_offset;
+			new_x_tdc 	= new_x_tdc 	+ tdc_reco_offset;
+			hits[hit].setXFadc	( new_x_fadc );
+			hits[hit].setX		( new_x_tdc );
+
+			//cout << "old tdc diff:\t" << old_tdiff_tdc << "\n";
+			//cout << "old tdc xpos:\t" << old_x_tdc << "\n";
+			//cout << "tdc reco off:\t" << tdc_reco_offset << "\n";
+			//cout << "new tdc diff:\t" << new_tdiff_tdc << "\n";
+			//cout << "new tdc xpos:\t" << new_x_tdc << "\n";
+		}
 		// Save how many neutron hits we have
 		mult++;
 	}
@@ -539,6 +579,80 @@ void shiftsReader::LoadInitRunFadc( string filename ){
 	}
 	f.close();
 }
+void shiftsReader::LoadEffVel( string filename_S6200 , string filename_S6291 ){
+	ifstream f;
+	int sector, layer, component, barId;
+	double tdc_ev, fadc_ev, temp;
+	
+	// Load Spring 2019 6200-6290 constants
+	f.open(filename_S6200);
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		f >> tdc_ev;
+		f >> fadc_ev;
+		barId = sector*100 + layer*10 + component;
+		S6200FadcEffVel[barId] 	= fadc_ev;
+		S6200TdcEffVel[barId] 	= tdc_ev;
+		f >> temp;
+		f >> temp;
+	}
+	f.close();
+
+	// Load Spring 2019 6291-INF constants
+	f.open(filename_S6291);
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		f >> tdc_ev;
+		f >> fadc_ev;
+		barId = sector*100 + layer*10 + component;
+		S6291FadcEffVel[barId] 	= fadc_ev;
+		S6291TdcEffVel[barId] 	= tdc_ev;
+		f >> temp;
+		f >> temp;
+	}
+	f.close();
+}
+void shiftsReader::LoadLrOff( string filename_S6200 , string filename_S6291 ){
+	ifstream f;
+	int sector, layer, component, barId;
+	double tdc_lr, fadc_lr, temp;
+	
+	// Load Spring 2019 6200-6290 constants
+	f.open(filename_S6200);
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		f >> tdc_lr;
+		f >> fadc_lr;
+		barId = sector*100 + layer*10 + component;
+		S6200FadcLrOffsets[barId] 	= fadc_lr;
+		S6200TdcLrOffsets[barId] 	= tdc_lr;
+		f >> temp;
+		f >> temp;
+	}
+	f.close();
+
+	// Load Spring 2019 6291-INF constants
+	f.open(filename_S6291);
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		f >> tdc_lr;
+		f >> fadc_lr;
+		barId = sector*100 + layer*10 + component;
+		S6291FadcLrOffsets[barId] 	= fadc_lr;
+		S6291TdcLrOffsets[barId] 	= tdc_lr;
+		f >> temp;
+		f >> temp;
+	}
+	f.close();
+}
 
 double * shiftsReader::getInitBar(void){
 	return InitBar;
@@ -551,4 +665,36 @@ double * shiftsReader::getInitRun(void){
 }
 double * shiftsReader::getInitRunFadc(void){
 	return InitRunFadc;
+}
+double * shiftsReader::getFadcEffVel(int Runno){
+	if( Runno < 6291 ){
+		return S6200FadcEffVel;
+	}
+	else{
+		return S6291FadcEffVel;
+	}
+}
+double * shiftsReader::getTdcEffVel(int Runno){
+	if( Runno < 6291 ){
+		return S6200TdcEffVel;
+	}
+	else{
+		return S6291TdcEffVel;
+	}
+}
+double * shiftsReader::getFadcLrOff(int Runno){
+	if( Runno < 6291 ){
+		return S6200FadcLrOffsets;
+	}
+	else{
+		return S6291FadcLrOffsets;
+	}
+}
+double * shiftsReader::getTdcLrOff(int Runno){
+	if( Runno < 6291 ){
+		return S6200TdcLrOffsets;
+	}
+	else{
+		return S6291TdcLrOffsets;
+	}
 }

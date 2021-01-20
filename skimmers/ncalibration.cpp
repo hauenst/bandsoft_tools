@@ -130,6 +130,10 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
+		int n_one = 0;
+		int n_two = 0;
+		int n_thr = 0;
+		int n_mor = 0;
 		while(reader.next()==true){
 			// Clear all branches
 			gated_charge	= 0;
@@ -147,6 +151,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
+			if(event_counter > 100000 ) break;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -175,9 +180,33 @@ int main(int argc, char** argv) {
 			for( int part = 0 ; part < particles.getRows() ; part++ ){
 				int PID 	= particles.getPid(part);
 				int charge 	= particles.getCharge(part);
-				if( PID == 11 && charge == -1 ) nElectrons++;
-				else{ nOthers++; }
+				if( PID != 11 ) continue;
+				if( charge !=-1 ) continue;
+				TVector3	momentum = particles.getV3P(part);
+				TVector3	vertex	 = particles.getV3v(part);
+				TVector3 	beamVec(0,0,Ebeam);
+				TVector3	qVec; qVec = beamVec - momentum;
+				double EoP=	calorimeter.getTotE(part) /  momentum.Mag();
+				double Epcal=	calorimeter.getPcalE(part);
+				if( EoP < 0.17 || EoP > 0.3 	) continue;
+				if( Epcal < 0.07		) continue;
+				if( vertex.Z() < -8 || vertex.Z() > 3 )	continue;
+				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
+				double lV=	calorimeter.getLV(part);
+				double lW=	calorimeter.getLW(part);
+				if( lV < 15 || lW < 15		) continue;
+				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
+				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
+				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
+				if( Q2 < 2 || Q2 > 10			) continue;
+				if( W2 < 2*2				) continue;
+
+				nElectrons++;
 			}
+			if( nElectrons == 1 )	n_one++;
+			if( nElectrons == 2 )	n_two++;
+			if( nElectrons == 3 )	n_thr++;
+			if( nElectrons > 3  )	n_mor++;
 			if( nElectrons != 1 ) 	continue;
 			//if( nOthers != 0 )	continue;
 
