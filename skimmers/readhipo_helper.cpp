@@ -22,7 +22,13 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setTofFadc		(band_hits.getTimeFadc		(hit) - starttime	);
 		hits[hit].setTdiff		(band_hits.getDifftimeTdc	(hit)			);
 		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
-		hits[hit].setX			(band_hits.getX			(hit)			);	// have a flag with standard value to not f everything else up
+		hits[hit].setX			(band_hits.getX			(hit)			);
+
+		// Fix for the Y position for layer 5:
+		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector() == 3 || band_hits.getSector() == 4 ) ){
+			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
+		}
+
 		hits[hit].setY			(band_hits.getY			(hit)			);
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
