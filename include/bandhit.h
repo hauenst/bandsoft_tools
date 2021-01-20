@@ -35,6 +35,7 @@ class bandhit : public TObject {
 		void setTdiff		(double iTdiff		)		{Tdiff		= iTdiff	; return;}
 		void setTdiffFadc	(double iTdiffFadc	)		{TdiffFadc	= iTdiffFadc	; return;}
 		void setX		(double iX		)		{X		= iX		; return;}
+		void setXFadc		(double iXFadc		)		{XFadc		= iXFadc	; return;}
 		void setY		(double iY		)		{Y		= iY		; return;}
 		void setZ		(double iZ		)		{Z		= iZ		; return;}
 		void setStatus		(double iStatus		)		{Status		= iStatus	; return;}
@@ -72,6 +73,7 @@ class bandhit : public TObject {
 		double	getTdiff	(void)		{return Tdiff		;}
 		double	getTdiffFadc	(void)		{return TdiffFadc	;}
 		double	getX		(void)		{return X		;}
+		double	getXFadc	(void)		{return XFadc		;}
 		double	getY		(void)		{return Y		;}
 		double	getZ		(void)		{return Z		;}
 		double	getStatus	(void)		{return Status		;}
@@ -98,7 +100,7 @@ class bandhit : public TObject {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		ClassDef(bandhit,3);
+		ClassDef(bandhit,6);
 	private:
 		int	Sector		;
 		int 	Layer		;
@@ -110,6 +112,7 @@ class bandhit : public TObject {
 		double 	Tdiff		;
 		double 	TdiffFadc	;
 		double 	X		;
+		double 	XFadc		;
 		double 	Y		;
 		double 	Z		;
 		int	Status		;
