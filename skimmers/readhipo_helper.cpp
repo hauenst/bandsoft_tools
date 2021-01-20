@@ -25,7 +25,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setX			(band_hits.getX			(hit)			);
 
 		// Fix for the Y position for layer 5:
-		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector() == 3 || band_hits.getSector() == 4 ) ){
+		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
 			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
 		}
 
@@ -66,7 +66,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
 		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
 
-		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs 
+		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs
 		int id 			= band_hits.getBarKey(hit);
 		if( hotfix == 1 ){
 			double old_tdiff_fadc 	= band_hits.getDifftimeFadc(hit);
@@ -74,7 +74,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 
 			// Shift the TDIFF_TDC by the residual correction for 10.2 GeV data
-			// and recalculate x-position to get the global offset corrections. 
+			// and recalculate x-position to get the global offset corrections.
 			// Then we can use NEW effective velocity tables to calculate a correct x-position,
 			// only for data and only for 10.2 GeV data
 			double old_x_fadc 		= (-1./2) * old_tdiff_fadc * s6200_fadc_effvel[id];
@@ -203,14 +203,31 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 }
 
 
-
-
 int getRunNumber( string filename ){
-	string parsed = filename.substr( filename.find("inc_") );
-	string moreparse = parsed.substr(4,6);
-	cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
+        //string parsed = filename.substr( filename.find("inc_") );
+        string parsed;
+        string moreparse;
+        if ( filename.find("inc_") <= filename.length() )
+        {
+                cout << "Parsed file and found position for string inc_ at " << filename.find("inc_") << endl;
+                parsed = filename.substr( filename.find("inc_") );
+                moreparse = parsed.substr(4,6);
+        }
+
+        else if (filename.find("band_") <= filename.length() )
+        {
+                cout << "Parsed file and found position for string band_ at " << filename.find("band_") << endl;
+                parsed = filename.substr( filename.find("band_") );
+                moreparse = parsed.substr(5,6);
+        }
+        else {
+                cout << "Could not parse runnumber from inputfile. Return 0 runnumber " << endl;
+                return 0;
+        }
+        cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
         return stoi(moreparse);
 }
+
 
 void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime ){
 	if( eventInfo.getRows() != 1 ){
@@ -629,7 +646,7 @@ void shiftsReader::LoadEffVel( string filename_S6200 , string filename_S6291 ){
 	ifstream f;
 	int sector, layer, component, barId;
 	double tdc_ev, fadc_ev, temp;
-	
+
 	// Load Spring 2019 6200-6290 constants
 	f.open(filename_S6200);
 	while(!f.eof()){
@@ -666,7 +683,7 @@ void shiftsReader::LoadLrOff( string filename_S6200 , string filename_S6291 ){
 	ifstream f;
 	int sector, layer, component, barId;
 	double tdc_lr, fadc_lr, temp;
-	
+
 	// Load Spring 2019 6200-6290 constants
 	f.open(filename_S6200);
 	while(!f.eof()){
