@@ -151,7 +151,11 @@ int main(int argc, char** argv) {
 	FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
 	shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
 	TDC_BARSHIFTS = (double*) shifts.getInitBar();
-
+	// Load bar shifts
+	//shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
+	//FADC_INITBAR = (double*) shifts.getInitBarFadc();
+	//shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+	//TDC_INITBAR = (double*) shifts.getInitBar();
 	/*
 		double * FADC_INITRUN;
 		// Load run-by-run shifts
@@ -159,7 +163,26 @@ int main(int argc, char** argv) {
 		FADC_INITRUN = (double*) shifts.getInitRunFadc();
 
 */
+// Effective velocity for re-doing x- calculation
+		double * FADC_EFFVEL_S6200;
+		double *  TDC_EFFVEL_S6200;
+		double * FADC_EFFVEL_S6291;
+		double *  TDC_EFFVEL_S6291;
+		double *  FADC_LROFF_S6200;
+		double *   TDC_LROFF_S6200;
+		double *  FADC_LROFF_S6291;
+		double *   TDC_LROFF_S6291;
+		shifts.LoadEffVel	("../include/EffVelocities_S6200.txt",	"../include/EffVelocities_S6291.txt");
+		shifts.LoadLrOff	("../include/LrOffsets_S6200.txt",	"../include/LrOffsets_S6291.txt");
+		FADC_EFFVEL_S6200	= (double*) shifts.getFadcEffVel(6200);
+		TDC_EFFVEL_S6200	= (double*)  shifts.getTdcEffVel(6200);
+		FADC_EFFVEL_S6291	= (double*) shifts.getFadcEffVel(6291);
+		TDC_EFFVEL_S6291	= (double*)  shifts.getTdcEffVel(6291);
 
+		FADC_LROFF_S6200	= (double*) shifts.getFadcLrOff(6200);
+		TDC_LROFF_S6200		= (double*)  shifts.getTdcLrOff(6200);
+		FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
+		TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 
 	// Load input file
@@ -308,7 +331,20 @@ int main(int argc, char** argv) {
 			}
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum);
+			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum,
+					1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+						FADC_LROFF_S6291,	TDC_LROFF_S6291,
+						FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+						FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+
+			//if( loadshifts_opt ){
+				for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS[(int)nHit[n].getBarID()]  );
+				}
+			//}
+
+
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
