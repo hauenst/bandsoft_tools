@@ -25,7 +25,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setX			(band_hits.getX			(hit)			);
 
 		// Fix for the Y position for layer 5:
-		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector() == 3 || band_hits.getSector() == 4 ) ){
+		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
 			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
 		}
 
