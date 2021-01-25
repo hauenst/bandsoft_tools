@@ -2,10 +2,6 @@
 #define __GENPART_H__
 
 #include "TObject.h"
-#include "constants.h"
-#include "clashit.h"
-#include "bandhit.h"
-#include "taghit.h"
 
 class genpart : public TObject {
 	public:
@@ -54,7 +50,7 @@ class genpart : public TObject {
 		double	getXb		(void)		{return Xb		;}
 		double	getW2		(void)		{return W2		;}
 
-		ClassDef(genpart,2);
+		ClassDef(genpart,4);
 	private:
 		int 	PID		;
 
@@ -74,10 +70,6 @@ class genpart : public TObject {
 		double 	Omega		;
 		double	Xb		;
 		double	W2		;
-
-		clashit	electron	;
-		bandhit	neutron		;
-		taghit	tag		;
 };
 
 

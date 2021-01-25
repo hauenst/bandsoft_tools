@@ -24,8 +24,4 @@ void genpart::Clear(){
 	Omega		= 0;
 	Xb		= 0;
 	W2		= 0;
-
-	electron	.Clear();
-	neutron		.Clear();
-	tag		.Clear();
 }
