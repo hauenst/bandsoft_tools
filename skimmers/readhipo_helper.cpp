@@ -111,11 +111,9 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect){
 
-	double thres = thresBANDhit; //5
 	double time_thres = time_thresBANDhit; //300
 
 	bool vetoHit = false;
-	bool thresPass = false;
 	bool accept = false;
 	double adctoMeVee = 0;
 	if (mcdataselect == 0) //MC
@@ -129,17 +127,17 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 	double fastestTime = 1E5;
 	int fastestTimeIdx = -1;
 	for( int thishit = 0; thishit < nMult ; thishit++){
-			bandhit neutron = hits[thishit];
-			//if the Edep in this PMT is less than 2MeVee, do not count it
-			//MC
-			if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2) 	continue;
-			//Data
-			if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
+		bandhit neutron = hits[thishit];
+		//if the Edep in this PMT is less than 2MeVee, do not count it
+		//MC
+		if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2) 	continue;
+		//Data
+		if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
 
-			if( neutron.getTof() < fastestTime ){
-					fastestTime = neutron.getTof();
-					fastestTimeIdx = thishit;
-			}
+		if( neutron.getTof() < fastestTime ){
+			fastestTime = neutron.getTof();
+			fastestTimeIdx = thishit;
+		}
 	}
 
 	// Once we have the fastest hit, ask how many other hits there
@@ -147,58 +145,49 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 	// but keep this earliest hit.
 	// Accept the event based on if there is another hit > 300ps
 	if( fastestTimeIdx != -1 ){
-			accept = true;
-			for( int thishit = 0; thishit < nMult ; thishit++){
+		accept = true;
+		for( int thishit = 0; thishit < nMult ; thishit++){
+			bandhit neutron = hits[thishit];
+			// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
+			if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
 
-						bandhit neutron = hits[thishit];
-						// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
-						if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
+			//if this bar does not have > 2MeVee, do not count the hit
+			//MC
+			if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
+			//Data
+			if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
 
-						//if this bar does not have > 2MeVee, do not count the hit
-						//MC
-						if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
-						//Data
-						if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
-
-
-
-						// if this bar does not have > X MeVee, do not count the hit (X = threshold set by user)
-						//MC
-						if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee > thres ) thresPass = true;
-						//Data
-						if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee > thres ) thresPass = true;
-
-						double tdiff = neutron.getTof() - fastestTime;
-						if( tdiff == 0 ){
-							continue;
-						}
-						bool adjLayer = false;
-						bool adjComp = false;
-						bool adjSpace = false;
-						bandhit lead = hits[thishit];
-
-						int layerDiff = lead.getLayer() - neutron.getLayer();
-						if( fabs(layerDiff) <= 1 ) adjLayer = true;
-						if( lead.getSector() == neutron.getSector() ){
-						// if hits are in the same sector, then just ask for comp diff
-							int compDiff = lead.getComponent() - neutron.getComponent();
-							if( fabs(compDiff) <= 1 ) adjComp = true;
-						}
-						else{
-						// have to implement some fancy component check due to sec comp differences
-							int yDiff = lead.getY() - neutron.getY();
-							if( fabs(yDiff) <= 10 ) adjComp = true;
-						}
-						if( adjComp && adjLayer ) adjSpace = true;
-
-						if( tdiff < time_thres && tdiff != 0 ) accept = false;
-						if( tdiff < time_thres && tdiff != 0 && adjSpace ) accept = true;
+			double tdiff = neutron.getTof() - fastestTime;
+			if( tdiff == 0 ){
+				continue;
 			}
+			bool adjLayer = false;
+			bool adjComp = false;
+			bool adjSpace = false;
+			bandhit lead = hits[thishit];
+
+			int layerDiff = lead.getLayer() - neutron.getLayer();
+			if( fabs(layerDiff) <= 1 ) adjLayer = true;
+			if( lead.getSector() == neutron.getSector() ){
+			// if hits are in the same sector, then just ask for comp diff
+				int compDiff = lead.getComponent() - neutron.getComponent();
+				if( fabs(compDiff) <= 1 ) adjComp = true;
+			}
+			else{
+			// have to implement some fancy component check due to sec comp differences
+				int yDiff = lead.getY() - neutron.getY();
+				if( fabs(yDiff) <= 10 ) adjComp = true;
+			}
+			if( adjComp && adjLayer ) adjSpace = true;
+
+			if( tdiff < time_thres && tdiff != 0 ) accept = false;
+			if( tdiff < time_thres && tdiff != 0 && adjSpace ) accept = true;
 		}
+	}
 
-		leadindex = fastestTimeIdx ;
+	leadindex = fastestTimeIdx ;
 
-		return accept && !vetoHit && thresPass;
+	return accept && !vetoHit;
 
 }
 
