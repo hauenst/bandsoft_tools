@@ -23,9 +23,8 @@ const int maxNeutrons	= 200;
 const int maxGens	= 10;
 const int maxParticles	= 100;
 const int maxScinHits = 100;
-const double thresBANDhit = 5.;
 const double time_thresBANDhit = 300;
-const double adctoMeVee_data = 2300; //conversion for data
+const double adctoMeVee_data = 1100; //conversion for data
 const double adctoMeVee_sim = 1E4;//conversion for simulation
 const double VERTEX_OFFSET = -3; // [cm]
 
