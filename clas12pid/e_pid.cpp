@@ -1,6 +1,7 @@
 #include "e_pid.h"
 
 #include "TF1.h"
+#include "TCanvas.h"
 #include "TString.h"
 #include "TMath.h"
 
@@ -15,97 +16,159 @@ using namespace std;
 
 e_pid::e_pid(){
 
-  interval = 3.5;
+  //Default is 10.6GeV parameters for SF cuts
+  setParamsRGB(10.6);
+  intervalEpcal = 3.5;
+  intervalMom = 3.5;
+  color = 2;
+
 }
 
 e_pid::~e_pid(){
 }
 
-void e_pid::setParamsRGB(double Ebeam){
-
-  //Determine correct file name
-  char fileName[100];
-  if(std::abs(Ebeam-10.6) < 0.001){
-    sprintf(fileName,"%s/SFCutParams_106_RGB.dat",std::string(PID_DIR).c_str()); 
-  }
-  else if(std::abs(Ebeam-10.2) < 0.001){
-    sprintf(fileName,"%s/SFCutParams_102_RGB.dat",std::string(PID_DIR).c_str()); 
-  }  
-  else{
-    std::cout<<"Attempting to set a beam energy\n"
-	     <<"without a defined RGB fiducal cut\n"
-	     <<"\t Using E=10.6 GeV as Default. \n\n\n";
-    sprintf(fileName,"%s/SFCutParams_106_RGB.dat",std::string(PID_DIR).c_str()); 
-  }      
-
-  //Load file data
-  ifstream paramFile(fileName);
-  if(!paramFile.is_open()){
-    cout<<"Fiducial cut parameter files failed to load.\n"
-	<<"Aborting...\n\n\n";
-    exit(-2);
-  }
-
-  for(int i = 0; i < 6; i++){
-    for(int j = 0; j < 8; j++){
-      params[i][j] = 0;
-      paramFile >> params[i][j];
-    }
-  }
-
-  paramFile.close();
-
-}
-
-void e_pid::setParamsRGA(){
-
-  //Determine correct file name
-  char fileName[100];
-  sprintf(fileName,"%s/SFCutParams_RGA.dat",std::string(PID_DIR).c_str()); 
-
-  //Load file data
-  ifstream paramFile(fileName);
-  if(!paramFile.is_open()){
-    cout<<"Fiducial cut parameter files failed to load.\n"
-	<<"Aborting...\n\n\n";
-    exit(-2);
-  }
-
-  for(int i = 0; i < 6; i++){
-    for(int j = 0; j < 8; j++){
-      params[i][j] = 0;
-      paramFile >> params[i][j];
-    }
-  }
-
-  paramFile.close();
-
-}
-
-void e_pid::setInterval(double newInterval){
-  interval = newInterval;
-}
 
 bool e_pid::isElectron(clashit * eHit){
   
-    bool passSFtot = SF_Epcal_Cut(eHit->getSector()-1,eHit->getEoP(),eHit->getEpcal());
-    bool passSFpi = SFpcal_SFecin_Cut(eHit->getMomentum(),eHit->getEpcal(),eHit->getEecin());
-    if(eHit->getPID() != 11){ return false; }
-    if(eHit->getCharge() != -1){ return false; }
-    if(!passSFtot){ return false; }
-    if(!passSFpi){ return false; }
-    return true;
+  bool passSFEpcal = SF_Epcal_Cut(eHit->getSector()-1,eHit->getEpcal(),eHit->getEoP());
+  bool passSFMom = SF_Mom_Cut(eHit->getSector()-1,eHit->getMomentum(),eHit->getEoP());
+  bool passSFpi = SFpcal_SFecin_Cut(eHit->getMomentum(),eHit->getEpcal(),eHit->getEecin());
+
+  if(eHit->getPID() != 11){ return false; }
+  if(eHit->getCharge() != -1){ return false; }
+  if(!passSFEpcal){ return false; }
+  if(!passSFMom){ return false; }
+  if(!passSFpi){ return false; }
+  return true;
+
+}
+bool e_pid::isElectronLoose(clashit * eHit){
+
+  bool passSFEpcal = SF_Epcal_Cut(eHit->getSector()-1,eHit->getEpcal(),eHit->getEoP());
+  bool passSFMom = SF_Mom_Cut(eHit->getSector()-1,eHit->getMomentum(),eHit->getEoP());
+  bool passSFpi = SFpcal_SFecin_Cut(eHit->getMomentum(),eHit->getEpcal(),eHit->getEecin());
+
+  if(eHit->getPID() != 11){ return false; }
+  if(eHit->getCharge() != -1){ return false; }
+  if(!passSFEpcal){ return false; }
+  return true;  
 
 }
 
-bool e_pid::SF_Epcal_Cut(int sector, double SF, double Epcal){
-  if(SF < minSF(sector,Epcal)){
-    return false;
+void e_pid::setParamsRGB(double Ebeam){
+
+  //Determine correct file name
+  if(std::abs(Ebeam-10.6) < 0.01){
+    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
+  }
+  else if(std::abs(Ebeam-10.2) < 0.01){
+    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());  
   }  
-  if(SF > maxSF(sector,Epcal)){
-    return false;
-  }  
-  return true;
+  else{
+    std::cout<<"Attempting to set a beam energy "<< Ebeam <<" GeV\n"
+	     <<"without a defined RGB fiducal cut\n"
+	     <<"\t Using E=10.6 GeV as Default. \n\n\n";
+    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str());
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str());  
+  }      
+
+  //Load file data
+  fillParams();
+}
+
+void e_pid::fillParams(){
+
+  //Load file data
+  ifstream paramFileEpcal(paramFileNameEpcal);
+  ifstream paramFileMom(paramFileNameMom);
+  if(!paramFileEpcal.is_open() || !paramFileMom.is_open()){
+    cout<<"Fiducial cut parameter files failed to load.\n"
+	<<"Aborting...\n\n\n";
+    exit(-2);
+  }
+
+  for(int i = 0; i < 6; i++){
+    for(int j = 0; j < 6; j++){
+      paramsEpcal[i][j] = 0;
+      paramFileEpcal >> paramsEpcal[i][j];
+      paramsMom[i][j] = 0;
+      paramFileMom >> paramsMom[i][j];
+    }
+  }
+
+  paramFileEpcal.close();
+  paramFileMom.close();
+
+}
+
+void e_pid::setIntervalEpcal(double newInterval){
+  intervalEpcal = newInterval;
+}
+
+void e_pid::setIntervalMom(double newInterval){
+  intervalMom = newInterval;
+}
+
+void e_pid::setColor(int newColor){
+  color = newColor;
+}
+
+void e_pid::drawEpcal(int sector, TCanvas * myCanvas){
+
+  sector--;
+
+  TF1 * meanFunction = new TF1("Mean",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]); },0.06,1.6,3);
+  meanFunction->SetLineColor(color);
+  meanFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2]);
+  
+  TF1 * maxFunction = new TF1("Max",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) + intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.06,1.6,6);
+  maxFunction->SetLineColor(color);
+  maxFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2],paramsEpcal[sector][3],paramsEpcal[sector][4],paramsEpcal[sector][5]);
+
+  TF1 * minFunction = new TF1("Min",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) - intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.06,1.6,6);
+  minFunction->SetLineColor(color);
+  minFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2],paramsEpcal[sector][3],paramsEpcal[sector][4],paramsEpcal[sector][5]);
+  
+  
+  myCanvas->cd();
+  meanFunction->Draw("SAME");
+  maxFunction->Draw("SAME");
+  minFunction->Draw("SAME");
+  
+}
+
+void e_pid::drawMom(int sector, TCanvas * myCanvas){
+
+  sector--;
+
+  TF1 * meanFunction = new TF1("Mean",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]); },0.5,9.5,3);
+  meanFunction->SetLineColor(color);
+  meanFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2]);
+  
+  TF1 * maxFunction = new TF1("Max",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) + intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.5,9.5,6);
+  maxFunction->SetLineColor(color);
+  maxFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2],paramsMom[sector][3],paramsMom[sector][4],paramsMom[sector][5]);
+
+  TF1 * minFunction = new TF1("Min",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) - intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.5,9.5,6);
+  minFunction->SetLineColor(color);
+  minFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2],paramsMom[sector][3],paramsMom[sector][4],paramsMom[sector][5]);
+  
+  
+  myCanvas->cd();
+  meanFunction->Draw("SAME");
+  maxFunction->Draw("SAME");
+  minFunction->Draw("SAME");
+  
+}
+
+bool e_pid::SF_Epcal_Cut(int sector, double Epcal, double SF){
+  return SF_Cut(sector,Epcal,SF,paramsEpcal,intervalEpcal);
+}
+
+bool e_pid::SF_Mom_Cut(int sector, double p, double SF){
+  return SF_Cut(sector,p,SF,paramsMom,intervalMom);
 }
 
 bool e_pid::SFpcal_SFecin_Cut(double p, double Epcal, double Eecin){
@@ -119,22 +182,32 @@ bool e_pid::SFpcal_SFecin_Cut(double p, double Epcal, double Eecin){
 
 }
 
-double e_pid::meanSF(int sector, double Epcal){
-  return FF(Epcal,params[sector][0],params[sector][1],params[sector][2],params[sector][3]);
+bool e_pid::SF_Cut(int sector, double x, double SF, double params[6][6], double interval){
+  if(SF < minSF(sector,x,params,interval)){
+    return false;
+  }  
+  if(SF > maxSF(sector,x,params,interval)){
+    return false;
+  }  
+  return true;
 }
 
-double e_pid::sigmaSF(int sector, double Epcal){
-  return FF(Epcal,params[sector][4],params[sector][5],params[sector][6],params[sector][7]);
+double e_pid::meanSF(int sector, double x, double params[6][6]){
+  return FF(x,params[sector][0],params[sector][1],params[sector][2]);
 }
 
-double e_pid::maxSF(int sector, double Epcal){
-  return meanSF(sector,Epcal) + interval * sigmaSF(sector,Epcal);
+double e_pid::sigmaSF(int sector, double x, double params[6][6]){
+  return FF(x,params[sector][3],params[sector][4],params[sector][5]);
 }
 
-double e_pid::minSF(int sector, double Epcal){
-  return meanSF(sector,Epcal) - interval * sigmaSF(sector,Epcal);
+double e_pid::maxSF(int sector, double x, double params[6][6], double interval){
+  return meanSF(sector,x,params) + interval * sigmaSF(sector,x,params);
 }
 
-double e_pid::FF(double E, double sf1, double sf2, double sf3, double sf4){
-  return sf1 * (sf2 + (sf3/E) + (sf4/(E*E)) ); 
+double e_pid::minSF(int sector, double x, double params[6][6], double interval){
+  return meanSF(sector,x,params) - interval * sigmaSF(sector,x,params);
+}
+
+double e_pid::FF(double x, double sf1, double sf2, double sf3){
+  return sf1 + (sf2/sqrt(x)) + (sf3/x); 
 }
