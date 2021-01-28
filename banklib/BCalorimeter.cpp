@@ -23,7 +23,7 @@ BCalorimeter::~BCalorimeter(){}
 // ==============================================================
 float BCalorimeter::getPcalE (int pindex)
 {
-	int nCal = getSize();
+	int nCal = getRows();
 	for(int i = 0 ; i < nCal ; i++){
 		if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==1){
 			return BCalorimeter::getEnergy(i);
@@ -34,7 +34,7 @@ float BCalorimeter::getPcalE (int pindex)
 // ==============================================================
 float BCalorimeter::getECinE (int pindex)
 {
-	int nCal = getSize();
+	int nCal = getRows();
         for(int i = 0 ; i < nCal ; i++){
                 if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==4){
                         return BCalorimeter::getEnergy(i);
@@ -45,7 +45,7 @@ float BCalorimeter::getECinE (int pindex)
 // ==============================================================
 float BCalorimeter::getECoutE(int pindex)
 {
-	int nCal = getSize();
+	int nCal = getRows();
         for(int i = 0 ; i < nCal ; i++){
                 if(BCalorimeter::getIndex(i)==pindex&&BCalorimeter::getLayer(i)==7){
                         return BCalorimeter::getEnergy(i);

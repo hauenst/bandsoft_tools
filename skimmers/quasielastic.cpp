@@ -31,7 +31,7 @@ using namespace std;
 //from readhipo_helper maxParticles	= 100;
 //from readhipo_helper maxScinHits = 100;
 //from readhipo_helper maxNeutrons = 200;
-//TODO: implement MC banks in root file. Check for memory leaks(memset??). IMplement Fiducial cuts
+//TODO:  Check for memory leaks(memset??). IMplement Fiducial cuts. Update RUN::config read to BConfig read
 
 
 int main(int argc, char** argv) {
@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			if( event_counter > 100 ) continue;
+			//if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
