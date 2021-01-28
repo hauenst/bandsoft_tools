@@ -31,14 +31,22 @@ using namespace std;
 //from readhipo_helper maxParticles	= 100;
 //from readhipo_helper maxScinHits = 100;
 //from readhipo_helper maxNeutrons = 200;
+//TODO: implement MC banks in root file. Check for memory leaks(memset??). IMplement Fiducial cuts
 
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 3 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [inputFile]\n\n";
+	if( argc < 5 ){
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [inputFile] \n\n";
+		cerr << "\t\t[outputFile] = ____.root\n";
+		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
+		cerr << "\t\t[<load shifts N,Y> = <0, 1> \n";
+		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
+
+	int MC_DATA_OPT = atoi(argv[2]);
+	int loadshifts_opt = atoi(argv[3]);
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
@@ -53,6 +61,7 @@ int main(int argc, char** argv) {
 	double current		= 0;
 	bool goodneutron = false;
 	int nleadindex = -1;
+	int eventnumber = 0;
 
 	// 	Neutron info:
 	int nMult		= 0;
@@ -79,7 +88,7 @@ int main(int argc, char** argv) {
 	double p_p		[maxParticles]= {0.};
 	double theta_p		[maxParticles]= {0.};
 	double phi_p		[maxParticles]= {0.};
-	double theta_pq		[maxParticles]= {0.};
+
 
  // Information from REC::Scintillator for positive Particles
   int scinHits = 0;
@@ -93,6 +102,12 @@ int main(int argc, char** argv) {
 	double hit_path [maxScinHits]= {0.};
 	double hit_status [maxScinHits]= {0.};
 
+	//	MC info:
+	double weight		= 0;
+	int genMult		= 0;
+	TClonesArray * mcParts = new TClonesArray("genpart");
+	TClonesArray &saveMC = *mcParts;
+
 
 	//Branches:
 	//Event
@@ -102,6 +117,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("eventnumber",&eventnumber);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
@@ -125,7 +141,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("p_p"		,&p_p			,"p_p[pMult]/D"		);
 	outTree->Branch("theta_p"	,&theta_p		,"theta_p[pMult]/D"	);
 	outTree->Branch("phi_p"		,&phi_p			,"phi_p[pMult]/D"	);
-	outTree->Branch("theta_pq"	,&theta_pq		,"theta_pq[pMult]/D"	);
+
 
  //Scintillators
   outTree->Branch("scinHits"		,&scinHits		);
@@ -138,6 +154,11 @@ int main(int argc, char** argv) {
 	outTree->Branch("hit_z"	,&hit_z		,"hit_z[scinHits]/D"	);
 	outTree->Branch("hit_path"	,&hit_path		,"hit_path[scinHits]/D"	);
 	outTree->Branch("hit_status"	,&hit_status		,"hit_status[scinHits]/D"	);
+	if( MC_DATA_OPT == 0){
+	//	MC branches:
+		outTree->Branch("genMult"	,&genMult		);
+		outTree->Branch("mcParts"	,&mcParts		);
+	}
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -145,17 +166,20 @@ int main(int argc, char** argv) {
 	//Load Bar shifts
 	//TODO: Make shifts flexible to use
 	shiftsReader shifts;
-	double * FADC_BARSHIFTS;
-	double * TDC_BARSHIFTS;
-	shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
-	FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
-	shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
-	TDC_BARSHIFTS = (double*) shifts.getInitBar();
-	// Load bar shifts
-	//shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
-	//FADC_INITBAR = (double*) shifts.getInitBarFadc();
-	//shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-	//TDC_INITBAR = (double*) shifts.getInitBar();
+	double * FADC_BARSHIFTS_LER;
+	double * TDC_BARSHIFTS_LER;
+	double * FADC_BARSHIFTS_SPRING19;
+	double * TDC_BARSHIFTS_SPRING19;
+	if( loadshifts_opt ){
+		shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
+		FADC_BARSHIFTS_LER = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
+		TDC_BARSHIFTS_LER = (double*) shifts.getInitBar();
+		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
+		FADC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+		TDC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBar();
+	}
 	/*
 		double * FADC_INITRUN;
 		// Load run-by-run shifts
@@ -186,20 +210,36 @@ int main(int argc, char** argv) {
 
 
 	// Load input file
-	for( int i = 2 ; i < argc ; i++ ){
-		// Using run number of current file, grab the beam energy from RCDB
-		int runNum = getRunNumber(argv[i]);
-		Runno = runNum;
-		auto cnd = connection.GetCondition(runNum, "beam_energy");
-		Ebeam = cnd->ToDouble() / 1000. * 1.018; // [GeV] -- conversion factor due to miscalibration in RCDB
-		current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+	for( int i = 4 ; i < argc ; i++ ){
+		if( MC_DATA_OPT == 0){
+			int runNum = 11;
+			Runno = runNum;
+			//Ebeam is calculated later via MC readin
+		}
+		else if( MC_DATA_OPT == 1){ //Data
+			// Using run number of current file, grab the beam energy from RCDB
+			int runNum = getRunNumber(argv[i]);
+			Runno = runNum;
+			auto cnd = connection.GetCondition(runNum, "beam_energy");
+			Ebeam = cnd->ToDouble() / 1000.;// [GeV] -- conversion factor
+			if (runNum >= 11286 && runNum < 11304)
+			{
+				Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+			}
+			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+		}
+		else{
+			cout << "Wrong option for MC_DATA. Option is " << MC_DATA_OPT  << ".Exit program" << endl;
+			exit(-1);
+		}
+
+
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
 		hipo::reader reader;
 		reader.open(inputFile);
 		hipo::dictionary  factory;
-		hipo::schema	  schema;
 		reader.readDictionary(factory);
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
@@ -207,18 +247,22 @@ int main(int argc, char** argv) {
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank      DC_Track      (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj      (factory.getSchema("REC::Traj"          ));
-		//new BAND banks in file with new cook F.H. 28/09/2020
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank  run_config (factory.getSchema("RUN::config"));
+		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
+		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
 		hipo::event 	readevent;
 
 		// Loop over all events in file
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
+		int run_number_from_run_config = 0;
+
 		while(reader.next()==true){
 				// Clear all branches
 			gated_charge	= 0;
@@ -232,6 +276,12 @@ int main(int argc, char** argv) {
 			nHits->Clear();
 			// Electron
 			eHit.Clear();
+			// MC
+			genMult = 0;
+			weight = 1;
+			genpart mcPart[maxGens];
+			mcParts->Clear();
+
 
 			pMult		= 0;
 			memset(	pIndex		,0	,sizeof(pIndex		)	);
@@ -247,7 +297,6 @@ int main(int argc, char** argv) {
 			memset(	p_p		,0	,sizeof(p_p		)	);
 			memset(	theta_p		,0	,sizeof(theta_p		)	);
 			memset(	phi_p		,0	,sizeof(phi_p		)	);
-			memset( theta_pq	,0	,sizeof(theta_pq	)	);
 
 			scinHits = 0;
 			memset(	hit_pindex	,0	,sizeof(hit_pindex		)	);
@@ -264,13 +313,14 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			//if( event_counter > 100000 ) break;
+			if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			//Electrons and Positive particles
 			readevent.getStructure(particles);
 			readevent.getStructure(calorimeter);
@@ -282,11 +332,31 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_tdc);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+			// monte carlo struct
+			readevent.getStructure(mc_event_info);
+			readevent.getStructure(mc_particle);
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
+
+			//Get Event number and run number from RUN::config
+			run_number_from_run_config = run_config.getInt( 0 , 0 );
+			eventnumber = run_config.getInt( 1 , 0 );
+			if (run_number_from_run_config != Runno && event_counter < 100) {
+				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
+			}
+			//if (event_counter < 100) {
+			//	cout << "event number " << eventnumber << " , runnumebr " << run_number_from_run_config << endl;
+			//}
+
+			// For simulated events, get the weight for the event, also sets the beam energy for MC. Ebeam is reference!
+			//getMcInfo has to be called before getElectronInfo because of Ebeam value
+			if( MC_DATA_OPT == 0){
+				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
+			}
+
 
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
@@ -319,7 +389,7 @@ int main(int argc, char** argv) {
 				p_p[p]			= pMomentum[p].Mag();
 				theta_p[p]	= pMomentum[p].Theta();
 				phi_p[p]		= pMomentum[p].Phi();
-			//	theta_pq[p]	= qMomentum.Angle(pMomentum[p]);
+
 			}
 
 			TVector3 hitVector[maxScinHits];
@@ -330,26 +400,46 @@ int main(int argc, char** argv) {
 				  hit_z[hit] = hitVector[hit].Z();
 			}
 
-			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , runNum,
-					1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
-						FADC_LROFF_S6291,	TDC_LROFF_S6291,
-						FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
-						FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			if( MC_DATA_OPT == 0 ){
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno );
+			}
+			else{
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno,
+						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+							FADC_LROFF_S6291,	TDC_LROFF_S6291,
+							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			}
 
-			//if( loadshifts_opt ){
-				for( int n = 0 ; n < nMult ; n++ ){
-						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS[(int)nHit[n].getBarID()] );
-						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS[(int)nHit[n].getBarID()]  );
+			if( loadshifts_opt && MC_DATA_OPT !=0){
+				//Load of shifts depending on run number
+				if (Runno >= 11286 && Runno < 11304)	{
+					//LER corrections
+					for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_LER[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_LER[(int)nHit[n].getBarID()]  );
+					}
 				}
-			//}
-
+				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+					for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()]  );
+					}
+				}
+			}
 
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
 				new(saveHit[n]) bandhit;
 				saveHit[n] = &nHit[n];
+			}
+			if( MC_DATA_OPT == 0){
+			// Store the mc particles in TClonesArray
+				for( int n = 0 ; n < maxGens ; n++ ){
+					new(saveMC[n]) genpart;
+					saveMC[n] = &mcPart[n];
+				}
 			}
 
 			if (nMult == 1) {
