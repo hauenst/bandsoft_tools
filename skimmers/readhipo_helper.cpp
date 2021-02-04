@@ -36,7 +36,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		// only for simulation for a quick test - TO BE REMOVED
 		double shifts[5] = {-1,-0.5,-1,-2,-2};
 		TVector3 shiftedDL;
-		shiftedDL.SetMagThetaPhi( hits[hit].getDL().Mag() + shifts[hits[hit].getLayer()] , hits[hit].getDL().Theta() , hits[hit].getDL().Phi() );
+		shiftedDL.SetMagThetaPhi( hits[hit].getDL().Mag() + shifts[hits[hit].getLayer()-1] , hits[hit].getDL().Theta() , hits[hit].getDL().Phi() );
 		hits[hit].setDL(	shiftedDL	);
 
 
