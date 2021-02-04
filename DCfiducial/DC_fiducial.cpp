@@ -161,16 +161,55 @@ DCFiducial::~DCFiducial() {
    }
 }
 
+//Define the function for min, max limits
+//========In-dending function=============//
+
+TF1 *DCFiducial::get_fmin_in(int sector, int layer) const{
+  if(sector > 0 && sector <7 && layer > 0 && layer <4){ 
+    return fmin_S_L_in[sector-1][layer-1];}
+  else
+    { std::cerr << "Min_in function: sector and layer information are not right: " << sector << " " << layer << std::endl;
+      return 0;}  
+}
+
+TF1 *DCFiducial::get_fmax_in(int sector, int layer) const{
+  if(sector > 0 && sector <7 && layer > 0 && layer <4){ 
+    return fmax_S_L_in[sector-1][layer-1];}
+  else
+    { std::cerr << "Max_in function: sector and layer information are not right: "<< sector << " " << layer << std::endl;
+      return 0;}  
+}
+
+//======out-bending function ===========//
+TF1 *DCFiducial::get_fmin_out(int sector, int layer) const{
+  if(sector > 0 && sector <7 && layer > 0 && layer <4){ 
+    return fmin_S_L_out[sector-1][layer-1];}
+  else
+    { std::cerr << "Min_out function: sector and layer information are not right: " << sector << " " << layer << std::endl;
+      return 0;}  
+}
+
+TF1 *DCFiducial::get_fmax_out(int sector, int layer) const{
+  if(sector > 0 && sector <7 && layer > 0 && layer <4){ 
+    return fmax_S_L_out[sector-1][layer-1];}
+  else
+    { std::cerr << "Max_out function: sector and layer information are not right: "<< sector << " " << layer << std::endl;
+      return 0;}  
+}
+
 //===Define a function to do roration from TCS ->SCS
 
 TVector3 DCFiducial::rotate(double x, double y, int sector) const{
 
     TVector3 vec;
     vec.SetXYZ(x, y, 0);
-  
-    double rot_ang = -(sector -1)*60 *TMath::DegToRad();
+    if(sector > 0 && sector <7)
+      {
+	double rot_ang = -(sector -1)*60 *TMath::DegToRad();
 
-    vec.RotateZ(rot_ang);
+        vec.RotateZ(rot_ang);}
+    else
+      {std::cerr << "Sector ID is wrong: "<< sector<< std::endl;}
 
     return vec;
 

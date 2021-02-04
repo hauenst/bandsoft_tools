@@ -14,12 +14,11 @@ class bandhit : public TObject {
 		void Clear();
 		
 		// Some custom get functions
-		TVector3 getDL		(void)		{return TVector3(X,Y,Z)	;}
-		double getBeta		(void)		{return TVector3(X,Y,Z).Mag() / Tof / cAir; }
+		double getBeta		(void)		{return DL.Mag() / Tof / cAir; }
 		TVector3 getMomentumN	(void){
-			double beta = TVector3(X,Y,Z).Mag() / Tof / cAir;
+			double beta = DL.Mag() / Tof / cAir;
 			double mom = mN / sqrt(1./pow(beta,2) - 1.);
-			TVector3 momN; momN.SetMagThetaPhi(mom,TVector3(X,Y,Z).Theta(),TVector3(X,Y,Z).Phi() );
+			TVector3 momN; momN.SetMagThetaPhi(mom,DL.Theta(),DL.Phi() );
 			return momN;
 		}
 
@@ -39,6 +38,7 @@ class bandhit : public TObject {
 		void setY		(double iY		)		{Y		= iY		; return;}
 		void setZ		(double iZ		)		{Z		= iZ		; return;}
 		void setStatus		(double iStatus		)		{Status		= iStatus	; return;}
+		void setDL		(TVector3 iDL		)		{DL		= iDL		; return;}
                                                                                                                   
 		void setRawLtdc		(double iRawLtdc	)		{RawLtdc	= iRawLtdc	; return;}
 		void setRawRtdc		(double iRawRtdc	)		{RawRtdc	= iRawRtdc	; return;}
@@ -77,6 +77,7 @@ class bandhit : public TObject {
 		double	getY		(void)		{return Y		;}
 		double	getZ		(void)		{return Z		;}
 		double	getStatus	(void)		{return Status		;}
+		TVector3 getDL		(void)		{return DL		;}
                                                                              
 		double 	getRawLtdc	(void)		{return	RawLtdc		;}	
 		double 	getRawRtdc	(void)		{return	RawRtdc		;}	
@@ -100,7 +101,7 @@ class bandhit : public TObject {
 		double 	getPmtLped	(void)		{return	PmtLped		;}
 		double 	getPmtRped	(void)		{return PmtRped		;}
 
-		ClassDef(bandhit,6);
+		ClassDef(bandhit,7);
 	private:
 		int	Sector		;
 		int 	Layer		;
@@ -116,6 +117,7 @@ class bandhit : public TObject {
 		double 	Y		;
 		double 	Z		;
 		int	Status		;
+		TVector3 DL		;
 
 		double 	RawLtdc		;
 		double 	RawRtdc		;
