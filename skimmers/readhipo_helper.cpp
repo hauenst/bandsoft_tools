@@ -32,6 +32,12 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setY			(band_hits.getY			(hit)			);
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
+		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
+		// only for simulation for a quick test - TO BE REMOVED
+		double shifts[5] = {-1,-0.5,-1,-2,-2};
+		TVector3 shiftedDL;
+		shiftedDL.SetMagThetaPhi( hits[hit].getDL().Mag() + shifts[hits[hit].getLayer()] , hits[hit].getDL().Theta() , hits[hit].getDL().Phi() );
+		hits[hit].setDL(	shiftedDL	);
 
 
 		// Using the band hit struct, get the raw hit PMT information to use later

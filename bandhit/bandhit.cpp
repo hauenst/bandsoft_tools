@@ -20,6 +20,7 @@ void bandhit::Clear(){
 	Y		= 0;
 	Z		= 0;
 	Status		= 0;
+	DL		.Clear();
 		
 	RawLtdc		= 0;
 	RawRtdc		= 0;
