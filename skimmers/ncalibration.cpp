@@ -82,23 +82,51 @@ int main(int argc, char** argv) {
 
 	shiftsReader shifts;
 	double * FADC_INITBAR;
-	double * FADC_INITRUN;
+	double * TDC_INITBAR;
 	if( loadshifts_opt ){
 		// Load bar shifts
-		shifts.LoadInitBarFadc("../include/FADC_pass1v0_initbar.txt");
+		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
 		FADC_INITBAR = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+		TDC_INITBAR = (double*) shifts.getInitBar();
 		// Load run-by-run shifts
-		shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		FADC_INITRUN = (double*) shifts.getInitRunFadc();
+		// 	for 10.2 these are not needed
+		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
+		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
+	// Effective velocity for re-doing x- calculation
+	double * FADC_EFFVEL_S6200;
+	double *  TDC_EFFVEL_S6200;
+	double * FADC_EFFVEL_S6291;
+	double *  TDC_EFFVEL_S6291;
+	double *  FADC_LROFF_S6200;
+	double *   TDC_LROFF_S6200;
+	double *  FADC_LROFF_S6291;
+	double *   TDC_LROFF_S6291;
+	shifts.LoadEffVel	("../include/EffVelocities_S6200.txt",	"../include/EffVelocities_S6291.txt");
+	shifts.LoadLrOff	("../include/LrOffsets_S6200.txt",	"../include/LrOffsets_S6291.txt");
+	FADC_EFFVEL_S6200	= (double*) shifts.getFadcEffVel(6200);
+	TDC_EFFVEL_S6200	= (double*)  shifts.getTdcEffVel(6200);
+	FADC_EFFVEL_S6291	= (double*) shifts.getFadcEffVel(6291);
+	TDC_EFFVEL_S6291	= (double*)  shifts.getTdcEffVel(6291);
+
+	FADC_LROFF_S6200	= (double*) shifts.getFadcLrOff(6200);
+	TDC_LROFF_S6200		= (double*)  shifts.getTdcLrOff(6200);
+	FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
+	TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
-		if( MC_DATA_OPT == 1){
+		if( MC_DATA_OPT == 0){
+			int runNum = 11;
+			Runno = runNum;
+		}
+		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
 			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
+			Ebeam = 4.244;
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 		}
 		else{
@@ -190,15 +218,15 @@ int main(int argc, char** argv) {
 				if( EoP < 0.17 || EoP > 0.3 	) continue;
 				if( Epcal < 0.07		) continue;
 				if( vertex.Z() < -8 || vertex.Z() > 3 )	continue;
-				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
+				if( momentum.Mag() < 1.3 || momentum.Mag() > Ebeam)	continue;
 				double lV=	calorimeter.getLV(part);
 				double lW=	calorimeter.getLW(part);
 				if( lV < 15 || lW < 15		) continue;
 				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
 				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
 				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
-				if( Q2 < 2 || Q2 > 10			) continue;
-				if( W2 < 2*2				) continue;
+				//if( Q2 < 2 || Q2 > 10			) continue;
+				//if( W2 < 2*2				) continue;
 
 				nElectrons++;
 			}
@@ -220,16 +248,25 @@ int main(int argc, char** argv) {
 			if( eHit.getEpcal() < 0.07					) continue;
 			if( eHit.getV() < 15 || eHit.getW() < 15			) continue;
 			if( eHit.getVtz() < -8 || eHit.getVtz() > 3			) continue;
-			if( eHit.getMomentum() < 3 || eHit.getMomentum() > 10.6		) continue;
-			if( eHit.getQ2() < 2 || eHit.getQ2() > 10			) continue;
-			if( eHit.getW2() < 2*2						) continue;
+			if( eHit.getMomentum() < 1.3 || eHit.getMomentum() > 10.6		) continue;
+			//if( eHit.getQ2() < 2 || eHit.getQ2() > 10			) continue;
+			//if( eHit.getW2() < 2*2						) continue;
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
+			if( MC_DATA_OPT == 0 ){
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno );
+			}
+			else{
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, 
+						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+							FADC_LROFF_S6291,	TDC_LROFF_S6291,
+							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			}
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() - FADC_INITBAR[(int)nHit[n].getBarID()] - FADC_INITRUN[Runno] );
-					//nHit[n].setTof(	nHit[n].getTof() - TDC_INITBAR[(int)nHit[n].getBarID()] - TDC_INITRUN[Runno] );
+					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
+					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
 				}
 			}
 
@@ -252,7 +289,10 @@ int main(int argc, char** argv) {
 			// Fill tree based on d(e,e'n)X for data
 			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
-			} 
+			} // else fill tree on d(e,e')nX for MC
+			else if( MC_DATA_OPT == 0 ){
+				outTree->Fill();
+			}
 
 
 
