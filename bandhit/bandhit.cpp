@@ -16,9 +16,11 @@ void bandhit::Clear(){
 	Tdiff		= 0;
 	TdiffFadc	= 0;
 	X		= 0;
+	XFadc		= 0;
 	Y		= 0;
 	Z		= 0;
 	Status		= 0;
+	DL		.Clear();
 		
 	RawLtdc		= 0;
 	RawRtdc		= 0;

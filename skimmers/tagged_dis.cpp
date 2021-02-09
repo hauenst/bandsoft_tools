@@ -108,6 +108,26 @@ int main(int argc, char** argv) {
 		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
 		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
+	// Effective velocity for re-doing x- calculation
+	double * FADC_EFFVEL_S6200;
+	double *  TDC_EFFVEL_S6200;
+	double * FADC_EFFVEL_S6291;
+	double *  TDC_EFFVEL_S6291;
+	double *  FADC_LROFF_S6200;
+	double *   TDC_LROFF_S6200;
+	double *  FADC_LROFF_S6291;
+	double *   TDC_LROFF_S6291;
+	shifts.LoadEffVel	("../include/EffVelocities_S6200.txt",	"../include/EffVelocities_S6291.txt");
+	shifts.LoadLrOff	("../include/LrOffsets_S6200.txt",	"../include/LrOffsets_S6291.txt");
+	FADC_EFFVEL_S6200	= (double*) shifts.getFadcEffVel(6200);
+	TDC_EFFVEL_S6200	= (double*)  shifts.getTdcEffVel(6200);
+	FADC_EFFVEL_S6291	= (double*) shifts.getFadcEffVel(6291);
+	TDC_EFFVEL_S6291	= (double*)  shifts.getTdcEffVel(6291);
+
+	FADC_LROFF_S6200	= (double*) shifts.getFadcLrOff(6200);
+	TDC_LROFF_S6200		= (double*)  shifts.getTdcLrOff(6200);
+	FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
+	TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -178,6 +198,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
+			//if( event_counter > 100000 ) break;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -209,7 +230,17 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
+			// 											do the hotfix for x-position
+			if( MC_DATA_OPT == 0 ){
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno );
+			}
+			else{
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, 
+						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+							FADC_LROFF_S6291,	TDC_LROFF_S6291,
+							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			}
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
 					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );

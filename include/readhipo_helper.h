@@ -23,9 +23,8 @@ const int maxNeutrons	= 200;
 const int maxGens	= 10;
 const int maxParticles	= 100;
 const int maxScinHits = 100;
-const double thresBANDhit = 5.;
 const double time_thresBANDhit = 300;
-const double adctoMeVee_data = 2300; //conversion for data
+const double adctoMeVee_data = 1100; //conversion for data
 const double adctoMeVee_sim = 1E4;//conversion for simulation
 const double VERTEX_OFFSET = -3; // [cm]
 
@@ -35,15 +34,32 @@ class shiftsReader {
 		void LoadInitBarFadc( string filename );
 		void LoadInitRun( string filename );
 		void LoadInitRunFadc( string filename );
+		void LoadEffVel( string filename_S6200 , string filename_S6291 );
+		void LoadLrOff( string filename_S6200 , string filename_S6291 );
 		double * getInitBar(void);
 		double * getInitBarFadc(void);
 		double * getInitRun(void);
 		double * getInitRunFadc(void);
+
+		double * getFadcEffVel	(int Runno);
+		double * getTdcEffVel	(int Runno);
+		double * getFadcLrOff	(int Runno);
+		double * getTdcLrOff	(int Runno);
 	private:
-		double InitBar[600] = {0.};
-		double InitBarFadc[600] = {0.};
+		double InitBar[670] = {0.};
+		double InitBarFadc[670] = {0.};
 		double InitRun[100000] = {0.};
 		double InitRunFadc[100000] = {0.};
+		// Spring 2019 6200-6291 GeV/c constants
+		double S6200FadcEffVel		[670] = {0.};
+		double S6200TdcEffVel		[670] = {0.};
+		double S6200TdcLrOffsets	[670] = {0.};
+		double S6200FadcLrOffsets	[670] = {0.};
+		// Spring 2019 6291-INF constants 
+		double S6291FadcEffVel		[670] = {0.};
+		double S6291TdcEffVel		[670] = {0.};
+		double S6291TdcLrOffsets	[670] = {0.};
+		double S6291FadcLrOffsets	[670] = {0.};
 };
 
 
@@ -51,7 +67,10 @@ int getRunNumber( string filename );
 void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime );
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun);
+			double starttime , int thisRun, int hotfix=0, double* s6200_fadc_lroffset=NULL , double* s6200_tdc_lroffset=NULL,
+			double* s6291_fadc_lroffset=NULL,	double* s6291_tdc_lroffset=NULL,
+			double* s6200_fadc_effvel=NULL,	double* s6200_tdc_effvel=NULL,
+	       		double* s6291_fadc_effvel=NULL,	double* s6291_tdc_effvel=NULL	);
 void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam );
