@@ -147,9 +147,9 @@ int main(int argc, char** argv) {
 	shiftsReader shifts;
 	double * FADC_BARSHIFTS;
 	double * TDC_BARSHIFTS;
-	shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
+	shifts.LoadInitBarFadc("../include/LER_FADC_shifts_02092021.txt");
 	FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
-	shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
+	shifts.LoadInitBar("../include/LER_TDC_shifts_02092021.txt");
 	TDC_BARSHIFTS = (double*) shifts.getInitBar();
 	// Load bar shifts
 	//shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
