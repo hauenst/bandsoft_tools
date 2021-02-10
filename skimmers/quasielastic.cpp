@@ -215,6 +215,7 @@ int main(int argc, char** argv) {
 			int runNum = 11;
 			Runno = runNum;
 			//Ebeam is calculated later via MC readin
+			Ebeam = 4.247; //QE MC value for beam energy at the moment 02/08/21
 		}
 		else if( MC_DATA_OPT == 1){ //Data
 			// Using run number of current file, grab the beam energy from RCDB
@@ -224,7 +225,8 @@ int main(int argc, char** argv) {
 			Ebeam = cnd->ToDouble() / 1000.;// [GeV] -- conversion factor
 			if (runNum >= 11286 && runNum < 11304)
 			{
-				Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+				//Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
 			}
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 		}
@@ -313,7 +315,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			//if( event_counter > 100 ) continue;
+			if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
