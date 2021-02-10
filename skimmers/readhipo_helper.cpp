@@ -243,6 +243,10 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 	weight 	= gen_info.getFloat(9,0);
 	// Grab the beam energy for this generated file:
 	Ebeam 	= gen_info.getFloat(6,0);
+	//ugly temporary fix for the MC beam energy for the QE simulations
+	if (Ebeam > 4 && Ebeam < 4.5) {
+		Ebeam = 4.247;
+	}
 
 	// Loop over all generated particles and find the electron to put that one first
 	for( int hit = 0 ; hit < gen_particles.getRows() ; hit++ ){
