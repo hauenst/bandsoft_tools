@@ -206,12 +206,17 @@ int getRunNumber( string filename ){
                 parsed = filename.substr( filename.find("inc_") );
                 moreparse = parsed.substr(4,6);
         }
-
         else if (filename.find("band_") <= filename.length() )
         {
                 cout << "Parsed file and found position for string band_ at " << filename.find("band_") << endl;
                 parsed = filename.substr( filename.find("band_") );
                 moreparse = parsed.substr(5,6);
+        }
+        else if (filename.find("rec_clas_") <= filename.length() )
+        {
+                cout << "Parsed file and found position for string rec_clas_ at " << filename.find("rec_clas_") << endl;
+                parsed = filename.substr( filename.find("rec_clas_") );
+                moreparse = parsed.substr(9,6);
         }
         else {
                 cout << "Could not parse runnumber from inputfile. Return 0 runnumber " << endl;
