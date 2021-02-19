@@ -586,7 +586,7 @@ void getBANDBarGeometry(string filename, std::map<int,double> &bar_y, std::map<i
 		f >> y; //units are in cm
 		f >> z; //units are in cm
 		bar_y.insert(std::pair<int,double>(barId,y));
-		bar_z.insert(std::pair<int,double>(barId,y));
+		bar_z.insert(std::pair<int,double>(barId,z));
 	}
 	f.close();
 }
