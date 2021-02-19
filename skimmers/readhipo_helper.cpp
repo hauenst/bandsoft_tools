@@ -3,10 +3,10 @@
 
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
+			double starttime , int thisRun, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
 			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
 			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
-	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel	){
+	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel 	){
 
 	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
 	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
@@ -23,14 +23,27 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		hits[hit].setTdiff		(band_hits.getDifftimeTdc	(hit)			);
 		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
 		hits[hit].setX			(band_hits.getX			(hit)			);
+
+		//Standard calculation of y and z if maps for bars are empty
 		hits[hit].setY			(band_hits.getY			(hit)			);
 		// Fix for the Y position for layer 5:
 		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
 			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
 		}
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
+
+		//If maps for bar geometry are not empty, use it for y and z
+		if ( !bar_y.empty() ) {
+				hits[hit].setY			( bar_y[band_hits.getBarKey		(hit)	]		);
+		}
+		if ( !bar_z.empty() ) {
+		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 - VERTEX_OFFSET	);
+		}
+
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
 		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
+
+
 		// only for simulation for a quick test - TO BE REMOVED
 		//double shifts[5] = {-1,-0.5,-1,-2,-2};
 		//TVector3 shiftedDL;
@@ -560,6 +573,23 @@ void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 mo
 	}
 }
 
+void getBANDBarGeometry(string filename, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
+	ifstream f;
+	int sector, layer, component, barId;
+	double y, z;
+	f.open(filename);
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		barId = 100*sector + 10*layer + component;
+		f >> y; //units are in cm
+		f >> z; //units are in cm
+		bar_y.insert(std::pair<int,double>(barId,y));
+		bar_z.insert(std::pair<int,double>(barId,y));
+	}
+	f.close();
+}
 
 void shiftsReader::LoadInitBar( string filename ){
 	ifstream f;
