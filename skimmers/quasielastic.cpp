@@ -320,7 +320,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			if( event_counter > 100 ) continue;
+		//	if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
