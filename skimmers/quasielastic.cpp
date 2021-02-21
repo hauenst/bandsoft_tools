@@ -275,6 +275,7 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
 			nleadindex = -1;

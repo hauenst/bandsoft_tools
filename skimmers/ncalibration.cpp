@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	int eventnumber = 0;
 	bool goodneutron 	= false;
 	int nleadindex 		= -1;
 	// 	Neutron info:
@@ -68,6 +69,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("eventnumber",&eventnumber);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
@@ -149,6 +151,7 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank  run_config (factory.getSchema("RUN::config"));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
@@ -164,6 +167,7 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
+		eventnumber = 0;
 		int n_one = 0;
 		int n_two = 0;
 		int n_thr = 0;
@@ -191,6 +195,7 @@ int main(int argc, char** argv) {
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			// band struct
 			readevent.getStructure(band_hits);
 			readevent.getStructure(band_rawhits);
@@ -202,6 +207,9 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+
+			//Get Event number from RUN::config
+			eventnumber = run_config.getInt( 1 , 0 );
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
@@ -263,7 +271,7 @@ int main(int argc, char** argv) {
 				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z );
 			}
 			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z, 
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z,
 						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
 							FADC_LROFF_S6291,	TDC_LROFF_S6291,
 							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,

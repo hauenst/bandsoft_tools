@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	int eventnumber = 0;
 	bool goodneutron = false;
 	int nleadindex = -1;
 	double weight		= 0;
@@ -76,6 +77,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("eventnumber",&eventnumber);
 	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
@@ -162,6 +164,7 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank  run_config (factory.getSchema("RUN::config"));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
@@ -184,6 +187,7 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
 			nleadindex = -1;
@@ -211,6 +215,7 @@ int main(int argc, char** argv) {
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			// band struct
 			readevent.getStructure(band_hits);
 			readevent.getStructure(band_rawhits);
@@ -225,6 +230,11 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
+
+
+			//Get Event number from RUN::config
+			eventnumber = run_config.getInt( 1 , 0 );
+
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0){
