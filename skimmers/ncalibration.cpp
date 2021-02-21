@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
-		eventnumber = 0;
+
 		int n_one = 0;
 		int n_two = 0;
 		int n_thr = 0;
@@ -177,6 +177,7 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
 			nleadindex = -1;
