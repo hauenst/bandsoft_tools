@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	int eventnumber = 0;
 	bool goodneutron = false;
 	int nleadindex = -1;
 	double weight		= 0;
@@ -68,6 +69,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("eventnumber",&eventnumber);
 	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
@@ -97,6 +99,12 @@ int main(int argc, char** argv) {
 		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
 	}
 
+	//Maps for geometry positions
+	std::map<int,double> bar_pos_y;
+	std::map<int,double> bar_pos_z;
+	//Load geometry position of bars
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
 		if( MC_DATA_OPT == 0){
@@ -124,6 +132,7 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank  run_config (factory.getSchema("RUN::config"));
 		hipo::event 	readevent;
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
@@ -140,6 +149,7 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
 			nleadindex = -1;
@@ -160,6 +170,7 @@ int main(int argc, char** argv) {
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			// band struct
 			readevent.getStructure(band_hits);
 			readevent.getStructure(band_rawhits);
@@ -168,6 +179,9 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
+
+			//Get Event number from RUN::config
+			eventnumber = run_config.getInt( 1 , 0 );
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0){
@@ -179,7 +193,7 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno);
+			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
 					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
