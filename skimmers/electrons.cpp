@@ -152,6 +152,7 @@ int main(int argc, char** argv) {
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
 			// electron struct
