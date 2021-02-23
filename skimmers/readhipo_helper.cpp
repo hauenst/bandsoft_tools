@@ -38,37 +38,76 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		//hits[hit].setDL(	shiftedDL	);
 
 
-		// Using the band hit struct, get the raw hit PMT information to use later
-		int rawhit_idxL = band_hits.getLpmtindex(hit);
-		int rawhit_idxR = band_hits.getRpmtindex(hit);
-		// 	Get the raw hit information corresponding to the band hit above
-		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
-        	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
-        	hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
-        	hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
-        	hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
-        	hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
-        	hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
+		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
+		if( hits[hit].getLayer() == 6 ){
+			int rawhit_idx = -1;
+			if( hits[hit].getSector() == 4 ) rawhit_idx = band_hits.getRpmtindex(hit);
+			else{ rawhit_idx = band_hits.getLpmtindex(hit); }
 
-		// Using the rawhit struct, get the raw PMT information to use later
-		int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
-		int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
-		int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
-		int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
-		//	Get the raw pmt information corresponding to the band hit above
-		hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
-		hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
-		hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
-		hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
-		hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
-		hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
-		hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
-		hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
-		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
-		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
+			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
+			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
+			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
+			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
+			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
+
+			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
+			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
+			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
+			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
+			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
+
+			hits[hit].setEdep		(hits[hit].getRawLadc()					);
+
+			// Using the rawhit struct, get the raw PMT information to use later
+			int pmtTdc	= band_rawhits.getInt( 10 , rawhit_idx );
+			int pmtAdc	= band_rawhits.getInt( 11 , rawhit_idx );
+			//	Get the raw pmt information corresponding to the band hit above
+			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
+			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
+			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
+			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
+			hits[hit].setPmtLamp		(band_adc.getInt( 5 	, pmtAdc )		);
+			hits[hit].setPmtRamp		(band_adc.getInt( 5 	, pmtAdc )		);
+			hits[hit].setPmtLadc		(band_adc.getInt( 4 	, pmtAdc )		);
+			hits[hit].setPmtRadc		(band_adc.getInt( 4 	, pmtAdc )		);
+			hits[hit].setPmtLped		(band_adc.getInt( 7 	, pmtAdc )		);
+			hits[hit].setPmtRped		(band_adc.getInt( 7 	, pmtAdc )		);
+
+			
+		}
+		else{
+			// Using the band hit struct, get the raw hit PMT information to use later
+			int rawhit_idxL = band_hits.getLpmtindex(hit);
+			int rawhit_idxR = band_hits.getRpmtindex(hit);
+			// 	Get the raw hit information corresponding to the band hit above
+			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
+			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
+			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
+			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
+			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
+			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
+			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
+			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
+			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
+			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
+
+			// Using the rawhit struct, get the raw PMT information to use later
+			int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
+			int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
+			int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
+			int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
+			//	Get the raw pmt information corresponding to the band hit above
+			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
+			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
+			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
+			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
+			hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
+			hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
+			hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
+			hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
+			hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
+			hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
+		}
 
 		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs
 		int id 			= band_hits.getBarKey(hit);
