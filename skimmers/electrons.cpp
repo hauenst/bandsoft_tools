@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
 	double livetime		= 0;
 	double starttime	= 0;
 	double current		= 0;
+	int eventnumber = 0;
 	double weight		= 0;
 	//	MC info:
 	int genMult		= 0;
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
+	outTree->Branch("eventnumber",&eventnumber);
 	outTree->Branch("weight"	,&weight		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
@@ -103,11 +105,12 @@ int main(int argc, char** argv) {
 		TString inputFile = argv[i];
 		hipo::reader reader;
 		reader.open(inputFile);
-		hipo::dictionary  factory;      
+		hipo::dictionary  factory;
 		hipo::schema	  schema;
-		reader.readDictionary(factory); 
+		reader.readDictionary(factory);
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
+		hipo::bank  run_config (factory.getSchema("RUN::config"));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
@@ -116,7 +119,7 @@ int main(int argc, char** argv) {
 		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
-		
+
 		// Loop over all events in file
 		int event_counter = 0;
 		gated_charge = 0;
@@ -133,6 +136,7 @@ int main(int argc, char** argv) {
 			livetime	= 0;
 			starttime 	= 0;
 			weight		= 1;
+			eventnumber = 0;
 			eHit.Clear();
 			// MC
 			genMult 	= 0;
@@ -148,6 +152,7 @@ int main(int argc, char** argv) {
 			reader.read(readevent);
 			readevent.getStructure(event_info);
 			readevent.getStructure(scaler);
+			readevent.getStructure(run_config);
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
 			// electron struct
@@ -156,8 +161,11 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
-	
-			// For simulated events, get the weight for the event		
+
+			//Get Event number from RUN::config
+			eventnumber = run_config.getInt( 1 , 0 );
+
+			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0){
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
@@ -203,13 +211,10 @@ int main(int argc, char** argv) {
 
 		} // end loop over events
 	}// end loop over files
-	
+
 	outFile->cd();
 	outTree->Write();
 	outFile->Close();
 
 	return 0;
 }
-
-
-

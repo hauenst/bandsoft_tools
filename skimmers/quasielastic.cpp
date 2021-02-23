@@ -208,6 +208,11 @@ int main(int argc, char** argv) {
 		FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
 		TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
+	//Maps for geometry positions
+	std::map<int,double> bar_pos_y;
+	std::map<int,double> bar_pos_z;
+	//Load geometry position of bars
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -215,6 +220,7 @@ int main(int argc, char** argv) {
 			int runNum = 11;
 			Runno = runNum;
 			//Ebeam is calculated later via MC readin
+			Ebeam = 4.247; //QE MC value for beam energy at the moment 02/08/21
 		}
 		else if( MC_DATA_OPT == 1){ //Data
 			// Using run number of current file, grab the beam energy from RCDB
@@ -224,7 +230,8 @@ int main(int argc, char** argv) {
 			Ebeam = cnd->ToDouble() / 1000.;// [GeV] -- conversion factor
 			if (runNum >= 11286 && runNum < 11304)
 			{
-				Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+				//Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
 			}
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 		}
@@ -268,6 +275,7 @@ int main(int argc, char** argv) {
 			gated_charge	= 0;
 			livetime	= 0;
 			starttime 	= 0;
+			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
 			nleadindex = -1;
@@ -313,7 +321,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			//if( event_counter > 100 ) continue;
+		//	if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -401,10 +409,10 @@ int main(int argc, char** argv) {
 			}
 
 			if( MC_DATA_OPT == 0 ){
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno );
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z);
 			}
 			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno,
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z,
 						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
 							FADC_LROFF_S6291,	TDC_LROFF_S6291,
 							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
