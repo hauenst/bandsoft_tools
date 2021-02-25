@@ -11,7 +11,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 add_executable(neutrons neutrons.cpp readhipo_helper.cpp )
 target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial
+				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS neutrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -22,7 +22,7 @@ install( TARGETS neutrons
 add_executable(electrons electrons.cpp readhipo_helper.cpp )
 target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial
+				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS electrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -33,7 +33,7 @@ install( TARGETS electrons
 add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp )
 target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial
+				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS tagged_dis
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -44,7 +44,7 @@ install( TARGETS tagged_dis
 add_executable(ncalibration ncalibration.cpp readhipo_helper.cpp )
 target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4  
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial
+				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS ncalibration
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -55,7 +55,7 @@ install( TARGETS ncalibration
 add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
 target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial
+				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS quasielastic
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
