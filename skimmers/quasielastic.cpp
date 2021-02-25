@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 	int nleadindex = -1;
 	int eventnumber = 0;
 
+
 	// 	Neutron info:
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
@@ -118,6 +119,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
 	outTree->Branch("eventnumber",&eventnumber);
+	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
