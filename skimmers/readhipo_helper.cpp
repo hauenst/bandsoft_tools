@@ -40,8 +40,6 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 - VERTEX_OFFSET	);
 		}
 
-		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
-		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
 
 
 		// only for simulation for a quick test - TO BE REMOVED
@@ -159,6 +157,10 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			//cout << "new tdc diff:\t" << new_tdiff_tdc << "\n";
 			//cout << "new tdc xpos:\t" << new_x_tdc << "\n";
 		}
+
+		// After all corrections to positions, set the pathlength and status:
+		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
+		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
 		// Save how many neutron hits we have
 		mult++;
 	}
