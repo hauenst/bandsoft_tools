@@ -1,15 +1,8 @@
-#include <cstdlib>
 #include <iostream>
-#include <fstream>
-#include <cmath>
-#include <string>
-#include <vector>
 
 #include "TFile.h"
 #include "TTree.h"
 #include "TVector3.h"
-#include "TH2.h"
-#include "TH1.h"
 #include "TClonesArray.h"
 
 #include "reader.h"
@@ -25,6 +18,7 @@
 
 #include "constants.h"
 #include "readhipo_helper.h"
+#include "e_pid.h"
 
 using namespace std;
 
@@ -122,6 +116,9 @@ int main(int argc, char** argv) {
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
 	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+	
+	// Load the electron PID class:
+	e_pid ePID;
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -134,12 +131,12 @@ int main(int argc, char** argv) {
 			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
-			Ebeam = 4.244;
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
 		}
 		else{
 			exit(-1);
 		}
+  		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
@@ -165,13 +162,8 @@ int main(int argc, char** argv) {
 
 		// Loop over all events in file
 		int event_counter = 0;
-		gated_charge = 0;
+		gated_charge 	= 0;
 		livetime	= 0;
-
-		int n_one = 0;
-		int n_two = 0;
-		int n_thr = 0;
-		int n_mor = 0;
 		while(reader.next()==true){
 			// Clear all branches
 			gated_charge	= 0;
@@ -190,6 +182,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
+			//if( event_counter > 1000000 ) break;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -218,54 +211,40 @@ int main(int argc, char** argv) {
 
 			// Skim the event so we only have a single electron and NO other particles:
 			int nElectrons = 0;
-			int nOthers = 0;
 			for( int part = 0 ; part < particles.getRows() ; part++ ){
 				int PID 	= particles.getPid(part);
 				int charge 	= particles.getCharge(part);
-				if( PID != 11 ) continue;
-				if( charge !=-1 ) continue;
+				if( PID != 11 ) 					continue;
+				if( charge !=-1 ) 					continue;
 				TVector3	momentum = particles.getV3P(part);
 				TVector3	vertex	 = particles.getV3v(part);
 				TVector3 	beamVec(0,0,Ebeam);
 				TVector3	qVec; qVec = beamVec - momentum;
 				double EoP=	calorimeter.getTotE(part) /  momentum.Mag();
 				double Epcal=	calorimeter.getPcalE(part);
-				if( EoP < 0.17 || EoP > 0.3 	) continue;
-				if( Epcal < 0.07		) continue;
-				if( vertex.Z() < -8 || vertex.Z() > 3 )	continue;
-				if( momentum.Mag() < 1.3 || momentum.Mag() > Ebeam)	continue;
+				if( EoP < 0.17 || EoP > 0.3 	) 			continue;
+				if( Epcal < 0.07		) 			continue;
+				if( vertex.Z() < -8 || vertex.Z() > 3 )			continue;
+				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
 				double lV=	calorimeter.getLV(part);
 				double lW=	calorimeter.getLW(part);
-				if( lV < 15 || lW < 15		) continue;
+				if( lV < 15 || lW < 15		) 			continue;
 				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
 				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
 				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
-				//if( Q2 < 2 || Q2 > 10			) continue;
-				//if( W2 < 2*2				) continue;
+				if( Q2 < 2 || Q2 > 10			) 		continue;
+				if( W2 < 2*2				) 		continue;
 
 				nElectrons++;
 			}
-			if( nElectrons == 1 )	n_one++;
-			if( nElectrons == 2 )	n_two++;
-			if( nElectrons == 3 )	n_thr++;
-			if( nElectrons > 3  )	n_mor++;
 			if( nElectrons != 1 ) 	continue;
 			//if( nOthers != 0 )	continue;
 
 
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
+    			if( !(ePID.isElectron(&eHit)) ) continue;
 
-			// Further skim the event so that the trigger electron passes basic fiducial requirements
-			if( eHit.getPID() != 11 					) continue;
-			if( eHit.getCharge() != -1					) continue;
-			if( eHit.getEoP() < 0.17 || eHit.getEoP() > 0.3			) continue;
-			if( eHit.getEpcal() < 0.07					) continue;
-			if( eHit.getV() < 15 || eHit.getW() < 15			) continue;
-			if( eHit.getVtz() < -8 || eHit.getVtz() > 3			) continue;
-			if( eHit.getMomentum() < 1.3 || eHit.getMomentum() > 10.6		) continue;
-			//if( eHit.getQ2() < 2 || eHit.getQ2() > 10			) continue;
-			//if( eHit.getW2() < 2*2						) continue;
 
 			// Grab the neutron information:
 			if( MC_DATA_OPT == 0 ){
