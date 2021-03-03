@@ -100,10 +100,11 @@ int main(int argc, char** argv) {
 	}
 
 	//Maps for geometry positions
+	std::map<int,double> bar_pos_x;
 	std::map<int,double> bar_pos_y;
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
-	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -193,7 +194,7 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z);
+			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
 					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );

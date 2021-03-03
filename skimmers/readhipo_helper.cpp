@@ -3,7 +3,7 @@
 
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
+			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
 			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
 			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
 	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel 	){
@@ -26,11 +26,12 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 		//Standard calculation of y and z if maps for bars are empty
 		hits[hit].setY			(band_hits.getY			(hit)			);
-		// Fix for the Y position for layer 5:
+		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
+		// Fix for the Y position for layer 5 in case not fixed by bar geometry map below:
 		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
 			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
 		}
-		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
+
 
 		//If maps for bar geometry are not empty, use it for y and z
 		if ( !bar_y.empty() ) {
@@ -50,7 +51,11 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 
 		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
+		//Also modify x position for veto if x map is not empty
 		if( hits[hit].getLayer() == 6 ){
+			if ( !bar_x.empty() ) {
+			  	hits[hit].setX			( bar_x[band_hits.getBarKey		(hit)	]	);
+			}
 			int rawhit_idx = -1;
 			if( hits[hit].getSector() == 4 ) rawhit_idx = band_hits.getRpmtindex(hit);
 			else{ rawhit_idx = band_hits.getLpmtindex(hit); }
@@ -84,7 +89,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			hits[hit].setPmtLped		(band_adc.getInt( 7 	, pmtAdc )		);
 			hits[hit].setPmtRped		(band_adc.getInt( 7 	, pmtAdc )		);
 
-			
+
 		}
 		else{
 			// Using the band hit struct, get the raw hit PMT information to use later
@@ -120,9 +125,9 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
 		}
 
-		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs
+		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs, dont do it for vetos
 		int id 			= band_hits.getBarKey(hit);
-		if( hotfix == 1 ){
+		if( hotfix == 1 && hits[hit].getLayer() != 6){
 			double old_tdiff_fadc 	= band_hits.getDifftimeFadc(hit);
 			double old_tdiff_tdc	= band_hits.getDifftimeTdc(hit);
 
@@ -619,18 +624,20 @@ void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 mo
 	}
 }
 
-void getBANDBarGeometry(string filename, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
+void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
 	ifstream f;
 	int sector, layer, component, barId;
-	double y, z;
+	double x, y, z;
 	f.open(filename);
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
 		f >> component;
 		barId = 100*sector + 10*layer + component;
+		f >> x; //units are in cm
 		f >> y; //units are in cm
 		f >> z; //units are in cm
+		bar_x.insert(std::pair<int,double>(barId,x));
 		bar_y.insert(std::pair<int,double>(barId,y));
 		bar_z.insert(std::pair<int,double>(barId,z));
 	}

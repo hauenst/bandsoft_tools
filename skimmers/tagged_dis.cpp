@@ -132,10 +132,11 @@ int main(int argc, char** argv) {
 	TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 	//Maps for geometry positions
+	std::map<int,double> bar_pos_x;	
 	std::map<int,double> bar_pos_y;
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
-	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -248,10 +249,10 @@ int main(int argc, char** argv) {
 			// Grab the neutron information:
 			// 											do the hotfix for x-position
 			if( MC_DATA_OPT == 0 ){
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z );
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z );
 			}
 			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z,
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z,
 						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
 							FADC_LROFF_S6291,	TDC_LROFF_S6291,
 							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
