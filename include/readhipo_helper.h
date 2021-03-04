@@ -28,6 +28,7 @@ const double adctoMeVee_data = 1100; //conversion for data
 const double adctoMeVee_sim = 1E4;//conversion for simulation
 const double VERTEX_OFFSET = -3; // [cm]
 
+
 class shiftsReader {
 	public:
 		void LoadInitBar( string filename );
@@ -67,7 +68,8 @@ int getRunNumber( string filename );
 void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime );
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix=0, double* s6200_fadc_lroffset=NULL , double* s6200_tdc_lroffset=NULL,
+			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z,
+			std::map<int,double> &bar_edep , int hotfix=0, double* s6200_fadc_lroffset=NULL , double* s6200_tdc_lroffset=NULL,
 			double* s6291_fadc_lroffset=NULL,	double* s6291_tdc_lroffset=NULL,
 			double* s6200_fadc_effvel=NULL,	double* s6200_tdc_effvel=NULL,
 	       		double* s6291_fadc_effvel=NULL,	double* s6291_tdc_effvel=NULL	);
@@ -84,5 +86,6 @@ void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double
 void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],
 								double time[maxParticles], double charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], double status[maxParticles] , int index[maxParticles], int& multiplicity );
 void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z);
+void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep);
 
 #endif

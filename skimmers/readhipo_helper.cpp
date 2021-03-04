@@ -3,7 +3,8 @@
 
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
+			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z,
+			std::map<int,double> &bar_edep, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
 			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
 			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
 	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel 	){
@@ -42,14 +43,6 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		}
 
 
-
-		// only for simulation for a quick test - TO BE REMOVED
-		//double shifts[5] = {-1,-0.5,-1,-2,-2};
-		//TVector3 shiftedDL;
-		//shiftedDL.SetMagThetaPhi( hits[hit].getDL().Mag() + shifts[hits[hit].getLayer()-1] , hits[hit].getDL().Theta() , hits[hit].getDL().Phi() );
-		//hits[hit].setDL(	shiftedDL	);
-
-
 		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
 		//Also modify x position for veto if x map is not empty
 		if( hits[hit].getLayer() == 6 ){
@@ -72,7 +65,8 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
 			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
 
-			hits[hit].setEdep		(hits[hit].getRawLadc()					);
+			//Use average Edep per channel for vetos (could be either RawLadc or RawRadc)
+			hits[hit].setEdep		(hits[hit].getRawLadc()	);
 
 			// Using the rawhit struct, get the raw PMT information to use later
 			int pmtTdc	= band_rawhits.getInt( 10 , rawhit_idx );
@@ -163,6 +157,15 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			//cout << "new tdc xpos:\t" << new_x_tdc << "\n";
 		}
 
+		//If Edep maps are not empty, use them to calibrate Edep in MeV for each bar
+		//For MC Edep other file is used with constants
+		if ( !bar_edep.empty() ) {
+			//Calibration values are in channel/MeV
+			//cout << "applying energycorrection before value: " << hits[hit].getEdep() << endl;
+				hits[hit].setEdep		(band_hits.getEnergy	(hit)	/ bar_edep[band_hits.getBarKey	(hit)	]		);
+			//		cout << "applying energycorrection after value: " << hits[hit].getEdep() << endl;
+		}
+
 		// After all corrections to positions, set the pathlength and status:
 		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
 		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
@@ -178,12 +181,6 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 
 	bool vetoHit = false;
 	bool accept = false;
-	double adctoMeVee = 0;
-	if (mcdataselect == 0) //MC
-		adctoMeVee = adctoMeVee_sim;
-	else  { //Data
-		adctoMeVee = adctoMeVee_data;
-	}
 
 	// Loop over all hits in BAND and get the earliest hit in time
 	// but filter out hits that have low Edep
@@ -192,10 +189,11 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 	for( int thishit = 0; thishit < nMult ; thishit++){
 		bandhit neutron = hits[thishit];
 		//if the Edep in this PMT is less than 2MeVee, do not count it
+		//Edep is assumed to be calibrated to MeV for each bar
 		//MC
-		if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2) 	continue;
+		if (mcdataselect == 0 && neutron.getEdep() < 2) 	continue;
 		//Data
-		if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
+		if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
 
 		if( neutron.getTof() < fastestTime ){
 			fastestTime = neutron.getTof();
@@ -212,13 +210,14 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 		for( int thishit = 0; thishit < nMult ; thishit++){
 			bandhit neutron = hits[thishit];
 			// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
-			if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
+			//Edep is assumed to be calibrated to MeV for each bar
+			if( neutron.getLayer() == 6 && neutron.getEdep() > 0.25 ) vetoHit = true;
 
 			//if this bar does not have > 2MeVee, do not count the hit
 			//MC
-			if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
+			if (mcdataselect == 0 && neutron.getEdep() < 2 ) continue;
 			//Data
-			if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
+			if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
 
 			double tdiff = neutron.getTof() - fastestTime;
 			if( tdiff == 0 ){
@@ -629,6 +628,10 @@ void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<i
 	int sector, layer, component, barId;
 	double x, y, z;
 	f.open(filename);
+	if (!f.is_open()) {
+		cout << "ERROR BAND Bar geometry file could not be read " << endl;
+		exit(-1);
+	}
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
@@ -641,7 +644,38 @@ void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<i
 		bar_y.insert(std::pair<int,double>(barId,y));
 		bar_z.insert(std::pair<int,double>(barId,z));
 	}
+	//140 is number of bars. Just check y (x and z should be similar)
+	if (bar_y.size() != 140) {
+		cout << "ERROR BAND Geometry y map length is not 140. Length is  " << bar_y.size() << endl;
+		exit(-1);
+	}
 	f.close();
+}
+
+void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep) {
+	ifstream f;
+	int sector, layer, component, barId;
+	double edep;
+	f.open(filename);
+	if (!f.is_open()) {
+		cout << "ERROR BAND Edep file could not be read " << endl;
+		exit(-1);
+	}
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		barId = 100*sector + 10*layer + component;
+		f >> edep; //units are in cm
+		bar_edep.insert(std::pair<int,double>(barId,edep));
+	//	cout << "BAND Edep " << sector << " " << layer << " " << component << " " << edep << endl;
+	}
+	f.close();
+	//140 is number of bars
+	if (bar_edep.size() != 140) {
+		cout << "ERROR BAND Edep map length is not 140. Length is  " << bar_edep.size() << endl;
+		exit(-1);
+	}
 }
 
 void shiftsReader::LoadInitBar( string filename ){
