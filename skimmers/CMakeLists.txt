@@ -11,7 +11,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 add_executable(neutrons neutrons.cpp readhipo_helper.cpp )
 target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				clas12fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS neutrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -22,7 +22,7 @@ install( TARGETS neutrons
 add_executable(electrons electrons.cpp readhipo_helper.cpp )
 target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				clas12fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS electrons
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -33,7 +33,7 @@ install( TARGETS electrons
 add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp )
 target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				clas12fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS tagged_dis
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -44,7 +44,7 @@ install( TARGETS tagged_dis
 add_executable(ncalibration ncalibration.cpp readhipo_helper.cpp )
 target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4  
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				clas12fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS ncalibration
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
@@ -55,11 +55,33 @@ install( TARGETS ncalibration
 add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
 target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				clas12fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS quasielastic
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 #################################################################################################
+add_executable(get_Q_Tag0 get_Q_Tag0.cpp)
+target_link_libraries(get_Q_Tag0 ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS get_Q_Tag0
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+		
+#add_executable(get_Q_Tag1 get_Q_Tag1.cpp)
+#target_link_libraries(get_Q_Tag1 ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+#install( TARGETS get_Q_Tag1
+#		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
+		
+add_executable(DC_fid_cuts DC_fid_cuts.cpp)
+target_link_libraries(DC_fid_cuts ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial DC_fiducial -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS DC_fid_cuts
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
+add_executable(DC_fid_QE DC_fid_QE.cpp)
+target_link_libraries(DC_fid_QE ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial DC_fiducial -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS DC_fid_QE
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
+
 
 #add_executable(EC_cuts EC_cuts.cpp readhipo_helper.cpp )
 #target_link_libraries(EC_cuts ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial e_pid -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
@@ -76,8 +98,5 @@ install( TARGETS quasielastic
 #install( TARGETS SF_cuts_fit
 #		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 
-#add_executable(DC_fid_test DC_fid_test.cpp)
-#target_link_libraries(DC_fid_test ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial DC_fiducial -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
-#install( TARGETS DC_fid_test
-#		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
 
