@@ -61,6 +61,12 @@ install( TARGETS quasielastic
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 #################################################################################################
 
+add_executable(get_Q_Tag0 get_Q_Tag0.cpp)
+target_link_libraries(get_Q_Tag0 ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS get_Q_Tag0
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+
+##################################################################################################
 #add_executable(EC_cuts EC_cuts.cpp readhipo_helper.cpp )
 #target_link_libraries(EC_cuts ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial e_pid -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 #install( TARGETS EC_cuts
