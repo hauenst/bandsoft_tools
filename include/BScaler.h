@@ -29,9 +29,9 @@ class BScaler : public hipo::bank {
 		~BScaler();
 
 
-		float getFCupGated (int index) { return getFloat ( FCupGated_order,index);}
-		float getFCup      (int index) { return getFloat ( FCup_order     ,index);}
-		float getLiveTime  (int index) { return getFloat ( LiveTime_order ,index);}
+		float getFCupGated (int row) { return getFloat ( FCupGated_order,row);}
+		float getFCup      (int row) { return getFloat ( FCup_order     ,row);}
+		float getLiveTime  (int row) { return getFloat ( LiveTime_order ,row);}
 };
 
 #endif

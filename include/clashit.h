@@ -11,7 +11,8 @@ class clashit : public TObject {
 
 
 		void Clear();
-		
+		void Print();
+
 		void setSector		(int	iSector		)		{Sector		= iSector	; return;}
 		void setPID		(int	iPID		)		{PID		= iPID		; return;}
 		void setCharge		(int	iCharge		)		{Charge		= iCharge	; return;}
@@ -47,27 +48,27 @@ class clashit : public TObject {
 		void setXb		(double	iXb		)		{Xb		= iXb		; return;}
 		void setW2		(double	iW2		)		{W2		= iW2		; return;}
 
-                void setDC_chi2         (double iDC_chi2      	)		{DC_chi2	= iDC_chi2	; return;}
-                void setDC_NDF		(int    iDC_NDF		)		{DC_NDF 	= iDC_NDF 	; return;}
-                void setDC_sector       (int    iDC_sector      )               {DC_sector      = iDC_sector    ; return;}
+		void setDC_chi2   (double iDC_chi2   	)		{DC_chi2	= iDC_chi2	; return;}
+		void setDC_NDF		(int    iDC_NDF			)		{DC_NDF 	= iDC_NDF 	; return;}
+		void setDC_sector (int    iDC_sector  ) 	{DC_sector      = iDC_sector    ; return;}
 
-                void setDC_x1		(double iDC_x1		)		{DC_x1   	= iDC_x1 	; return;}
-                void setDC_y1		(double iDC_y1		)		{DC_y1   	= iDC_y1   	; return;}
-                void setDC_z1		(double iDC_z1		)		{DC_z1   	= iDC_z1   	; return;}
+		void setDC_x1		(double iDC_x1		)		{DC_x1   	= iDC_x1 	; return;}
+		void setDC_y1		(double iDC_y1		)		{DC_y1   	= iDC_y1   	; return;}
+		void setDC_z1		(double iDC_z1		)		{DC_z1   	= iDC_z1   	; return;}
 
-                void setDC_x2		(double iDC_x2		)		{DC_x2   	= iDC_x2 	; return;}
-                void setDC_y2		(double iDC_y2		)		{DC_y2   	= iDC_y2   	; return;}
-                void setDC_z2		(double iDC_z2		)		{DC_z2   	= iDC_z2   	; return;}
+		void setDC_x2		(double iDC_x2		)		{DC_x2   	= iDC_x2 	; return;}
+		void setDC_y2		(double iDC_y2		)		{DC_y2   	= iDC_y2   	; return;}
+		void setDC_z2		(double iDC_z2		)		{DC_z2   	= iDC_z2   	; return;}
 
-                void setDC_x3		(double iDC_x3		)		{DC_x3   	= iDC_x3 	; return;}
-                void setDC_y3		(double iDC_y3		)		{DC_y3   	= iDC_y3   	; return;}
-                void setDC_z3		(double iDC_z3		)		{DC_z3   	= iDC_z3   	; return;}
+		void setDC_x3		(double iDC_x3		)		{DC_x3   	= iDC_x3 	; return;}
+		void setDC_y3		(double iDC_y3		)		{DC_y3   	= iDC_y3   	; return;}
+		void setDC_z3		(double iDC_z3		)		{DC_z3   	= iDC_z3   	; return;}
 
 		int	getSector	(void)		{return Sector		;}
 		int	getPID		(void)		{return PID		;}
 		int	getCharge	(void)		{return Charge		;}
 		int	getStatus	(void)		{return Status		;}
-                                                                
+
 		double	getTime		(void)		{return Time		;}
 		double	getBeta		(void)		{return Beta		;}
 		double	getChi2		(void)		{return Chi2		;}
@@ -84,42 +85,42 @@ class clashit : public TObject {
 		double	getVtx		(void)		{return Vtx		;}
 		double	getVty		(void)		{return Vty		;}
 		double	getVtz		(void)		{return Vtz		;}
-                                                                
+
 		double	getMomentum	(void)		{return Momentum	;}
 		double	getTheta	(void)		{return Theta		;}
 		double	getPhi		(void)		{return Phi		;}
-                                                               
+
 		double	getQ		(void)		{return Q		;}
 		double	getThetaQ	(void)		{return ThetaQ		;}
 		double	getPhiQ		(void)		{return PhiQ		;}
-                                                              
+
 		double	getQ2		(void)		{return Q2		;}
 		double	getOmega	(void)		{return Omega		;}
 		double	getXb		(void)		{return Xb		;}
 		double	getW2		(void)		{return W2		;}
 
 
-                double  getDC_chi2      (void)          {return DC_chi2         ;}
-                int     getDC_NDF       (void)          {return DC_NDF          ;}
-                int     getDC_sector    (void)          {return DC_sector       ;}
+		double  getDC_chi2      (void)          {return DC_chi2         ;}
+		int     getDC_NDF       (void)          {return DC_NDF          ;}
+		int     getDC_sector    (void)          {return DC_sector       ;}
 
-                double  getDC_x1        (void)          {return DC_x1           ;}
-                double  getDC_y1        (void)          {return DC_y1           ;}
-                double  getDC_z1        (void)          {return DC_z1           ;}
+		double  getDC_x1        (void)          {return DC_x1           ;}
+		double  getDC_y1        (void)          {return DC_y1           ;}
+		double  getDC_z1        (void)          {return DC_z1           ;}
 
-                double  getDC_x2        (void)          {return DC_x2           ;}
-                double  getDC_y2        (void)          {return DC_y2           ;}
-                double  getDC_z2        (void)          {return DC_z2           ;}
+		double  getDC_x2        (void)          {return DC_x2           ;}
+		double  getDC_y2        (void)          {return DC_y2           ;}
+		double  getDC_z2        (void)          {return DC_z2           ;}
 
-                double  getDC_x3        (void)          {return DC_x3           ;}
-                double  getDC_y3        (void)          {return DC_y3           ;}
-                double  getDC_z3        (void)          {return DC_z3           ;}
+		double  getDC_x3        (void)          {return DC_x3           ;}
+		double  getDC_y3        (void)          {return DC_y3           ;}
+		double  getDC_z3        (void)          {return DC_z3           ;}
 
-		  ClassDef(clashit,2);
+		ClassDef(clashit,3);
 
 	private:
 		int	Sector		;
-		int 	PID		;
+		int PID		;
 		int	Charge		;
 		int	Status		;
 
@@ -143,7 +144,7 @@ class clashit : public TObject {
 		double 	Momentum	;
 		double	Theta		;
 		double 	Phi		;
-		
+
 		double 	Q		;
 		double	ThetaQ		;
 		double 	PhiQ		;
@@ -153,21 +154,21 @@ class clashit : public TObject {
 		double	Xb		;
 		double	W2		;
 
-                double DC_chi2          ;
-                int    DC_NDF           ;
-                int    DC_sector        ;
+		double DC_chi2          ;
+		int    DC_NDF           ;
+		int    DC_sector        ;
 
-                double DC_x1            ;
-                double DC_y1            ;
-                double DC_z1            ;
+		double DC_x1            ;
+		double DC_y1            ;
+		double DC_z1            ;
 
-                double DC_x2            ;
-                double DC_y2            ;
-                double DC_z2            ;
+		double DC_x2            ;
+		double DC_y2            ;
+		double DC_z2            ;
 
-                double DC_x3            ;
-                double DC_y3            ;
-                double DC_z3            ;
+		double DC_x3            ;
+		double DC_y3            ;
+		double DC_z3            ;
 };
 
 

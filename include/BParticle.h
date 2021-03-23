@@ -37,21 +37,21 @@ class BParticle : public hipo::bank {
 
 		~BParticle();
 
-		int   getPid    (int index) { return getInt  (pid_order    ,index);}
-		float getPx     (int index) { return getFloat(px_order     ,index);}
-		float getPy     (int index) { return getFloat(py_order     ,index);}
-		float getPz     (int index) { return getFloat(pz_order     ,index);}
-		float getVx     (int index) { return getFloat(vx_order     ,index);}
-	        float getVy     (int index) { return getFloat(vy_order     ,index);}
-	        float getVz     (int index) { return getFloat(vz_order     ,index);}
-	        float getVt     (int index) { return getFloat(vt_order     ,index);}
-		int   getCharge (int index) { return getInt  (charge_order ,index);}
-		float getBeta   (int index) { return getFloat(beta_order   ,index);}
-		float getChi2pid(int index) { return getFloat(chi2pid_order,index);}
-		int   getStatus (int index) { return getInt  (status_order ,index);}
+		int   getPid    (int row) { return getInt  (pid_order    ,row);}
+		float getPx     (int row) { return getFloat(px_order     ,row);}
+		float getPy     (int row) { return getFloat(py_order     ,row);}
+		float getPz     (int row) { return getFloat(pz_order     ,row);}
+		float getVx     (int row) { return getFloat(vx_order     ,row);}
+		float getVy     (int row) { return getFloat(vy_order     ,row);}
+		float getVz     (int row) { return getFloat(vz_order     ,row);}
+		float getVt     (int row) { return getFloat(vt_order     ,row);}
+		int   getCharge (int row) { return getInt  (charge_order ,row);}
+		float getBeta   (int row) { return getFloat(beta_order   ,row);}
+		float getChi2pid(int row) { return getFloat(chi2pid_order,row);}
+		int   getStatus (int row) { return getInt  (status_order ,row);}
 
-		TVector3 getV3v(int index);
-		TVector3 getV3P(int index);
+		TVector3 getV3v(int row);
+		TVector3 getV3P(int row);
 };
 
 #endif

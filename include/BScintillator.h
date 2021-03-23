@@ -42,23 +42,23 @@ class BScintillator : public hipo::bank {
 
 		~BScintillator();
 
-		int   getIndex	  (int index) { return getInt   ( index_order     ,index);}
-		int   getPindex   (int index) { return getInt   ( pindex_order    ,index);}
-		int   getDetector (int index) { return getInt   ( detector_order  ,index);}
-		int   getSector   (int index) { return getInt   ( sector_order    ,index);}
-		int   getLayer    (int index) { return getInt   ( layer_order     ,index);}
-		int   getComponent(int index) { return getInt   ( component_order ,index);}
-		float getEnergy   (int index) { return getFloat ( energy_order    ,index);}
-		float getTime     (int index) { return getFloat ( time_order      ,index);}
-		float getPath     (int index) { return getFloat ( path_order      ,index);}
-		float getChi2     (int index) { return getFloat ( chi2_order      ,index);}
-		float getX        (int index) { return getFloat ( x_order         ,index);}
-		float getY        (int index) { return getFloat ( y_order         ,index);}
-		float getZ        (int index) { return getFloat ( z_order         ,index);}
-		float getHx       (int index) { return getFloat ( hx_order        ,index);}
-		float getHy       (int index) { return getFloat ( hy_order        ,index);}
-		float getHz       (int index) { return getFloat ( hz_order        ,index);}
-		int   getStatus   (int index) { return getInt   ( status_order    ,index);}
+		int   getIndex	  (int row) { return getInt   ( index_order     ,row);}
+		int   getPindex   (int row) { return getInt   ( pindex_order    ,row);}
+		int   getDetector (int row) { return getInt   ( detector_order  ,row);}
+		int   getSector   (int row) { return getInt   ( sector_order    ,row);}
+		int   getLayer    (int row) { return getInt   ( layer_order     ,row);}
+		int   getComponent(int row) { return getInt   ( component_order ,row);}
+		float getEnergy   (int row) { return getFloat ( energy_order    ,row);}
+		float getTime     (int row) { return getFloat ( time_order      ,row);}
+		float getPath     (int row) { return getFloat ( path_order      ,row);}
+		float getChi2     (int row) { return getFloat ( chi2_order      ,row);}
+		float getX        (int row) { return getFloat ( x_order         ,row);}
+		float getY        (int row) { return getFloat ( y_order         ,row);}
+		float getZ        (int row) { return getFloat ( z_order         ,row);}
+		float getHx       (int row) { return getFloat ( hx_order        ,row);}
+		float getHy       (int row) { return getFloat ( hy_order        ,row);}
+		float getHz       (int row) { return getFloat ( hz_order        ,row);}
+		int   getStatus   (int row) { return getInt   ( status_order    ,row);}
 
 };
 

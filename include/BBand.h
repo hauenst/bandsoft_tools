@@ -56,100 +56,100 @@ class BBand : public hipo::bank {
 		~BBand();
 
 		bool  isOldfile       () 					{ return oldfile;}
-		int   getId           (int index) { return getInt   (id_order           ,index);}
-		int   getSector       (int index) { return getInt   (sector_order       ,index);}
-		int   getLayer        (int index) { return getInt   (layer_order        ,index);}
-		int   getComponent    (int index) { return getInt   (component_order    ,index);}
-		float getMeantimeTdc  (int index) { return getFloat (meantimeTdc_order  ,index);}
-		float getMeantimeFadc (int index) { return getFloat (meantimeFadc_order ,index);}
-		float getDifftimeTdc  (int index) { return getFloat (difftimeTdc_order  ,index);}
-		float getDifftimeFadc (int index) { return getFloat (difftimeFadc_order ,index);}
-		float getX            (int index) { return getFloat (x_order            ,index);}
-		float getY            (int index) { return getFloat (y_order            ,index);}
-		float getZ            (int index) { return getFloat (z_order            ,index);}
-		float getUx           (int index) { return getFloat (ux_order           ,index);}
-		float getUy           (int index) { return getFloat (uy_order           ,index);}
-		float getUz           (int index) { return getFloat (uz_order           ,index);}
+		int   getId           (int row) { return getInt   (id_order           ,row);}
+		int   getSector       (int row) { return getInt   (sector_order       ,row);}
+		int   getLayer        (int row) { return getInt   (layer_order        ,row);}
+		int   getComponent    (int row) { return getInt   (component_order    ,row);}
+		float getMeantimeTdc  (int row) { return getFloat (meantimeTdc_order  ,row);}
+		float getMeantimeFadc (int row) { return getFloat (meantimeFadc_order ,row);}
+		float getDifftimeTdc  (int row) { return getFloat (difftimeTdc_order  ,row);}
+		float getDifftimeFadc (int row) { return getFloat (difftimeFadc_order ,row);}
+		float getX            (int row) { return getFloat (x_order            ,row);}
+		float getY            (int row) { return getFloat (y_order            ,row);}
+		float getZ            (int row) { return getFloat (z_order            ,row);}
+		float getUx           (int row) { return getFloat (ux_order           ,row);}
+		float getUy           (int row) { return getFloat (uy_order           ,row);}
+		float getUz           (int row) { return getFloat (uz_order           ,row);}
 		//next 6 functions are exclusively for old BAND::hits structure
-		float getAdcLcorr     (int index) {
+		float getAdcLcorr     (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getAdcLcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (adcLcorr_order    ,index);
+			return getFloat (adcLcorr_order    ,row);
 		}
-		float getAdcRcorr     (int index) {
+		float getAdcRcorr     (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getAdcRcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (adcRcorr_order     ,index);
+			return getFloat (adcRcorr_order     ,row);
 		}
-		float getTfadcLcorr   (int index) {
+		float getTfadcLcorr   (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getTfadcLcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (tFadcLcorr_order   ,index);
+			return getFloat (tFadcLcorr_order   ,row);
 		}
-		float getTfadcRcorr   (int index) {
+		float getTfadcRcorr   (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getTfadcRcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (tFadcRcorr_order   ,index);
+			return getFloat (tFadcRcorr_order   ,row);
 		}
-		float getTtdcLcorr    (int index) {
+		float getTtdcLcorr    (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getTtdcLcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (tTdcLcorr_order    ,index);
+			return getFloat (tTdcLcorr_order    ,row);
 		}
-		float getTtdcRcorr    (int index) {
+		float getTtdcRcorr    (int row) {
 			if (oldfile == false) {
 				std::cout << "Warning from BBand class: Usage of getTtdcRcorr with new file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (tTdcRcorr_order    ,index);
+			return getFloat (tTdcRcorr_order    ,row);
 		}
 		//next functions are for BAND::hits new structure. some of them are mapped to the same class members than previous get-functions
-		float getEx           (int index) { return getFloat (ux_order           ,index);}
-		float getEy           (int index) { return getFloat (uy_order           ,index);}
-		float getEz           (int index) { return getFloat (uz_order           ,index);}
-		float getTime         (int index) { return getFloat (meantimeTdc_order  ,index);}
-		float getTimeFadc     (int index) { return getFloat (meantimeFadc_order ,index);}
+		float getEx           (int row) { return getFloat (ux_order           ,row);}
+		float getEy           (int row) { return getFloat (uy_order           ,row);}
+		float getEz           (int row) { return getFloat (uz_order           ,row);}
+		float getTime         (int row) { return getFloat (meantimeTdc_order  ,row);}
+		float getTimeFadc     (int row) { return getFloat (meantimeFadc_order ,row);}
 		//exclusively for new BAND::hits structure
-		float getEnergy       (int index) {
+		float getEnergy       (int row) {
 			if (oldfile == true) {
 				std::cout << "Warning from BBand class: Usage of getEnergy with old file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getFloat (energy_order       ,index);
+			return getFloat (energy_order       ,row);
 		}
-		int   getLpmtindex    (int index) {
+		int   getLpmtindex    (int row) {
 			if (oldfile == true) {
 				std::cout << "Warning from BBand class: Usage of getLpmtindex with old file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getInt   (indexLpmt_order    ,index);
+			return getInt   (indexLpmt_order    ,row);
 		}
-		int   getRpmtindex    (int index) {
+		int   getRpmtindex    (int row) {
 			if (oldfile == true) {
 				std::cout << "Warning from BBand class: Usage of getRpmtindex with old file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getInt   (indexRpmt_order    ,index);
+			return getInt   (indexRpmt_order    ,row);
 		}
-		int   getStatus       (int index) {
+		int   getStatus       (int row) {
 			if (oldfile == true) {
 				std::cout << "Warning from BBand class: Usage of getStatus with old file or constructor was used wrong. Return 0 " << std::endl;
 				return 0;
 			}
-			return getInt   (status_order       ,index);
+			return getInt   (status_order       ,row);
 		}
 
-		int   getBarKey(int index);
+		int   getBarKey(int row);
 };
 
 #endif
