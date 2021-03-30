@@ -3,7 +3,8 @@
 
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, std::map<int,double> &bar_y, std::map<int,double> &bar_z, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
+			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z,
+			std::map<int,double> &bar_edep, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
 			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
 			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
 	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel 	){
@@ -26,11 +27,12 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 		//Standard calculation of y and z if maps for bars are empty
 		hits[hit].setY			(band_hits.getY			(hit)			);
-		// Fix for the Y position for layer 5:
+		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
+		// Fix for the Y position for layer 5 in case not fixed by bar geometry map below:
 		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
 			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
 		}
-		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
+
 
 		//If maps for bar geometry are not empty, use it for y and z
 		if ( !bar_y.empty() ) {
@@ -40,52 +42,86 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 - VERTEX_OFFSET	);
 		}
 
-		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
-		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
+
+		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
+		//Also modify x position for veto if x map is not empty
+		if( hits[hit].getLayer() == 6 ){
+			if ( !bar_x.empty() ) {
+			  	hits[hit].setX			( bar_x[band_hits.getBarKey		(hit)	]	);
+			}
+			int rawhit_idx = -1;
+			if( hits[hit].getSector() == 4 ) rawhit_idx = band_hits.getRpmtindex(hit);
+			else{ rawhit_idx = band_hits.getLpmtindex(hit); }
+
+			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
+			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
+			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
+			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
+			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
+
+			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
+			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
+			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
+			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
+			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
+
+			//Use average Edep per channel for vetos (could be either RawLadc or RawRadc)
+			hits[hit].setEdep		(hits[hit].getRawLadc()	);
+
+			// Using the rawhit struct, get the raw PMT information to use later
+			int pmtTdc	= band_rawhits.getInt( 10 , rawhit_idx );
+			int pmtAdc	= band_rawhits.getInt( 11 , rawhit_idx );
+			//	Get the raw pmt information corresponding to the band hit above
+			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
+			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
+			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
+			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
+			hits[hit].setPmtLamp		(band_adc.getInt( 5 	, pmtAdc )		);
+			hits[hit].setPmtRamp		(band_adc.getInt( 5 	, pmtAdc )		);
+			hits[hit].setPmtLadc		(band_adc.getInt( 4 	, pmtAdc )		);
+			hits[hit].setPmtRadc		(band_adc.getInt( 4 	, pmtAdc )		);
+			hits[hit].setPmtLped		(band_adc.getInt( 7 	, pmtAdc )		);
+			hits[hit].setPmtRped		(band_adc.getInt( 7 	, pmtAdc )		);
 
 
-		// only for simulation for a quick test - TO BE REMOVED
-		//double shifts[5] = {-1,-0.5,-1,-2,-2};
-		//TVector3 shiftedDL;
-		//shiftedDL.SetMagThetaPhi( hits[hit].getDL().Mag() + shifts[hits[hit].getLayer()-1] , hits[hit].getDL().Theta() , hits[hit].getDL().Phi() );
-		//hits[hit].setDL(	shiftedDL	);
+		}
+		else{
+			// Using the band hit struct, get the raw hit PMT information to use later
+			int rawhit_idxL = band_hits.getLpmtindex(hit);
+			int rawhit_idxR = band_hits.getRpmtindex(hit);
+			// 	Get the raw hit information corresponding to the band hit above
+			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
+			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
+			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
+			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
+			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
+			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
+			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
+			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
+			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
+			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
 
+			// Using the rawhit struct, get the raw PMT information to use later
+			int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
+			int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
+			int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
+			int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
+			//	Get the raw pmt information corresponding to the band hit above
+			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
+			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
+			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
+			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
+			hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
+			hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
+			hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
+			hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
+			hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
+			hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
+		}
 
-		// Using the band hit struct, get the raw hit PMT information to use later
-		int rawhit_idxL = band_hits.getLpmtindex(hit);
-		int rawhit_idxR = band_hits.getRpmtindex(hit);
-		// 	Get the raw hit information corresponding to the band hit above
-		hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
-        	hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
-        	hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
-        	hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
-        	hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
-        	hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
-        	hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
-        	hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
-
-		// Using the rawhit struct, get the raw PMT information to use later
-		int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
-		int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
-		int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
-		int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
-		//	Get the raw pmt information corresponding to the band hit above
-		hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
-		hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
-		hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
-		hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
-		hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
-		hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
-		hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
-		hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
-		hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
-		hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
-
-		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs
+		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs, dont do it for vetos
 		int id 			= band_hits.getBarKey(hit);
-		if( hotfix == 1 ){
+		if( hotfix == 1 && hits[hit].getLayer() != 6){
 			double old_tdiff_fadc 	= band_hits.getDifftimeFadc(hit);
 			double old_tdiff_tdc	= band_hits.getDifftimeTdc(hit);
 
@@ -120,6 +156,19 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			//cout << "new tdc diff:\t" << new_tdiff_tdc << "\n";
 			//cout << "new tdc xpos:\t" << new_x_tdc << "\n";
 		}
+
+		//If Edep maps are not empty, use them to calibrate Edep in MeV for each bar
+		//For MC Edep other file is used with constants
+		if ( !bar_edep.empty() ) {
+			//Calibration values are in channel/MeV
+			//cout << "applying energycorrection before value: " << hits[hit].getEdep() << endl;
+				hits[hit].setEdep		(band_hits.getEnergy	(hit)	/ bar_edep[band_hits.getBarKey	(hit)	]		);
+			//		cout << "applying energycorrection after value: " << hits[hit].getEdep() << endl;
+		}
+
+		// After all corrections to positions, set the pathlength and status:
+		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
+		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
 		// Save how many neutron hits we have
 		mult++;
 	}
@@ -132,12 +181,6 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 
 	bool vetoHit = false;
 	bool accept = false;
-	double adctoMeVee = 0;
-	if (mcdataselect == 0) //MC
-		adctoMeVee = adctoMeVee_sim;
-	else  { //Data
-		adctoMeVee = adctoMeVee_data;
-	}
 
 	// Loop over all hits in BAND and get the earliest hit in time
 	// but filter out hits that have low Edep
@@ -146,10 +189,11 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 	for( int thishit = 0; thishit < nMult ; thishit++){
 		bandhit neutron = hits[thishit];
 		//if the Edep in this PMT is less than 2MeVee, do not count it
+		//Edep is assumed to be calibrated to MeV for each bar
 		//MC
-		if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2) 	continue;
+		if (mcdataselect == 0 && neutron.getEdep() < 2) 	continue;
 		//Data
-		if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
+		if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
 
 		if( neutron.getTof() < fastestTime ){
 			fastestTime = neutron.getTof();
@@ -166,13 +210,14 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 		for( int thishit = 0; thishit < nMult ; thishit++){
 			bandhit neutron = hits[thishit];
 			// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
-			if( neutron.getLayer() == 6 && neutron.getPmtLadc()/adctoMeVee > 0.25 ) vetoHit = true;
+			//Edep is assumed to be calibrated to MeV for each bar
+			if( neutron.getLayer() == 6 && neutron.getEdep() > 0.25 ) vetoHit = true;
 
 			//if this bar does not have > 2MeVee, do not count the hit
 			//MC
-			if (mcdataselect == 0 && neutron.getPmtLadc()/adctoMeVee < 2 ) continue;
+			if (mcdataselect == 0 && neutron.getEdep() < 2 ) continue;
 			//Data
-			if( mcdataselect != 0 && neutron.getEdep()/adctoMeVee < 2 ) continue;
+			if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
 
 			double tdiff = neutron.getTof() - fastestTime;
 			if( tdiff == 0 ){
@@ -219,12 +264,17 @@ int getRunNumber( string filename ){
                 parsed = filename.substr( filename.find("inc_") );
                 moreparse = parsed.substr(4,6);
         }
-
         else if (filename.find("band_") <= filename.length() )
         {
                 cout << "Parsed file and found position for string band_ at " << filename.find("band_") << endl;
                 parsed = filename.substr( filename.find("band_") );
                 moreparse = parsed.substr(5,6);
+        }
+        else if (filename.find("rec_clas_") <= filename.length() )
+        {
+                cout << "Parsed file and found position for string rec_clas_ at " << filename.find("rec_clas_") << endl;
+                parsed = filename.substr( filename.find("rec_clas_") );
+                moreparse = parsed.substr(9,6);
         }
         else {
                 cout << "Could not parse runnumber from inputfile. Return 0 runnumber " << endl;
@@ -573,22 +623,59 @@ void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 mo
 	}
 }
 
-void getBANDBarGeometry(string filename, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
+void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
 	ifstream f;
 	int sector, layer, component, barId;
-	double y, z;
+	double x, y, z;
 	f.open(filename);
+	if (!f.is_open()) {
+		cout << "ERROR BAND Bar geometry file could not be read " << endl;
+		exit(-1);
+	}
 	while(!f.eof()){
 		f >> sector;
 		f >> layer;
 		f >> component;
 		barId = 100*sector + 10*layer + component;
+		f >> x; //units are in cm
 		f >> y; //units are in cm
 		f >> z; //units are in cm
+		bar_x.insert(std::pair<int,double>(barId,x));
 		bar_y.insert(std::pair<int,double>(barId,y));
 		bar_z.insert(std::pair<int,double>(barId,z));
 	}
+	//140 is number of bars. Just check y (x and z should be similar)
+	if (bar_y.size() != 140) {
+		cout << "ERROR BAND Geometry y map length is not 140. Length is  " << bar_y.size() << endl;
+		exit(-1);
+	}
 	f.close();
+}
+
+void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep) {
+	ifstream f;
+	int sector, layer, component, barId;
+	double edep;
+	f.open(filename);
+	if (!f.is_open()) {
+		cout << "ERROR BAND Edep file could not be read " << endl;
+		exit(-1);
+	}
+	while(!f.eof()){
+		f >> sector;
+		f >> layer;
+		f >> component;
+		barId = 100*sector + 10*layer + component;
+		f >> edep; //units are in cm
+		bar_edep.insert(std::pair<int,double>(barId,edep));
+	//	cout << "BAND Edep " << sector << " " << layer << " " << component << " " << edep << endl;
+	}
+	f.close();
+	//140 is number of bars
+	if (bar_edep.size() != 140) {
+		cout << "ERROR BAND Edep map length is not 140. Length is  " << bar_edep.size() << endl;
+		exit(-1);
+	}
 }
 
 void shiftsReader::LoadInitBar( string filename ){

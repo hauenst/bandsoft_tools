@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 	int nleadindex = -1;
 	int eventnumber = 0;
 
+
 	// 	Neutron info:
 	int nMult		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
@@ -118,6 +119,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
 	outTree->Branch("eventnumber",&eventnumber);
+	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
 	outTree->Branch("nHits"		,&nHits			);
@@ -209,10 +211,23 @@ int main(int argc, char** argv) {
 		TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 	//Maps for geometry positions
+	std::map<int,double> bar_pos_x;
 	std::map<int,double> bar_pos_y;
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
-	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
+	//Maps for energy deposition
+	std::map<int,double> bar_edep;
+	//Load edep calibration of bars if not MC
+	if( MC_DATA_OPT == 1){ //Data
+		getBANDEdepCalibration("../include/band-bar-edep.txt", bar_edep);
+	}
+	else if( MC_DATA_OPT == 0){ //MC
+		getBANDEdepCalibration("../include/band-bar-edep-mc.txt", bar_edep);
+	}
+	else {
+		cout << "No BAND Edep file is loaded " << endl;
+	}
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -321,7 +336,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-		//	if( event_counter > 100 ) continue;
+			//if( event_counter > 100 ) continue;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -409,10 +424,10 @@ int main(int argc, char** argv) {
 			}
 
 			if( MC_DATA_OPT == 0 ){
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z);
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
 			}
 			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z,
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep,
 						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
 							FADC_LROFF_S6291,	TDC_LROFF_S6291,
 							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,

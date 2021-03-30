@@ -100,10 +100,23 @@ int main(int argc, char** argv) {
 	}
 
 	//Maps for geometry positions
+	std::map<int,double> bar_pos_x;
 	std::map<int,double> bar_pos_y;
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
-	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_y,bar_pos_z);
+	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
+	//Maps for geometry positions
+	std::map<int,double> bar_edep;
+	//Load edep calibration of bars if not MC
+	if( MC_DATA_OPT == 1){ //Data
+		getBANDEdepCalibration("../include/band-bar-edep.txt", bar_edep);
+	}
+	else if( MC_DATA_OPT == 0){ //MC
+		getBANDEdepCalibration("../include/band-bar-edep-mc.txt", bar_edep);
+	}
+	else {
+		cout << "No BAND Edep file is loaded " << endl;
+	}
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -193,7 +206,7 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_y, bar_pos_z);
+			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
 			if( loadshifts_opt ){
 				for( int n = 0 ; n < nMult ; n++ ){
 					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
