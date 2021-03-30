@@ -58,11 +58,15 @@ bool e_pid::isElectronLoose(clashit * eHit){
 void e_pid::setParamsRGB(double Ebeam){
 
   //Determine correct file name
-  if(std::abs(Ebeam-10.6) < 0.01){
+  if(std::fabs(Ebeam-10.6) < 0.01){
     sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
     sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
   }
-  else if(std::abs(Ebeam-10.2) < 0.01){
+  else if(std::fabs(Ebeam-10.2) < 0.01){
+    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());  
+  }  
+  else if(std::fabs(Ebeam-4.247) < 0.01){//10.2 seems to work well for the low energy run data set
     sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
     sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());  
   }  
