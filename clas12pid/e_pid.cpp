@@ -6,7 +6,7 @@
 #include "TMath.h"
 
 #include "clashit.h"
-
+#include <iostream>
 #include <fstream>
 #include <unistd.h>
 
@@ -29,10 +29,19 @@ e_pid::~e_pid(){
 
 
 bool e_pid::isElectron(clashit * eHit){
-  
+
+  //if any of the energy values is 0, cut away the electron
+  if (eHit->getEpcal() == 0 || eHit->getEoP() == 0 || eHit->getEecin() == 0) {
+    return false;
+  }
+
   bool passSFEpcal = SF_Epcal_Cut(eHit->getSector()-1,eHit->getEpcal(),eHit->getEoP());
   bool passSFMom = SF_Mom_Cut(eHit->getSector()-1,eHit->getMomentum(),eHit->getEoP());
   bool passSFpi = SFpcal_SFecin_Cut(eHit->getMomentum(),eHit->getEpcal(),eHit->getEecin());
+
+  //For Debugging
+  //std::cout << "ePID: passSFEpcal = " << passSFEpcal << " , passSFMom = " << passSFMom << " , passSFpi = " << passSFpi << std::endl;
+
 
   if(eHit->getPID() != 11){ return false; }
   if(eHit->getCharge() != -1){ return false; }
@@ -51,7 +60,7 @@ bool e_pid::isElectronLoose(clashit * eHit){
   if(eHit->getPID() != 11){ return false; }
   if(eHit->getCharge() != -1){ return false; }
   if(!passSFEpcal){ return false; }
-  return true;  
+  return true;
 
 }
 
@@ -59,20 +68,20 @@ void e_pid::setParamsRGB(double Ebeam){
 
   //Determine correct file name
   if(std::abs(Ebeam-10.6) < 0.01){
-    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
-    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str()); 
+    sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str());
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str());
   }
   else if(std::abs(Ebeam-10.2) < 0.01){
     sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
-    sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());  
-  }  
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());
+  }
   else{
     std::cout<<"Attempting to set a beam energy "<< Ebeam <<" GeV\n"
 	     <<"without a defined RGB fiducal cut\n"
 	     <<"\t Using E=10.6 GeV as Default. \n\n\n";
     sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_106_RGB.dat",std::string(PID_DIR).c_str());
-    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str());  
-  }      
+    sprintf(paramFileNameMom,"%s/SFvMom_Params_106_RGB.dat",std::string(PID_DIR).c_str());
+  }
 
   //Load file data
   fillParams();
@@ -122,7 +131,7 @@ void e_pid::drawEpcal(int sector, TCanvas * myCanvas){
   TF1 * meanFunction = new TF1("Mean",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]); },0.06,1.6,3);
   meanFunction->SetLineColor(color);
   meanFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2]);
-  
+
   TF1 * maxFunction = new TF1("Max",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) + intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.06,1.6,6);
   maxFunction->SetLineColor(color);
   maxFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2],paramsEpcal[sector][3],paramsEpcal[sector][4],paramsEpcal[sector][5]);
@@ -130,13 +139,13 @@ void e_pid::drawEpcal(int sector, TCanvas * myCanvas){
   TF1 * minFunction = new TF1("Min",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) - intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.06,1.6,6);
   minFunction->SetLineColor(color);
   minFunction->SetParameters(paramsEpcal[sector][0],paramsEpcal[sector][1],paramsEpcal[sector][2],paramsEpcal[sector][3],paramsEpcal[sector][4],paramsEpcal[sector][5]);
-  
-  
+
+
   myCanvas->cd();
   meanFunction->Draw("SAME");
   maxFunction->Draw("SAME");
   minFunction->Draw("SAME");
-  
+
 }
 
 void e_pid::drawMom(int sector, TCanvas * myCanvas){
@@ -146,7 +155,7 @@ void e_pid::drawMom(int sector, TCanvas * myCanvas){
   TF1 * meanFunction = new TF1("Mean",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]); },0.5,9.5,3);
   meanFunction->SetLineColor(color);
   meanFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2]);
-  
+
   TF1 * maxFunction = new TF1("Max",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) + intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.5,9.5,6);
   maxFunction->SetLineColor(color);
   maxFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2],paramsMom[sector][3],paramsMom[sector][4],paramsMom[sector][5]);
@@ -154,13 +163,13 @@ void e_pid::drawMom(int sector, TCanvas * myCanvas){
   TF1 * minFunction = new TF1("Min",[&](double *x, double *p){ return FF(x[0],p[0],p[1],p[2]) - intervalEpcal * FF(x[0],p[3],p[4],p[5]); },0.5,9.5,6);
   minFunction->SetLineColor(color);
   minFunction->SetParameters(paramsMom[sector][0],paramsMom[sector][1],paramsMom[sector][2],paramsMom[sector][3],paramsMom[sector][4],paramsMom[sector][5]);
-  
-  
+
+
   myCanvas->cd();
   meanFunction->Draw("SAME");
   maxFunction->Draw("SAME");
   minFunction->Draw("SAME");
-  
+
 }
 
 bool e_pid::SF_Epcal_Cut(int sector, double Epcal, double SF){
@@ -172,7 +181,7 @@ bool e_pid::SF_Mom_Cut(int sector, double p, double SF){
 }
 
 bool e_pid::SFpcal_SFecin_Cut(double p, double Epcal, double Eecin){
-  
+
   //This cut is only for high momentum particles
   if(p < 4.5){ return true; }
 
@@ -183,12 +192,13 @@ bool e_pid::SFpcal_SFecin_Cut(double p, double Epcal, double Eecin){
 }
 
 bool e_pid::SF_Cut(int sector, double x, double SF, double params[6][6], double interval){
+  //cout << "in SF_cut: SF =  " << SF << " , minSF = " <<minSF(sector,x,params,interval) << " , maxSF " << maxSF(sector,x,params,interval) << endl;
   if(SF < minSF(sector,x,params,interval)){
     return false;
-  }  
+  }
   if(SF > maxSF(sector,x,params,interval)){
     return false;
-  }  
+  }
   return true;
 }
 
@@ -209,5 +219,5 @@ double e_pid::minSF(int sector, double x, double params[6][6], double interval){
 }
 
 double e_pid::FF(double x, double sf1, double sf2, double sf3){
-  return sf1 + (sf2/sqrt(x)) + (sf3/x); 
+  return sf1 + (sf2/sqrt(x)) + (sf3/x);
 }

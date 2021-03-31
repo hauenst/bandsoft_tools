@@ -34,15 +34,15 @@ class BConfig : public hipo::bank {
 
 		~BConfig();
 
-		int   getRunNumber (int index) { return getInt ( Run_order        ,index);}
-		int   getEvent     (int index) { return getInt ( Event_order      ,index);}
-		int   getUnixTime  (int index) { return getInt ( UTime_order      ,index);}
-		int   getTrigger   (int index) { return getInt ( Trigger_order    ,index);}
-		int   getTimeStamp (int index) { return getInt ( TimeStamp_order  ,index);}
-		int   getType      (int index) { return getInt ( Type_order       ,index);}
-		int   getMode      (int index) { return getInt ( Mode_order       ,index);}
-		float getTorus     (int index) { return getFloat ( Torus_order    ,index);}
-		float getSolenoid  (int index) { return getFloat ( Solenoid_order ,index);}
+		int   getRunNumber (int row) { return getInt ( Run_order        ,row);}
+		int   getEvent     (int row) { return getInt ( Event_order      ,row);}
+		int   getUnixTime  (int row) { return getInt ( UTime_order      ,row);}
+		int   getTrigger   (int row) { return getInt ( Trigger_order    ,row);}
+		int   getTimeStamp (int row) { return getInt ( TimeStamp_order  ,row);}
+		int   getType      (int row) { return getInt ( Type_order       ,row);}
+		int   getMode      (int row) { return getInt ( Mode_order       ,row);}
+		float getTorus     (int row) { return getFloat ( Torus_order    ,row);}
+		float getSolenoid  (int row) { return getFloat ( Solenoid_order ,row);}
 };
 
 #endif
