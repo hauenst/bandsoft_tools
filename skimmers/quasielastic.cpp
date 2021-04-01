@@ -25,6 +25,8 @@
 
 #include "constants.h"
 #include "readhipo_helper.h"
+#include "e_pid.h"
+#include "DC_fiducial.h"
 
 using namespace std;
 
@@ -229,6 +231,11 @@ int main(int argc, char** argv) {
 		cout << "No BAND Edep file is loaded " << endl;
 	}
 
+	// Load the electron PID class:
+	e_pid ePID;
+	// Load the DC fiducial class for electrons;
+	DCFiducial DCfid_electrons;
+
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
 		if( MC_DATA_OPT == 0){
@@ -255,7 +262,8 @@ int main(int argc, char** argv) {
 			exit(-1);
 		}
 
-
+		//Set cut parameters for electron PID. This only has 10.2 and 10.6 implemented
+		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
@@ -284,7 +292,7 @@ int main(int argc, char** argv) {
 		gated_charge = 0;
 		livetime	= 0;
 		int run_number_from_run_config = 0;
-
+		double torussetting = 0;
 		while(reader.next()==true){
 				// Clear all branches
 			gated_charge	= 0;
@@ -370,6 +378,12 @@ int main(int argc, char** argv) {
 			if (run_number_from_run_config != Runno && event_counter < 100) {
 				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
 			}
+
+
+			//from first event get RUN::config torus Setting
+		 // inbending = negative torussetting, outbending = torusseting
+			torussetting = run_config.getFloat( 7 , 0 );
+
 			//if (event_counter < 100) {
 			//	cout << "event number " << eventnumber << " , runnumebr " << run_number_from_run_config << endl;
 			//}
@@ -384,10 +398,41 @@ int main(int argc, char** argv) {
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
 
-			//	Do electron PID cuts
-			//		only PID (11) and charge (-1) selection on first particle
-			if( eHit.getPID() != 11 					) continue;
-			if( eHit.getCharge() != -1					) continue;
+			//check electron PID in EC with Andrew's class
+			if( !(ePID.isElectron(&eHit)) ) continue;
+
+
+			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
+			int bending;
+			//picking up torussetting from RUN::config, inbending = negative torussetting, outbending = positive torusseting
+			if (torussetting > 0 && torussetting <=1.0) { //outbending
+				bending = 0;
+			}
+			else if (torussetting < 0 && torussetting >=-1.0) { //inbending
+				bending = 1;
+			}
+			else {
+				cout << "WARNING: Torus setting from RUN::config is " << torussetting << ". This is not defined for bending value for DC fiducials. Please check " << endl;
+			}
+			if (eHit.getDC_sector() == -999 || eHit.getDC_sector() == -1  ) {
+				cout << "Skimmer Error: DC sector is  " << eHit.getDC_sector() << " . Skipping event "<< event_counter << endl;
+				eHit.Print();
+				continue;
+			}
+
+			//checking DC Fiducials
+			//Region 1, true = pass DC Region 1
+			bool DC_fid_1  = DCfid_electrons.DC_e_fid(eHit.getDC_x1(),eHit.getDC_y1(),eHit.getDC_sector(), 1, bending);
+			//checking DC Fiducials
+			//Region 2, true = pass DC Region 2
+			bool DC_fid_2  = DCfid_electrons.DC_e_fid(eHit.getDC_x2(),eHit.getDC_y2(),eHit.getDC_sector(), 2, bending);
+			//checking DC Fiducials
+			//Region 3, true = pass DC Region 3
+			bool DC_fid_3  = DCfid_electrons.DC_e_fid(eHit.getDC_x3(),eHit.getDC_y3(),eHit.getDC_sector(), 3, bending);
+
+			//check if any of the fiducials is false i.e. electron does not pass all DC fiducials
+			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
+
 
 			//check other particles for electron or negative charge
 			/*for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
