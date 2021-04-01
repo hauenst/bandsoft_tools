@@ -22,6 +22,8 @@
 
 #include "constants.h"
 #include "readhipo_helper.h"
+#include "e_pid.h"
+#include "DC_fiducial.h"
 
 using namespace std;
 
@@ -105,7 +107,7 @@ int main(int argc, char** argv) {
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
 	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
-	//Maps for geometry positions
+	//Maps for energy deposition
 	std::map<int,double> bar_edep;
 	//Load edep calibration of bars if not MC
 	if( MC_DATA_OPT == 1){ //Data
@@ -117,6 +119,12 @@ int main(int argc, char** argv) {
 	else {
 		cout << "No BAND Edep file is loaded " << endl;
 	}
+
+
+		// Load the electron PID class:
+		e_pid ePID;
+		// Load the DC fiducial class for electrons;
+		DCFiducial DCfid_electrons;
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -134,6 +142,8 @@ int main(int argc, char** argv) {
 		else{
 			exit(-1);
 		}
+		//Set cut parameters for electron PID. This only has 10.2 and 10.6 implemented
+		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
@@ -157,6 +167,7 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge = 0;
 		livetime	= 0;
+		double torussetting = 0;
 		while(reader.next()==true){
 			// Clear all branches
 			gated_charge	= 0;
@@ -195,6 +206,10 @@ int main(int argc, char** argv) {
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
+
+			//from first event get RUN::config torus Setting
+		 // inbending = negative torussetting, outbending = torusseting
+			torussetting = run_config.getFloat( 7 , 0 );
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0){
