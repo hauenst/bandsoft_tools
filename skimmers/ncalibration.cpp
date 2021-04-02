@@ -232,42 +232,26 @@ int main(int argc, char** argv) {
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
-			// Skim the event so we only have a single electron and NO other particles:
-			int nElectrons = 0;
-			for( int part = 0 ; part < particles.getRows() ; part++ ){
-				int PID 	= particles.getPid(part);
-				int charge 	= particles.getCharge(part);
-				if( PID != 11 ) 					continue;
-				if( charge !=-1 ) 					continue;
-				TVector3	momentum = particles.getV3P(part);
-				TVector3	vertex	 = particles.getV3v(part);
-				TVector3 	beamVec(0,0,Ebeam);
-				TVector3	qVec; qVec = beamVec - momentum;
-				double EoP=	calorimeter.getTotE(part) /  momentum.Mag();
-				double Epcal=	calorimeter.getPcalE(part);
-				if( EoP < 0.17 || EoP > 0.3 	) 			continue;
-				if( Epcal < 0.07		) 			continue;
-				if( vertex.Z() < -8 || vertex.Z() > 3 )			continue;
-				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
-				double lV=	calorimeter.getLV(part);
-				double lW=	calorimeter.getLW(part);
-				if( lV < 15 || lW < 15		) 			continue;
-				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
-				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
-				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
-				if( Q2 < 2 || Q2 > 10			) 		continue;
-				if( W2 < 2*2				) 		continue;
 
-				nElectrons++;
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			//check electron PID in EC with Andrew's class
+			if( !(ePID.isElectron(&eHit)) ) continue;
+
+
+			// Check the event so we only have a single electron and NO other particles:
+			int nElectrons = 1;
+			clashit temp_eHit;
+			for( int part = 1 ; part < particles.getRows() ; part++ ){
+				temp_eHit.Clear();
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, part, temp_eHit , starttime , Runno , Ebeam );
+				if ( ePID.isElectron(&temp_eHit) ) 	nElectrons++;
 			}
+			temp_eHit.Clear();
+			//if more than one electron is found
 			if( nElectrons != 1 ) 	continue;
 			//if( nOthers != 0 )	continue;
 
-
-			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
-			//check electron PID in EC with Andrew's class
-			if( !(ePID.isElectron(&eHit)) ) continue;
 
 
 			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)

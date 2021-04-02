@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
