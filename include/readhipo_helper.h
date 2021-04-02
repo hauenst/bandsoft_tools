@@ -81,10 +81,10 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect);
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult );
-void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-			    TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits);
-void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],
-								double time[maxParticles], double charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], double status[maxParticles] , int index[maxParticles], int& multiplicity );
+void getScinHits( BScintillator scintillator, int pindex[maxScinHits], int detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
+			    TVector3 posVector[maxScinHits], double path[maxScinHits], int status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits);
+void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],
+								double time[maxParticles], int charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], int status[maxParticles] , int index[maxParticles], int& multiplicity );
 void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z);
 void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep);
 

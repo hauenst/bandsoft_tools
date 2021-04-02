@@ -79,9 +79,9 @@ int main(int argc, char** argv) {
 	// 	Positive Particles info:
 	int pMult		= 0;
 	int pIndex		[maxParticles]= {0};
-	double pPid		[maxParticles]= {0.};
-	double pCharge		[maxParticles]= {0.};
-	double pStatus		[maxParticles]= {0.};
+	int pPid		[maxParticles]= {0}; // to int
+	int pCharge		[maxParticles]= {0}; //to int
+	int pStatus		[maxParticles]= {0}; //to int
 	double pTime		[maxParticles]= {0.};
 	double pBeta		[maxParticles]= {0.};
 	double pChi2pid		[maxParticles]= {0.};
@@ -95,15 +95,15 @@ int main(int argc, char** argv) {
 
  // Information from REC::Scintillator for positive Particles
   int scinHits = 0;
-	double hit_pindex [maxScinHits]= {0.}; //pPid of associated positive particle
-	double hit_detid [maxScinHits]= {0.};
+	int hit_pindex [maxScinHits]= {0};//needs to be int //pPid of associated positive particle
+	int hit_detid [maxScinHits]= {0}; //needs to be int
 	double hit_energy [maxScinHits]= {0.};
 	double hit_time [maxScinHits]= {0.};
 	double hit_x [maxScinHits]= {0.};
 	double hit_y [maxScinHits]= {0.};
 	double hit_z [maxScinHits]= {0.};
 	double hit_path [maxScinHits]= {0.};
-	double hit_status [maxScinHits]= {0.};
+	int hit_status [maxScinHits]= {0};//needs to be int
 
 	//	MC info:
 	double weight		= 0;
@@ -133,9 +133,9 @@ int main(int argc, char** argv) {
 	//Positive Particles
 	outTree->Branch("pMult"		,&pMult			);
 	outTree->Branch("pIndex"		,&pIndex			,"pIndex[pMult]/I"	);
-	outTree->Branch("pPid"		,&pPid			,"pPid[pMult]/D"	);
-	outTree->Branch("pCharge"	,&pCharge		,"pCharge[pMult]/D"	);
-	outTree->Branch("pStatus"	,&pStatus		,"pStatus[pMult]/D"	);
+	outTree->Branch("pPid"		,&pPid			,"pPid[pMult]/I"	);
+	outTree->Branch("pCharge"	,&pCharge		,"pCharge[pMult]/I"	);
+	outTree->Branch("pStatus"	,&pStatus		,"pStatus[pMult]/I"	);
 	outTree->Branch("pTime"		,&pTime			,"pTime[pMult]/D"	);
 	outTree->Branch("pBeta"		,&pBeta			,"pBeta[pMult]/D"	);
 	outTree->Branch("pChi2pid",&pChi2pid		,"pChi2pid[pMult]/D"	);
@@ -148,16 +148,16 @@ int main(int argc, char** argv) {
 
 
  //Scintillators
-  outTree->Branch("scinHits"		,&scinHits		);
-  outTree->Branch("hit_pindex"	,&hit_pindex		,"hit_pindex[scinHits]/D"	);
-  outTree->Branch("hit_detid"	,&hit_detid		,"hit_detid[scinHits]/D"	);
+  outTree->Branch("scinHits"		,&scinHits	);
+  outTree->Branch("hit_pindex"	,&hit_pindex		,"hit_pindex[scinHits]/I"	);
+  outTree->Branch("hit_detid"	,&hit_detid		,"hit_detid[scinHits]/I"	);
   outTree->Branch("hit_energy"	,&hit_energy		,"hit_energy[scinHits]/D"	);
 	outTree->Branch("hit_time"	,&hit_time		,"hit_time[scinHits]/D"	);
 	outTree->Branch("hit_x"	,&hit_x		,"hit_x[scinHits]/D"	);
   outTree->Branch("hit_y"	,&hit_y		,"hit_y[scinHits]/D"	);
 	outTree->Branch("hit_z"	,&hit_z		,"hit_z[scinHits]/D"	);
 	outTree->Branch("hit_path"	,&hit_path		,"hit_path[scinHits]/D"	);
-	outTree->Branch("hit_status"	,&hit_status		,"hit_status[scinHits]/D"	);
+	outTree->Branch("hit_status"	,&hit_status		,"hit_status[scinHits]/I"	);
 	if( MC_DATA_OPT == 0){
 	//	MC branches:
 		outTree->Branch("genMult"	,&genMult		);
