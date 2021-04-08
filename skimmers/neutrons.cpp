@@ -86,20 +86,43 @@ int main(int argc, char** argv) {
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
+	//Load bar shifts
 	shiftsReader shifts;
-	double * FADC_INITBAR;
-	double * TDC_INITBAR;
+	double * FADC_BARSHIFTS_LER;
+	double * TDC_BARSHIFTS_LER;
+	double * FADC_BARSHIFTS_SPRING19;
+	double * TDC_BARSHIFTS_SPRING19;
 	if( loadshifts_opt ){
-		// Load bar shifts
+		shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
+		FADC_BARSHIFTS_LER = (double*) shifts.getInitBarFadc();
+		shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
+		TDC_BARSHIFTS_LER = (double*) shifts.getInitBar();
 		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
-		FADC_INITBAR = (double*) shifts.getInitBarFadc();
+		FADC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBarFadc();
 		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-		TDC_INITBAR = (double*) shifts.getInitBar();
-		// Load run-by-run shifts
-		// 	for 10.2 these are not needed
-		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
+		TDC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBar();
 	}
+
+	// Effective velocity for re-doing x- calculation
+	double * FADC_EFFVEL_S6200;
+	double *  TDC_EFFVEL_S6200;
+	double * FADC_EFFVEL_S6291;
+	double *  TDC_EFFVEL_S6291;
+	double *  FADC_LROFF_S6200;
+	double *   TDC_LROFF_S6200;
+	double *  FADC_LROFF_S6291;
+	double *   TDC_LROFF_S6291;
+	shifts.LoadEffVel	("../include/EffVelocities_S6200.txt",	"../include/EffVelocities_S6291.txt");
+	shifts.LoadLrOff	("../include/LrOffsets_S6200.txt",	"../include/LrOffsets_S6291.txt");
+	FADC_EFFVEL_S6200	= (double*) shifts.getFadcEffVel(6200);
+	TDC_EFFVEL_S6200	= (double*)  shifts.getTdcEffVel(6200);
+	FADC_EFFVEL_S6291	= (double*) shifts.getFadcEffVel(6291);
+	TDC_EFFVEL_S6291	= (double*)  shifts.getTdcEffVel(6291);
+
+	FADC_LROFF_S6200	= (double*) shifts.getFadcLrOff(6200);
+	TDC_LROFF_S6200		= (double*)  shifts.getTdcLrOff(6200);
+	FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
+	TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
 
 	//Maps for geometry positions
 	std::map<int,double> bar_pos_x;
@@ -221,11 +244,31 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the neutron information:
-			getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
-			if( loadshifts_opt ){
-				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
-					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
+			if( MC_DATA_OPT == 0 ){
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
+			}
+			else{
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep,
+						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+							FADC_LROFF_S6291,	TDC_LROFF_S6291,
+							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			}
+
+			if( loadshifts_opt && MC_DATA_OPT !=0){
+				//Load of shifts depending on run number
+				if (Runno >= 11286 && Runno < 11304)	{
+					//LER corrections
+					for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_LER[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_LER[(int)nHit[n].getBarID()]  );
+					}
+				}
+				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+					for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()]  );
+					}
 				}
 			}
 
