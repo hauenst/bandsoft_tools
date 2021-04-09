@@ -170,20 +170,9 @@ int main(int argc, char** argv) {
 	//Load Bar shifts
 	//TODO: Make shifts flexible to use
 	shiftsReader shifts;
-	double * FADC_BARSHIFTS_LER;
-	double * TDC_BARSHIFTS_LER;
-	double * FADC_BARSHIFTS_SPRING19;
-	double * TDC_BARSHIFTS_SPRING19;
-	if( loadshifts_opt ){
-		shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
-		FADC_BARSHIFTS_LER = (double*) shifts.getInitBarFadc();
-		shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
-		TDC_BARSHIFTS_LER = (double*) shifts.getInitBar();
-		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
-		FADC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBarFadc();
-		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-		TDC_BARSHIFTS_SPRING19 = (double*) shifts.getInitBar();
-	}
+	double * FADC_BARSHIFTS;
+	double * TDC_BARSHIFTS;
+
 	/*
 		double * FADC_INITRUN;
 		// Load run-by-run shifts
@@ -380,6 +369,28 @@ int main(int argc, char** argv) {
 			}
 
 
+			if( loadshifts_opt && event_counter == 1 && MC_DATA_OPT !=0){
+				//Load of shifts depending on run number
+				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
+					shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
+					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
+					shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
+					TDC_BARSHIFTS = (double*) shifts.getInitBar();
+				}
+				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+					shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
+					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
+					shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+					TDC_BARSHIFTS = (double*) shifts.getInitBar();
+				}
+				else {
+					cout << "No bar by bar offsets loaded " << endl;
+					cout << "Check shift option when starting program. Exit " << endl;
+					exit(-1);
+				}
+
+			}
+
 			//from first event get RUN::config torus Setting
 		 // inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
@@ -480,20 +491,10 @@ int main(int argc, char** argv) {
 			}
 
 			if( loadshifts_opt && MC_DATA_OPT !=0){
-				//Load of shifts depending on run number
-				if (Runno >= 11286 && Runno < 11304)	{
-					//LER corrections
 					for( int n = 0 ; n < nMult ; n++ ){
-						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_LER[(int)nHit[n].getBarID()] );
-						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_LER[(int)nHit[n].getBarID()]  );
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS[(int)nHit[n].getBarID()]  );
 					}
-				}
-				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
-					for( int n = 0 ; n < nMult ; n++ ){
-						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()] );
-						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS_SPRING19[(int)nHit[n].getBarID()]  );
-					}
-				}
 			}
 
 
