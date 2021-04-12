@@ -286,6 +286,10 @@ int main(int argc, char** argv) {
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
+			//Skip sector 4 events for LER runs
+			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{ 
+				continue;
+			}
 
 			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
 			int bending;
