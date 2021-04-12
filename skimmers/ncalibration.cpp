@@ -255,6 +255,10 @@ int main(int argc, char** argv) {
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
+			//Skip sector 4 events for LER runs
+			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{ 
+				continue;
+			}
 
 			// Check the event so we only have a single electron and NO other particles:
 			int nElectrons = 1;
