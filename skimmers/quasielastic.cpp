@@ -356,19 +356,6 @@ int main(int argc, char** argv) {
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
 
-			// Get integrated charge, livetime and start-time from REC::Event
-			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
-
-			//Get Event number and run number from RUN::config
-			run_number_from_run_config = run_config.getInt( 0 , 0 );
-			eventnumber = run_config.getInt( 1 , 0 );
-			if (run_number_from_run_config != Runno && event_counter < 100) {
-				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
-			}
-
-
 			if( loadshifts_opt && event_counter == 1 && MC_DATA_OPT !=0){
 				//Load of shifts depending on run number
 				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
@@ -389,6 +376,19 @@ int main(int argc, char** argv) {
 					exit(-1);
 				}
 
+			}
+
+
+			// Get integrated charge, livetime and start-time from REC::Event
+			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
+			if( event_info.getRows() == 0 ) continue;
+			getEventInfo( event_info, gated_charge, livetime, starttime );
+
+			//Get Event number and run number from RUN::config
+			run_number_from_run_config = run_config.getInt( 0 , 0 );
+			eventnumber = run_config.getInt( 1 , 0 );
+			if (run_number_from_run_config != Runno && event_counter < 100) {
+				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
 			}
 
 			//from first event get RUN::config torus Setting

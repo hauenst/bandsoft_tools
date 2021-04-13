@@ -212,14 +212,6 @@ int main(int argc, char** argv) {
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
 
-
-			//Get Event number and run number from RUN::config
-			run_number_from_run_config = run_config.getInt( 0 , 0 );
-			eventnumber = run_config.getInt( 1 , 0 );
-			if (run_number_from_run_config != Runno && event_counter < 100) {
-					cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
-			}
-
 			if( loadshifts_opt && event_counter == 1 && MC_DATA_OPT !=0){
 				//Load of shifts depending on run number
 				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
@@ -241,13 +233,54 @@ int main(int argc, char** argv) {
 				}
 			}
 
+			// Get integrated charge, livetime and start-time from REC::Event
+			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
+			if( event_info.getRows() == 0 ) continue;
+			getEventInfo( event_info, gated_charge, livetime, starttime );
+
+
+			//Get Event number and run number from RUN::config
+			run_number_from_run_config = run_config.getInt( 0 , 0 );
+			eventnumber = run_config.getInt( 1 , 0 );
+			if (run_number_from_run_config != Runno && event_counter < 100) {
+				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
+			}
+
+
 			//from first event get RUN::config torus Setting
 			// inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
 
-			// Get integrated charge, livetime and start-time from REC::Event
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
+			// Skim the event so we only have a single electron and NO other particles:
+			int nElectrons = 0;
+			for( int part = 0 ; part < particles.getRows() ; part++ ){
+				int PID 	= particles.getPid(part);
+				int charge 	= particles.getCharge(part);
+				if( PID != 11 ) 					continue;
+				if( charge !=-1 ) 					continue;
+				TVector3	momentum = particles.getV3P(part);
+				TVector3	vertex	 = particles.getV3v(part);
+				TVector3 	beamVec(0,0,Ebeam);
+				TVector3	qVec; qVec = beamVec - momentum;
+				double EoP=	calorimeter.getTotE(part) /  momentum.Mag();
+				double Epcal=	calorimeter.getPcalE(part);
+				if( EoP < 0.17 || EoP > 0.3 	) 			continue;
+				if( Epcal < 0.07		) 			continue;
+				if( vertex.Z() < -8 || vertex.Z() > 3 )			continue;
+				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
+				double lV=	calorimeter.getLV(part);
+				double lW=	calorimeter.getLW(part);
+				if( lV < 15 || lW < 15		) 			continue;
+				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
+				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
+				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
+				if( Q2 < 2 || Q2 > 10			) 		continue;
+				if( W2 < 2*2				) 		continue;
+
+				nElectrons++;
+			}
+			if( nElectrons != 1 ) 	continue;
+			//if( nOthers != 0 )	continue;
 
 
 			// Grab the electron information:
@@ -256,7 +289,7 @@ int main(int argc, char** argv) {
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
 			//Skip sector 4 events for LER runs
-			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{ 
+			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{
 				continue;
 			}
 
