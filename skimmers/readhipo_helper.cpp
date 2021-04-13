@@ -380,35 +380,35 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 
 
 void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
-
+			int pbankIndex,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam ){
 
-	TVector3	momentum = particles.getV3P(0);
-	TVector3	vertex	 = particles.getV3v(0);
+	TVector3	momentum = particles.getV3P(pbankIndex);
+	TVector3	vertex	 = particles.getV3v(pbankIndex);
 
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	qVec; qVec = beamVec - momentum;
 
 //for Calorimeter information it is the Particle bank index for the first particle (usually electron)
 //for Particle bank it is bank index 0
-	electron.setSector		(	calorimeter.getElectronSector(0)				);
-	electron.setPID			  (	particles.getPid(0)					);
-	electron.setCharge		(	particles.getCharge(0)					);
-	electron.setStatus		(	particles.getStatus(0)					);
+	electron.setSector		(	calorimeter.getElectronSector(pbankIndex)				);
+	electron.setPID			  (	particles.getPid(pbankIndex)					);
+	electron.setCharge		(	particles.getCharge(pbankIndex)					);
+	electron.setStatus		(	particles.getStatus(pbankIndex)					);
 
-	electron.setTime		(	particles.getVt(0)					);
-	electron.setBeta		(	particles.getBeta(0)					);
-	electron.setChi2		(	particles.getChi2pid(0)					);
-	electron.setEtot		(	calorimeter.getTotE(0)					);
-	electron.setEpcal		(	calorimeter.getPcalE(0)					);
-	electron.setEecin		(	calorimeter.getECinE(0)					);
-	electron.setEecout		(	calorimeter.getECoutE(0)       				);
+	electron.setTime		(	particles.getVt(pbankIndex)					);
+	electron.setBeta		(	particles.getBeta(pbankIndex)					);
+	electron.setChi2		(	particles.getChi2pid(pbankIndex)					);
+	electron.setEtot		(	calorimeter.getTotE(pbankIndex)					);
+	electron.setEpcal		(	calorimeter.getPcalE(pbankIndex)					);
+	electron.setEecin		(	calorimeter.getECinE(pbankIndex)					);
+	electron.setEecout		(	calorimeter.getECoutE(pbankIndex)   		);
 	electron.setEoP			(	electron.getEtot() / momentum.Mag()			);
-	if (calorimeter.getPcalRow(0) > -1) {
-		electron.setU			(	calorimeter.getLU(calorimeter.getPcalRow(0))					);
-		electron.setV			(	calorimeter.getLV(calorimeter.getPcalRow(0))					);
-		electron.setW			(	calorimeter.getLW(calorimeter.getPcalRow(0))					);
+	if (calorimeter.getPcalRow(pbankIndex) > -1) {
+		electron.setU			(	calorimeter.getLU(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setV			(	calorimeter.getLV(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setW			(	calorimeter.getLW(calorimeter.getPcalRow(pbankIndex))					);
 	}
 	electron.setVtx			(	vertex.X()						);
 	electron.setVty			(	vertex.Y()						);
@@ -437,7 +437,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	  int pindex   = DC_Track.getInt(1,i);
 	  int detector = DC_Track.getInt(2,i);
 
-	  if (pindex ==0 && detector ==6 )
+	  if (pindex == pbankIndex && detector ==6 )
 	    {index = i;
 	     count ++;
 	   }
@@ -458,7 +458,8 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	if (count>1) {
 		cout << "getElectronInfo Warning: DC count is larger than 1. Count =  " << count << endl;
 	}
-	if (index == -1) {
+	//just give out warning for electron in first particle bank row
+	if (index == -1 && pbankIndex == 0) {
 		cout << "getElectronInfo Warning: DC index is -1" << endl;
 	}
 
@@ -475,7 +476,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	  int detector = DC_Traj.getInt(2,i);
 	  int layer    = DC_Traj.getInt(3,i);
 
-	  if(pindex ==0 && detector ==6 && layer ==6 && count ==1)
+	  if(pindex == pbankIndex && detector ==6 && layer ==6 && count ==1)
 
 	     {
 	       electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
@@ -484,7 +485,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	     }
 
-	  if(pindex ==0 && detector == 6 && layer ==18 && count ==1)
+	  if(pindex == pbankIndex && detector == 6 && layer ==18 && count ==1)
 
 	    {
 	       electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
@@ -494,7 +495,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	    }
 
-	  if(pindex ==0 && detector == 6 && layer ==36 && count ==1)
+	  if(pindex == pbankIndex && detector == 6 && layer ==36 && count ==1)
 
 	    {
 	       electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );

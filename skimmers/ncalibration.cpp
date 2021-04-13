@@ -238,6 +238,7 @@ int main(int argc, char** argv) {
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
+
 			//Get Event number and run number from RUN::config
 			run_number_from_run_config = run_config.getInt( 0 , 0 );
 			eventnumber = run_config.getInt( 1 , 0 );
@@ -283,7 +284,7 @@ int main(int argc, char** argv) {
 
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
@@ -291,6 +292,21 @@ int main(int argc, char** argv) {
 			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{
 				continue;
 			}
+
+			// Check the event so we only have a single electron and NO other particles:
+			int nElectrons = 1;
+			clashit temp_eHit;
+			for( int part = 1 ; part < particles.getRows() ; part++ ){
+				temp_eHit.Clear();
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, part, temp_eHit , starttime , Runno , Ebeam );
+				if ( ePID.isElectron(&temp_eHit) ) 	nElectrons++;
+			}
+			temp_eHit.Clear();
+			//if more than one electron is found
+			if( nElectrons != 1 ) 	continue;
+			//if( nOthers != 0 )	continue;
+
+
 
 			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
 			int bending;
