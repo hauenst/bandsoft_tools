@@ -27,6 +27,9 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 		//Standard calculation of y and z if maps for bars are empty
 		hits[hit].setY			(band_hits.getY			(hit)			);
+		//correct for offset of BAND compared to ideal position
+		hits[hit].setZ			(band_hits.getZ			(hit) + BAND_OFFSET	);
+		//correct for target offset
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		// Fix for the Y position for layer 5 in case not fixed by bar geometry map below:
 		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
