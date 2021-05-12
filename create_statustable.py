@@ -11,6 +11,8 @@ if sys.argv[1] == '1' :
     print('Create table for spring2019')
 elif sys.argv[1] == '2' :
     print('Create table for fall2019')
+elif sys.argv[1] == '0' :
+    print('Create default table with all values set to 0')
 else:
     print('Option for table not known')
     exit(-1)
@@ -36,6 +38,8 @@ if sys.argv[1] == '1' :
     tempbad = badspring19
 elif sys.argv[1] == '2' :
     tempbad = badfall19
+elif sys.argv[1] == '0' :
+    print('Use empty list for bad PMTS')
 else:
     print('Option for table not known')
     exit(-1)
