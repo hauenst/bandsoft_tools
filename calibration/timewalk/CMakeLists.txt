@@ -37,3 +37,11 @@ target_link_libraries(test_timewalk_v2 ${ROOT_LIBRARIES} Hipo4 Banks4
 install( TARGETS test_timewalk_v2
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
 #################################################################################################
+
+#################################################################################################
+add_executable(test_timewalk_v3 test_timewalk_v3.cpp )
+target_link_libraries(test_timewalk_v3 ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS test_timewalk_v3
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
