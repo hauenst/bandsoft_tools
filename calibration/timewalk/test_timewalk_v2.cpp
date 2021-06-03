@@ -241,6 +241,7 @@ int main(int argc, char** argv) {
 				int amp		= this_pmt.amp;
 
 				double tdc = pmts_tdc[PMT_ID][0].tdc;
+				if( amp < 250 && PMT_ID!=REFID ) continue;
 
 				double tdc_ampcorr;
 				double tdc_adccorr;
@@ -699,38 +700,45 @@ void fitTW(TH2D * hist , TCanvas * c, int cd, int s, int l, int co, int o, doubl
 	for(int bin = 1 ; bin <= dim ; ++bin ){
 		cout << xs[bin-1] << " " << ys[bin-1] << " " << xErrs[bin-1] << " " << yErrs[bin-1] << "\n";
 	}
-	g->GetHistogram()->SetMaximum(0.1);	// third iteration (check results)
-	g->GetHistogram()->SetMinimum(-0.1);	// third iteration (check results)
+	//g->GetHistogram()->SetMaximum(0.1);	// third iteration (check results)
+	//g->GetHistogram()->SetMinimum(-0.1);	// third iteration (check results)
 	int max = (int)cut;
 	g->GetXaxis()->SetLimits(0,max);	// third iteration (check results)
-	//TF1 * model = new TF1("timeWalk",wlk,0,20000,2);
-	//model->SetParameter(0,0);
-	//model->SetParameter(1,1E12);
-	//model->SetParameter(2,5);
+	TF1 * model = new TF1("timeWalk",wlk,0,20000,5);
+	model->SetParameter(0,0.06);
+	model->SetParameter(1,1000);
+	model->SetParameter(2,400);
+	model->SetParameter(3,-300);
+	model->SetParameter(4,1.5);
 	//model->SetParLimits(0,0,4E4);
 	//model->SetParameter(0,1000);
 	//model->SetParameter(1,-11);
 	//model->SetParameter(2,-16E3);
 	//model->SetParameter(3,4E3);
 	//model->SetParameter(4,-40);
-	//TFitResultPtr ptr = g->Fit(model,"QES");
-	//par1 = ptr->Parameter(0);
-	//par1_err = ptr->ParError(0);
+	TFitResultPtr ptr = g->Fit(model,"QES");
+	par1 = ptr->Parameter(0);
+	par1_err = ptr->ParError(0);
 
-	//par2 = ptr->Parameter(1);
-	//par2_err = ptr->ParError(1);
+	par2 = ptr->Parameter(1);
+	par2_err = ptr->ParError(1);
 
-	//par3 = ptr->Parameter(2);
-	//par3_err = ptr->ParError(2);
+	par3 = ptr->Parameter(2);
+	par3_err = ptr->ParError(2);
 
-	//par4 = ptr->Parameter(3);
-	//par4_err = ptr->ParError(3);
+	par4 = ptr->Parameter(3);
+	par4_err = ptr->ParError(3);
 
-	//par5 = ptr->Parameter(4);
-	//par5_err = ptr->ParError(4);
+	par5 = ptr->Parameter(4);
+	par5_err = ptr->ParError(4);
 
-	//par6 = ptr->Parameter(5);
-	//par6_err = ptr->ParError(5);
+	par6 = ptr->Parameter(5);
+	par6_err = ptr->ParError(5);
+
+	if( fabs(par3) < 100 ){ // too quick oscillation
+		par1 = par2 = par3 = par4 = par5 = par6 = 0;
+		par1_err = par2_err = par3_err = par4_err = par5_err = par6_err = 0;
+	}
 
 	c->cd(cd);
 	//gStyle->SetTitleW(0.6);
@@ -738,14 +746,14 @@ void fitTW(TH2D * hist , TCanvas * c, int cd, int s, int l, int co, int o, doubl
 	g->SetMarkerStyle(20);
 	g->Draw("AP");
 		// third iteration (check results):
-	TLine *l1 = new TLine(0,0.04,max,0.04);
-	TLine *l2 = new TLine(0,-0.04,max,-0.04);
-	l1->SetLineWidth(2);
-	l1->SetLineStyle(9);
-	l2->SetLineWidth(2);
-	l2->SetLineStyle(9);
-	l1->Draw("SAME");
-	l2->Draw("SAME");
+	//TLine *l1 = new TLine(0,0.04,max,0.04);
+	//TLine *l2 = new TLine(0,-0.04,max,-0.04);
+	//l1->SetLineWidth(2);
+	//l1->SetLineStyle(9);
+	//l2->SetLineWidth(2);
+	//l2->SetLineStyle(9);
+	//l1->Draw("SAME");
+	//l2->Draw("SAME");
 
 
 	c->Modified(); c->Update();
@@ -765,7 +773,7 @@ void walkCorr(	vector<double> *adcs		,
 	while( currBin < maxBin ){
 		double xPt, yPt, yEr, ySig, ySigEr;
 		double currBin_x = hist->GetXaxis()->GetBinCenter(currBin);
-		int nEvents = 10000;
+		int nEvents = 4000;
 		//if( currBin_x > 600 ) nEvents = 4000;	// first iteration
 		//if( currBin_x > 1000 ) nEvents = 2000;	// first iteration
 		//if( currBin_x < 1000 ) nEvents = 250;	// first iteration
@@ -791,6 +799,7 @@ double wlk( double *x , double *p){
 	double var = *x;
 	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) ;
 	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) + p[5]*pow(var,5);
+	return p[0]*sin( (var-p[1])/p[2] ) + p[3]/pow(var,p[4]);
 	return p[0] + p[1]*var;
 	return p[0]/var + p[1]/( p[4]+exp((var-p[2])/p[3]) );
 	return p[0] + p[1] / pow(var,p[2]); // first iteration

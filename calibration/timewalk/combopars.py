@@ -7,8 +7,8 @@ with open("/Users/efrainsegarra/work/band/software/bandsoft_tools/include/bar_li
         BAR_LIST.append( int(parse[0])*100 + int(parse[1])*10 + int(parse[2]) )
 
 
-files = ["init_paramsamp","iter0_paramsamp","iter1_paramsamp"]
-parameters = [3,5,2]
+files = ["init_paramsamp","iter0_paramsamp","iter1_paramsamp","iter2_paramsamp"]
+parameters = [3,5,2,5]
 PARAMETERS = {}
 for PMT in ['L','R']:
     for i in range(len(files)):
