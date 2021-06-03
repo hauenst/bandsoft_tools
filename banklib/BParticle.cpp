@@ -19,22 +19,22 @@ BParticle::BParticle(hipo::schema __schema) : hipo::bank(__schema){
 // ==============================================================
 BParticle::~BParticle(){}
 // ==============================================================
-TVector3 BParticle::getV3v(int index)
+TVector3 BParticle::getV3v(int row)
 {
 	TVector3 * V3v = new TVector3();
-        float vx = BParticle::getVx(index);
-        float vy = BParticle::getVy(index);
-        float vz = BParticle::getVz(index);
-        V3v -> SetXYZ(vx,vy,vz);
-        return * V3v;
+	float vx = BParticle::getVx(row);
+	float vy = BParticle::getVy(row);
+	float vz = BParticle::getVz(row);
+	V3v -> SetXYZ(vx,vy,vz);
+	return * V3v;
 }
 // ==============================================================
-TVector3 BParticle::getV3P(int index)
+TVector3 BParticle::getV3P(int row)
 {
 	TVector3 * V3P = new TVector3();
-	float px = BParticle::getPx(index);
-	float py = BParticle::getPy(index);
-	float pz = BParticle::getPz(index);
+	float px = BParticle::getPx(row);
+	float py = BParticle::getPy(row);
+	float pz = BParticle::getPz(row);
 	V3P -> SetXYZ(px,py,pz);
 	return * V3P;
 }

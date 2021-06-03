@@ -35,15 +35,15 @@ class BEvent : public hipo::bank {
 
 		~BEvent();
 
-		int   getCategory(int index) { return getInt   ( Category_order   ,index);}
-		int   getTopo    (int index) { return getInt   ( Topo_order       ,index);}
-		float getBCG     (int index) { return getFloat ( BCG_order        ,index);}
-		float getLT      (int index) { return getFloat ( LiveTime_order   ,index);}
-		float getSTTime  (int index) { return getFloat ( StartTime_order  ,index);}
-		float getRFTime  (int index) { return getFloat ( RFTime_order     ,index);}
-		int   getHelic   (int index) { return getInt   ( Helic_order      ,index);}
-		int   getHelicRaw(int index) { return getInt   ( HelicRaw_order   ,index);}
-		float getPTime   (int index) { return getFloat ( ProcTime_order   ,index);}
+		int   getCategory(int row) { return getInt   ( Category_order   ,row);}
+		int   getTopo    (int row) { return getInt   ( Topo_order       ,row);}
+		float getBCG     (int row) { return getFloat ( BCG_order        ,row);}
+		float getLT      (int row) { return getFloat ( LiveTime_order   ,row);}
+		float getSTTime  (int row) { return getFloat ( StartTime_order  ,row);}
+		float getRFTime  (int row) { return getFloat ( RFTime_order     ,row);}
+		int   getHelic   (int row) { return getInt   ( Helic_order      ,row);}
+		int   getHelicRaw(int row) { return getInt   ( HelicRaw_order   ,row);}
+		float getPTime   (int row) { return getFloat ( ProcTime_order   ,row);}
 };
 
 #endif

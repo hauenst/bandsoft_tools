@@ -15,6 +15,7 @@
 class BCalorimeter : public hipo::bank {
 
 	private:
+		int index_order    ;
 		int pindex_order   ;
 		int detector_order ;
 		int sector_order   ;
@@ -37,15 +38,19 @@ class BCalorimeter : public hipo::bank {
 
 		~BCalorimeter();
 
-		int   getIndex   (int index) { return getInt  (pindex_order    ,index);}
-		int   getDetector(int index) { return getInt  (detector_order  ,index);}
-		int   getSector  (int index) { return getInt  (sector_order    ,index);}
-		int   getLayer   (int index) { return getInt  (layer_order     ,index);}
-		float getEnergy  (int index) { return getFloat(energy_order    ,index);}
-		float getLU      (int index) { return getFloat(lu_order        ,index);}
-		float getLV      (int index) { return getFloat(lv_order        ,index);}
-		float getLW      (int index) { return getFloat(lw_order        ,index);}
+		int   getIndex	 (int row) { return getInt  (index_order     ,row);}
+		int   getPindex  (int row) { return getInt  (pindex_order    ,row);}
+		int   getDetector(int row) { return getInt  (detector_order  ,row);}
+		int   getSector  (int row) { return getInt  (sector_order    ,row);}
+		int   getLayer   (int row) { return getInt  (layer_order     ,row);}
+		float getEnergy  (int row) { return getFloat(energy_order    ,row);}
+		float getLU      (int row) { return getFloat(lu_order        ,row);}
+		float getLV      (int row) { return getFloat(lv_order        ,row);}
+		float getLW      (int row) { return getFloat(lw_order        ,row);}
 
+
+		int   getElectronSector  (int pindex);
+		int   getPcalRow( int pindex);
 		float getPcalE (int pindex);
 		float getECinE (int pindex);
 		float getECoutE(int pindex);

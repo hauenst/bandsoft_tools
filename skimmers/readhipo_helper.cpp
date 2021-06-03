@@ -27,6 +27,9 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 		//Standard calculation of y and z if maps for bars are empty
 		hits[hit].setY			(band_hits.getY			(hit)			);
+		//correct for offset of BAND compared to ideal position
+		hits[hit].setZ			(band_hits.getZ			(hit) + BAND_OFFSET	);
+		//correct for target offset
 		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
 		// Fix for the Y position for layer 5 in case not fixed by bar geometry map below:
 		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
@@ -380,35 +383,36 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 
 
 void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
-
+			int pbankIndex,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam ){
 
-	TVector3	momentum = particles.getV3P(0);
-	TVector3	vertex	 = particles.getV3v(0);
+	TVector3	momentum = particles.getV3P(pbankIndex);
+	TVector3	vertex	 = particles.getV3v(pbankIndex);
 
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	qVec; qVec = beamVec - momentum;
 
+//for Calorimeter information it is the Particle bank index for the first particle (usually electron)
+//for Particle bank it is bank index 0
+	electron.setSector		(	calorimeter.getElectronSector(pbankIndex)				);
+	electron.setPID			  (	particles.getPid(pbankIndex)					);
+	electron.setCharge		(	particles.getCharge(pbankIndex)					);
+	electron.setStatus		(	particles.getStatus(pbankIndex)					);
 
-	electron.setSector		(	calorimeter.getSector(0)				);
-	electron.setPID			(	particles.getPid(0)					);
-	electron.setCharge		(	particles.getCharge(0)					);
-	electron.setStatus		(	particles.getStatus(0)					);
-
-	electron.setTime		(	particles.getVt(0)					);
-	electron.setBeta		(	particles.getBeta(0)					);
-	electron.setChi2		(	particles.getChi2pid(0)					);
-	electron.setEtot		(	calorimeter.getTotE(0)					);
-	electron.setEpcal		(	calorimeter.getPcalE(0)					);
-	electron.setEecin		(	calorimeter.getECinE(0)					);
-	electron.setEecout		(	calorimeter.getECoutE(0)       				);
+	electron.setTime		(	particles.getVt(pbankIndex)					);
+	electron.setBeta		(	particles.getBeta(pbankIndex)					);
+	electron.setChi2		(	particles.getChi2pid(pbankIndex)					);
+	electron.setEtot		(	calorimeter.getTotE(pbankIndex)					);
+	electron.setEpcal		(	calorimeter.getPcalE(pbankIndex)					);
+	electron.setEecin		(	calorimeter.getECinE(pbankIndex)					);
+	electron.setEecout		(	calorimeter.getECoutE(pbankIndex)   		);
 	electron.setEoP			(	electron.getEtot() / momentum.Mag()			);
-	electron.setTimeScint		(	scintillator.getTime(0)-starttime			);
-	electron.setPathScint		(	scintillator.getPath(0)					);
-	electron.setU			(	calorimeter.getLU(0)					);
-	electron.setV			(	calorimeter.getLV(0)					);
-	electron.setW			(	calorimeter.getLW(0)					);
+	if (calorimeter.getPcalRow(pbankIndex) > -1) {
+		electron.setU			(	calorimeter.getLU(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setV			(	calorimeter.getLV(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setW			(	calorimeter.getLW(calorimeter.getPcalRow(pbankIndex))					);
+	}
 	electron.setVtx			(	vertex.X()						);
 	electron.setVty			(	vertex.Y()						);
 	electron.setVtz			(	vertex.Z()						);
@@ -427,7 +431,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	electron.setW2			(	mP*mP - electron.getQ2() + 2.*electron.getOmega()*mP	);
 
 
-        //Adding Tracking bank
+  //Adding Tracking bank
 
 	int Ntrack = DC_Track.getRows();
 	int index = -1;
@@ -436,7 +440,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	  int pindex   = DC_Track.getInt(1,i);
 	  int detector = DC_Track.getInt(2,i);
 
-	  if (pindex ==0 && detector ==6 )
+	  if (pindex == pbankIndex && detector ==6 )
 	    {index = i;
 	     count ++;
 	   }
@@ -448,9 +452,20 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	if (index != -1 && count ==1) {
 	  electron.setDC_chi2             (       DC_Track.getFloat(6, index)                                 );
 	  electron.setDC_NDF              (       DC_Track.getInt(7, index)                                   );
-          electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
+	  electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
 
 	}
+	else {
+		electron.setDC_sector           (       electron.getSector()                                );
+	}
+	if (count>1) {
+		cout << "getElectronInfo Warning: DC count is larger than 1. Count =  " << count << endl;
+	}
+	//just give out warning for electron in first particle bank row
+	if (index == -1 && pbankIndex == 0) {
+		cout << "getElectronInfo Warning: DC index is -1" << endl;
+	}
+
 
 
 	//Adding Traj bank, Structure is more complicated
@@ -460,11 +475,11 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	int index_traj = -1;
 
 	for(int i =0; i <NTraj; i++){
-          int pindex   = DC_Traj.getInt(0, i);
+    int pindex   = DC_Traj.getInt(0, i);
 	  int detector = DC_Traj.getInt(2,i);
 	  int layer    = DC_Traj.getInt(3,i);
 
-	  if(pindex ==0 && detector ==6 && layer ==6 && count ==1)
+	  if(pindex == pbankIndex && detector ==6 && layer ==6 && count ==1)
 
 	     {
 	       electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
@@ -473,7 +488,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	     }
 
-	  if(pindex ==0 && detector == 6 && layer ==18 && count ==1)
+	  if(pindex == pbankIndex && detector == 6 && layer ==18 && count ==1)
 
 	    {
 	       electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
@@ -483,7 +498,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	    }
 
-	  if(pindex ==0 && detector == 6 && layer ==36 && count ==1)
+	  if(pindex == pbankIndex && detector == 6 && layer ==36 && count ==1)
 
 	    {
 	       electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );
@@ -584,39 +599,39 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 	return;
 }
 
-void getScinHits( BScintillator scintillator, double pindex[maxScinHits], double detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-	 TVector3 posVector[maxScinHits], double path[maxScinHits], double status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
+void getScinHits( BScintillator scintillator, int pindex[maxScinHits], int detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
+	 TVector3 posVector[maxScinHits], double path[maxScinHits], int status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
 	scinHits = 0;
 	for( int row = 0 ; row < scintillator.getRows() ; row++ ){
 		for ( int i = 0 ; i < posMult ; i++) { //loop over all other particles
       if (scintillator.getPindex(row) == posIndex[i]) { //check if hit Pindex corresponds to particle index = row from REC::Particles bank
-				pindex[scinHits ] 		= scintillator.getPindex(row);
-			  detid[scinHits ] 		= scintillator.getDetector(row);
-				energy[scinHits ] 		= scintillator.getEnergy(row);
-				time[scinHits ] 		= scintillator.getTime(row);
-				path[scinHits ] 		= scintillator.getPath(row);
+				pindex[scinHits ] 		= scintillator.getPindex(row); //int
+			  detid[scinHits ] 		= scintillator.getDetector(row); //int
+				energy[scinHits ] 		= scintillator.getEnergy(row); //float
+				time[scinHits ] 		= scintillator.getTime(row);//float
+				path[scinHits ] 		= scintillator.getPath(row);//float
 				posVector[scinHits].SetXYZ(	scintillator.getX(row), scintillator.getY(row), scintillator.getZ(row) 	);
-				status		[scinHits]	= scintillator.getStatus(row);
+				status		[scinHits]	= scintillator.getStatus(row); //int
 				scinHits ++;
 			}
 		}
 	}
 }
 
-void getParticleInfo( BParticle particles, double pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],	double time[maxParticles],
-	double charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], double status[maxParticles] , int index[maxParticles], int& multiplicity ){
+void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],	double time[maxParticles],
+	int charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], int status[maxParticles] , int index[maxParticles], int& multiplicity ){
 	// Takes all particles in REC::Particles other than leading particle
 	multiplicity = 0;
 	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
 			if( particles.getCharge(row) == 1 || particles.getCharge(row) == -1 ){ //checks for positive and negative charge
-			pid[multiplicity] 		= particles.getPid(row);
-			charge[multiplicity]		= particles.getCharge(row);
-			momentum 	[multiplicity]	= particles.getV3P(row);
-			vertex		[multiplicity]	= particles.getV3v(row);
-			time		[multiplicity]	= particles.getVt(row);
-			beta		[multiplicity]	= particles.getBeta(row);
-			chi2pid		[multiplicity]	= particles.getChi2pid(row);
-			status		[multiplicity]	= particles.getStatus(row);
+			pid[multiplicity] 		= particles.getPid(row); //int
+			charge[multiplicity]		= particles.getCharge(row); //int
+			momentum 	[multiplicity]	= particles.getV3P(row); //TVector3
+			vertex		[multiplicity]	= particles.getV3v(row);//TVector3
+			time		[multiplicity]	= particles.getVt(row);//float
+			beta		[multiplicity]	= particles.getBeta(row);//float
+			chi2pid		[multiplicity]	= particles.getChi2pid(row);//float
+			status		[multiplicity]	= particles.getStatus(row); //int
 			index [multiplicity] = row;
 			multiplicity ++;
 		}

@@ -67,10 +67,10 @@ BBand::BBand(hipo::schema __schema) : hipo::bank(__schema){
 // ==============================================================
 BBand::~BBand(){}
 // ==============================================================
-int BBand::getBarKey(int index)
+int BBand::getBarKey(int row)
 {
-	int s = getSector   (index);
-	int l = getLayer    (index);
-	int c = getComponent(index);
+	int s = getSector   (row);
+	int l = getLayer    (row);
+	int c = getComponent(row);
 	return s*100+l*10+c;
 }

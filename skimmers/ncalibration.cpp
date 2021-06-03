@@ -19,6 +19,7 @@
 #include "constants.h"
 #include "readhipo_helper.h"
 #include "e_pid.h"
+#include "DC_fiducial.h"
 
 using namespace std;
 
@@ -76,20 +77,11 @@ int main(int argc, char** argv) {
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
+	//Load Bar shifts
 	shiftsReader shifts;
-	double * FADC_INITBAR;
-	double * TDC_INITBAR;
-	if( loadshifts_opt ){
-		// Load bar shifts
-		shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
-		FADC_INITBAR = (double*) shifts.getInitBarFadc();
-		shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-		TDC_INITBAR = (double*) shifts.getInitBar();
-		// Load run-by-run shifts
-		// 	for 10.2 these are not needed
-		//shifts.LoadInitRunFadc("../include/FADC_pass1v0_initrun.txt");
-		//FADC_INITRUN = (double*) shifts.getInitRunFadc();
-	}
+	double * FADC_BARSHIFTS;
+	double * TDC_BARSHIFTS;
+
 	// Effective velocity for re-doing x- calculation
 	double * FADC_EFFVEL_S6200;
 	double *  TDC_EFFVEL_S6200;
@@ -117,7 +109,7 @@ int main(int argc, char** argv) {
 	std::map<int,double> bar_pos_z;
 	//Load geometry position of bars
 	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
-	//Maps for energy deposition 
+	//Maps for energy deposition
 	std::map<int,double> bar_edep;
 	//Load edep calibration of bars if not MC
 	if( MC_DATA_OPT == 1){ //Data
@@ -132,6 +124,8 @@ int main(int argc, char** argv) {
 
 	// Load the electron PID class:
 	e_pid ePID;
+	// Load the DC fiducial class for electrons;
+	DCFiducial DCfid_electrons;
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -149,7 +143,8 @@ int main(int argc, char** argv) {
 		else{
 			exit(-1);
 		}
-  		ePID.setParamsRGB(Ebeam);
+		//Set cut parameters for electron PID. This only has 10.2 and 10.6 implemented
+		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
 		TString inputFile = argv[i];
@@ -177,6 +172,8 @@ int main(int argc, char** argv) {
 		int event_counter = 0;
 		gated_charge 	= 0;
 		livetime	= 0;
+		int run_number_from_run_config = 0;
+		double torussetting = 0;
 		while(reader.next()==true){
 			// Clear all branches
 			gated_charge	= 0;
@@ -215,48 +212,102 @@ int main(int argc, char** argv) {
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
 
-			//Get Event number from RUN::config
-			eventnumber = run_config.getInt( 1 , 0 );
+			if( loadshifts_opt && event_counter == 1 && MC_DATA_OPT !=0){
+				//Load of shifts depending on run number
+				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
+					shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
+					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
+					shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
+					TDC_BARSHIFTS = (double*) shifts.getInitBar();
+				}
+				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+					shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
+					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
+					shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
+					TDC_BARSHIFTS = (double*) shifts.getInitBar();
+				}
+				else {
+					cout << "No bar by bar offsets loaded " << endl;
+					cout << "Check shift option when starting program. Exit " << endl;
+					exit(-1);
+				}
+			}
 
 			// Get integrated charge, livetime and start-time from REC::Event
+			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
-			// Skim the event so we only have a single electron and NO other particles:
-			int nElectrons = 0;
-			for( int part = 0 ; part < particles.getRows() ; part++ ){
-				int PID 	= particles.getPid(part);
-				int charge 	= particles.getCharge(part);
-				if( PID != 11 ) 					continue;
-				if( charge !=-1 ) 					continue;
-				TVector3	momentum = particles.getV3P(part);
-				TVector3	vertex	 = particles.getV3v(part);
-				TVector3 	beamVec(0,0,Ebeam);
-				TVector3	qVec; qVec = beamVec - momentum;
-				double EoP=	calorimeter.getTotE(part) /  momentum.Mag();
-				double Epcal=	calorimeter.getPcalE(part);
-				if( EoP < 0.17 || EoP > 0.3 	) 			continue;
-				if( Epcal < 0.07		) 			continue;
-				if( vertex.Z() < -8 || vertex.Z() > 3 )			continue;
-				if( momentum.Mag() < 3 || momentum.Mag() > Ebeam)	continue;
-				double lV=	calorimeter.getLV(part);
-				double lW=	calorimeter.getLW(part);
-				if( lV < 15 || lW < 15		) 			continue;
-				double Omega	=Ebeam - sqrt( pow(momentum.Mag(),2) + mE*mE )	;
-				double Q2	=	qVec.Mag()*qVec.Mag() - pow(Omega,2)	;
-				double W2	=	mP*mP - Q2 + 2.*Omega*mP	;
-				if( Q2 < 2 || Q2 > 10			) 		continue;
-				if( W2 < 2*2				) 		continue;
 
-				nElectrons++;
+			//Get Event number and run number from RUN::config
+			run_number_from_run_config = run_config.getInt( 0 , 0 );
+			eventnumber = run_config.getInt( 1 , 0 );
+			if (run_number_from_run_config != Runno && event_counter < 100) {
+				cout << "Run number from RUN::config and file name not the same!! File name is " << Runno << " and RUN::config is " << run_number_from_run_config << endl;
 			}
+
+
+			//from first event get RUN::config torus Setting
+			// inbending = negative torussetting, outbending = torusseting
+			torussetting = run_config.getFloat( 7 , 0 );
+
+
+
+			// Grab the electron information:
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			//check electron PID in EC with Andrew's class
+			if( !(ePID.isElectron(&eHit)) ) continue;
+
+			//Skip sector 4 events for LER runs
+			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{
+				continue;
+			}
+
+			// Check the event so we only have a single electron and NO other particles:
+			int nElectrons = 1;
+			clashit temp_eHit;
+			for( int part = 1 ; part < particles.getRows() ; part++ ){
+				temp_eHit.Clear();
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, part, temp_eHit , starttime , Runno , Ebeam );
+				if ( ePID.isElectron(&temp_eHit) ) 	nElectrons++;
+			}
+			temp_eHit.Clear();
+			//if more than one electron is found
 			if( nElectrons != 1 ) 	continue;
 			//if( nOthers != 0 )	continue;
 
 
-			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, eHit , starttime , Runno , Ebeam );
-    			if( !(ePID.isElectron(&eHit)) ) continue;
+
+			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
+			int bending;
+			//picking up torussetting from RUN::config, inbending = negative torussetting, outbending = positive torusseting
+			if (torussetting > 0 && torussetting <=1.0) { //outbending
+				bending = 0;
+			}
+			else if (torussetting < 0 && torussetting >=-1.0) { //inbending
+				bending = 1;
+			}
+			else {
+				cout << "WARNING: Torus setting from RUN::config is " << torussetting << ". This is not defined for bending value for DC fiducials. Please check " << endl;
+			}
+			if (eHit.getDC_sector() == -999 || eHit.getDC_sector() == -1  ) {
+				cout << "Skimmer Error: DC sector is  " << eHit.getDC_sector() << " . Skipping event "<< event_counter << endl;
+				eHit.Print();
+				continue;
+			}
+
+			//checking DC Fiducials
+			//Region 1, true = pass DC Region 1
+			bool DC_fid_1  = DCfid_electrons.DC_e_fid(eHit.getDC_x1(),eHit.getDC_y1(),eHit.getDC_sector(), 1, bending);
+			//checking DC Fiducials
+			//Region 2, true = pass DC Region 2
+			bool DC_fid_2  = DCfid_electrons.DC_e_fid(eHit.getDC_x2(),eHit.getDC_y2(),eHit.getDC_sector(), 2, bending);
+			//checking DC Fiducials
+			//Region 3, true = pass DC Region 3
+			bool DC_fid_3  = DCfid_electrons.DC_e_fid(eHit.getDC_x3(),eHit.getDC_y3(),eHit.getDC_sector(), 3, bending);
+
+			//check if any of the fiducials is false i.e. electron does not pass all DC fiducials
+			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
 
 
 			// Grab the neutron information:
@@ -270,11 +321,11 @@ int main(int argc, char** argv) {
 							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
 							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
 			}
-			if( loadshifts_opt ){
-				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
-					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
-				}
+			if( loadshifts_opt && MC_DATA_OPT !=0){
+					for( int n = 0 ; n < nMult ; n++ ){
+						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS[(int)nHit[n].getBarID()] );
+						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS[(int)nHit[n].getBarID()]  );
+					}
 			}
 
 			// Store the neutrons in TClonesArray

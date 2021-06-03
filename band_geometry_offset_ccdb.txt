@@ -1,0 +1,4 @@
+#Offset of BAND compared to ideal position as in survey measurements from 2019. Values are in cm
+#Coordinate system is z along beam line, x to beam left and y to the ceiling
+# x-offset, y-offset, z-offset
+0 0 -3
