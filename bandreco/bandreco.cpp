@@ -11,10 +11,10 @@ void BANDReco::setPeriod( const int period ){
 	
 	// Set the vertex offset of the target:
 	if( SPRING2019 ){
-		TRGT_VERTEX_OFFSET = -3; // [cm]
+		BAND_MOTHER_OFFSET = -3; // [cm]
 	}
 	else if(FALL2019_WINTER2020){
-		TRGT_VERTEX_OFFSET = -3; // [cm]
+		BAND_MOTHER_OFFSET = -3; // [cm]
 	}
 
 	return;
@@ -212,6 +212,34 @@ void BANDReco::readEnergyCalib(){
 	return;
 }
 
+void BANDReco::readStatus(){
+	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	if( SPRING2019 ) path += "/spring2019";
+	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else{ cerr << "cannot load file\n"; exit(-1); }
+	std::string line;
+	std::ifstream f;
+
+	// Load the Edep calibration:
+	f.open(path+"/status_list.txt");
+	if( f.is_open() ){
+		while( getline(f,line) ){
+			std::istringstream ss(line);
+			int sector, layer, component;
+			int status;
+			sector = layer = component =
+				status = 0;
+			ss >> sector >> layer >> component >> status;
+
+			int BARID = sector*100 + layer*10 + component;
+			STATUS[BARID] = status;
+		}
+	}
+	f.close();
+
+	return;
+}
+
 double BANDReco::getTriggerPhase( const long timeStamp ) {
 	double tPh = 0.;
 
@@ -238,10 +266,9 @@ double BANDReco::timewalk( const double *x , const double *p){
 	return f0+f1+f2+f3;
 }
 
-bool BANDReco::check_bar(Bar * this_bar){
+bool BANDReco::check_bar(const Bar * this_bar){
 	PMT left 	= this_bar->left;
 	PMT right 	= this_bar->right;
-	if( left.layer == 6 || right.layer == 6 ) return true;
 	if( left.amp == 0 || right.amp == 0 		) return false;
 	if( left.adc == 0 || right.adc == 0		) return false;
 	if( left.ftdc == 0 || right.ftdc == 0		) return false;
@@ -251,8 +278,13 @@ bool BANDReco::check_bar(Bar * this_bar){
 	if( left.sector != right.sector			) return false;
 	if( left.layer != right.layer			) return false;
 	if( left.component != right.component		) return false;
+	if( left.layer == 6 || right.layer == 6 	) return true;	// if it's veto, we don't want to check the PMT difference
 	if( abs(left.PMT_ID-right.PMT_ID)>1		) return false;
 
+	return true;
+}
+bool BANDReco::check_status( const Bar * this_bar){
+	if( STATUS[this_bar->Bar_ID] == 0 ) return false;
 	return true;
 }
 
@@ -267,16 +299,16 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 	map<int,vector<PMT>> raw_pmts_adc;
 	map<int,vector<PMT>> raw_pmts_tdc;
 	for( int row = 0 ; row < band_adc->getRows() ; ++row ){
-		int sector 	= band_adc->getInt( 0, row );
-		int layer 	= band_adc->getInt( 1, row );
-		int component 	= band_adc->getInt( 2, row );
-		int order	= band_adc->getInt( 3, row );
+		int sector 	= (int) band_adc->getInt( 0, row );
+		int layer 	= (int) band_adc->getInt( 1, row );
+		int component 	= (int) band_adc->getInt( 2, row );
+		int order	= (int) band_adc->getInt( 3, row );
 		int PMT_ID	= sector*1000 + layer*100 + component*10 + order;
 
-		int adc		= band_adc->getInt( 4, row );
-		int amp		= band_adc->getInt( 5, row );
-		double ftdc	= band_adc->getFloat( 6, row );
-		int ped		= band_adc->getInt( 7, row );
+		int adc		= (int) band_adc->getInt( 4, row );
+		int amp		= (int) band_adc->getInt( 5, row );
+		double ftdc	= (double) band_adc->getFloat( 6, row );
+		int ped		= (int) band_adc->getInt( 7, row );
 
 		if( amp < 250 || amp >= 4095 ) continue;  // cut for TW 
 
@@ -295,13 +327,14 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 	}
 	// Loop over all the TDC hits to find a match:
 	for( int row = 0 ; row < band_tdc->getRows() ; ++row ){
-		int sector 	= band_tdc->getInt( 0 , row );
-		int layer 	= band_tdc->getInt( 1 , row );
-		int component 	= band_tdc->getInt( 2 , row );
-		int order	= band_tdc->getInt( 3 , row ) - 2;
+		int sector 	= (int) band_tdc->getInt( 0 , row );
+		int layer 	= (int) band_tdc->getInt( 1 , row );
+		int component 	= (int) band_tdc->getInt( 2 , row );
+		int order	= (int) band_tdc->getInt( 3 , row ) - 2; // minus two because TDC order is 2,3 for PMTs L,R
 		int PMT_ID	= sector*1000 + layer*100 + component*10 + order;
 
-		double tdc	= band_tdc->getInt( 4 , row ) * 0.02345 - phaseCorr;
+		int tdc_raw	= (int) band_tdc->getInt( 4 , row );
+		double tdc	= tdc_raw * 0.02345 - phaseCorr;
 
 		// If we do not have a matching FTDC hit for the PMT, we 
 		// skip this event completely
@@ -395,23 +428,32 @@ void BANDReco::createBars(  ){
 			newbar.layer		= candidate1.layer;
 			newbar.component	= candidate1.component;
 			newbar.Bar_ID		= Bar_ID;
+			if( check_status(&newbar) == false ) continue; // check the status table
 
+			// Now we can check to make sure we have a valid bar and set the quantities correctly
 			double tdiff		= (newbar.left.tdc_corr - newbar.right.tdc_corr) - TDCOffsets[Bar_ID];
 			double tdiff_ftdc	= (newbar.left.ftdc_corr - newbar.right.ftdc_corr) - FTDCOffsets[Bar_ID];
+			// no velocity max Tdiff check since we don't have a full bar
+	
+			// Create the ToF:
+			double meantime		= 0.5*(newbar.left.tdc_corr + newbar.right.tdc_corr - TDCOffsets[Bar_ID]	) - TDCPaddle[Bar_ID] - TDCLayer[Bar_ID] - TDCGlobal[Bar_ID];
+			double meantime_ftdc	= 0.5*(newbar.left.ftdc_corr + newbar.right.ftdc_corr - FTDCOffsets[Bar_ID]	) - FTDCPaddle[Bar_ID] - FTDCLayer[Bar_ID] - FTDCGlobal[Bar_ID];
 
-			double meantime		= 0.5*(newbar.left.tdc_corr + newbar.right.tdc_corr - TDCOffsets[Bar_ID]	) - TDCPaddle[Bar_ID];
-			double meantime_ftdc	= 0.5*(newbar.left.ftdc_corr + newbar.right.ftdc_corr - FTDCOffsets[Bar_ID]	) - FTDCPaddle[Bar_ID];
+			// Create the x,y,z:
+			double x 	= GlobalX[Bar_ID];
+			double x_ftdc 	= GlobalX[Bar_ID];
+			double y 	= GlobalY[Bar_ID];
+			double z 	= GlobalZ[Bar_ID] + BAND_MOTHER_OFFSET;
+										// GlobalZ is w.r. to the ideal target position
+										// SVT cart is shifted w.r. to the ideal target position
 
-			double x = GlobalX[Bar_ID];
-			double y = GlobalY[Bar_ID];
-			double z = GlobalZ[Bar_ID] - TRGT_VERTEX_OFFSET;
-
+			// Create the Edep:
 			double sec_length = bar_lengths[newbar.sector-1];
 			double mu = 1e10;
-			double adcL_corr = newbar.left.adc * exp( (sec_length/2.-x)/mu );
-			double adcR_corr = newbar.right.adc * exp( (sec_length/2.-x)/mu );
-			double ampL_corr = newbar.left.amp * exp( (sec_length/2.-x)/mu );
-			double ampR_corr = newbar.right.amp * exp( (sec_length/2.-x)/mu );
+			double adcL_corr = newbar.left.adc 	* exp( (sec_length/2.-x)/mu );
+			double adcR_corr = newbar.right.adc 	* exp( (sec_length/2.-x)/mu );
+			double ampL_corr = newbar.left.amp 	* exp( (sec_length/2.-x)/mu );
+			double ampR_corr = newbar.right.amp 	* exp( (sec_length/2.-x)/mu );
 
 			double edep = sqrt( adcL_corr * adcR_corr );
 			edep /= ADCtoMEV[Bar_ID]; // [ADC] / ([Adc/MeV]) = [MeV]
@@ -426,6 +468,7 @@ void BANDReco::createBars(  ){
 			newbar.AmpL		= ampL_corr;
 			newbar.AmpR		= ampR_corr;
 			newbar.X		= x;
+			newbar.XFtdc		= x_ftdc;
 			newbar.Y		= y;
 			newbar.Z		= z;
 			candidate_bars[Bar_ID] = newbar;
@@ -449,7 +492,7 @@ void BANDReco::createBars(  ){
 				newbar.left 	= candidate1;
 				newbar.right 	= candidate2;
 			}
-			else if( candidate2.order == 1 ){ // candidate 1 is right, candidate 2 is left
+			else if( candidate1.order == 1 ){ // candidate 1 is right, candidate 2 is left
 				newbar.left 	= candidate2;
 				newbar.right 	= candidate1;
 			}
@@ -459,6 +502,7 @@ void BANDReco::createBars(  ){
 			newbar.component	= component;
 			newbar.Bar_ID		= Bar_ID;
 			if( check_bar(&newbar) == false ) continue;	// make sure all the values for left and right are set
+			if( check_status(&newbar) == false ) continue; // check the status table
 
 			// Now we can check to make sure we have a valid bar and set the quantities correctly
 			double tdiff		= (newbar.left.tdc_corr - newbar.right.tdc_corr) - TDCOffsets[Bar_ID];
@@ -469,21 +513,24 @@ void BANDReco::createBars(  ){
 			if( fabs(tdiff_ftdc) > maxTdiff_ftdc 	) continue;
 	
 			// Create the ToF:
-			double meantime		= 0.5*(newbar.left.tdc_corr + newbar.right.tdc_corr - TDCOffsets[Bar_ID]	) - TDCPaddle[Bar_ID];
-			double meantime_ftdc	= 0.5*(newbar.left.ftdc_corr + newbar.right.ftdc_corr - FTDCOffsets[Bar_ID]	) - FTDCPaddle[Bar_ID];
+			double meantime		= 0.5*(newbar.left.tdc_corr + newbar.right.tdc_corr - TDCOffsets[Bar_ID]	) - TDCPaddle[Bar_ID] - TDCLayer[Bar_ID] - TDCGlobal[Bar_ID];
+			double meantime_ftdc	= 0.5*(newbar.left.ftdc_corr + newbar.right.ftdc_corr - FTDCOffsets[Bar_ID]	) - FTDCPaddle[Bar_ID] - FTDCLayer[Bar_ID] - FTDCGlobal[Bar_ID];
 
 			// Create the x,y,z:
-			double x = GlobalX[Bar_ID] - (0.5 * tdiff * TDCVelocity[Bar_ID]);
+			double x 	= GlobalX[Bar_ID] - (0.5 * tdiff * TDCVelocity[Bar_ID]);
+			double x_ftdc 	= GlobalX[Bar_ID] - (0.5 * tdiff_ftdc * FTDCVelocity[Bar_ID]);
 			double y = GlobalY[Bar_ID];
-			double z = GlobalZ[Bar_ID] - TRGT_VERTEX_OFFSET;
+			double z = GlobalZ[Bar_ID] + BAND_MOTHER_OFFSET;
+										// GlobalZ is w.r. to the ideal target position
+										// SVT cart is shifted w.r. to the ideal target position
 
 			// Create the Edep:
 			double sec_length = bar_lengths[newbar.sector-1];
 			double mu = 1e10;
-			double adcL_corr = newbar.left.adc * exp( (sec_length/2.-x)/mu );
-			double adcR_corr = newbar.right.adc * exp( (sec_length/2.-x)/mu );
-			double ampL_corr = newbar.left.amp * exp( (sec_length/2.-x)/mu );
-			double ampR_corr = newbar.right.amp * exp( (sec_length/2.-x)/mu );
+			double adcL_corr = newbar.left.adc 	* exp( (sec_length/2.-x)/mu );
+			double adcR_corr = newbar.right.adc 	* exp( (sec_length/2.-x)/mu );
+			double ampL_corr = newbar.left.amp 	* exp( (sec_length/2.-x)/mu );
+			double ampR_corr = newbar.right.amp 	* exp( (sec_length/2.-x)/mu );
 
 			double edep = sqrt( adcL_corr * adcR_corr );
 			edep /= ADCtoMEV[Bar_ID]; // [ADC] / ([Adc/MeV]) = [MeV]
@@ -498,6 +545,7 @@ void BANDReco::createBars(  ){
 			newbar.AmpL		= ampL_corr;
 			newbar.AmpR		= ampR_corr;
 			newbar.X		= x;
+			newbar.XFtdc		= x_ftdc;
 			newbar.Y		= y;
 			newbar.Z		= z;
 			candidate_bars[Bar_ID] = newbar;
@@ -507,10 +555,10 @@ void BANDReco::createBars(  ){
 	return;
 }
 
-void BANDReco::storeHits( int& mult , bandhit * hits , const double starttime ){
+void BANDReco::storeHits( int& mult , bandhit * hits , const double starttime , const double vtx_z ){
 
 	mult = 0;
-	map<int,Bar>::iterator bar_it;
+	map<int,Bar>::const_iterator bar_it;
 	for( bar_it = candidate_bars.begin() ; bar_it != candidate_bars.end() ; ++bar_it){
 
 		int Bar_ID 	= bar_it->first;
@@ -524,114 +572,45 @@ void BANDReco::storeHits( int& mult , bandhit * hits , const double starttime ){
 		hits[mult].setLayer		(this_bar.layer);
 		hits[mult].setComponent		(this_bar.component);
 		hits[mult].setBarID		(Bar_ID);
+
 		hits[mult].setEdep		(this_bar.Edep);
 		hits[mult].setTof		(this_bar.Tof 		- starttime );
 		hits[mult].setTofFadc		(this_bar.TofFtdc 	- starttime );
 		hits[mult].setTdiff		(this_bar.Tdiff);
 		hits[mult].setTdiffFadc		(this_bar.TdiffFtdc);
 		hits[mult].setX			(this_bar.X);
+		hits[mult].setXFadc		(this_bar.XFtdc);
 		hits[mult].setY			(this_bar.Y);
-		hits[mult].setZ			(this_bar.Z);
+		hits[mult].setZ			(this_bar.Z - vtx_z );
 
-		// 	Get the raw hit information corresponding to the band hit above
-		hits[mult].setPmtLtdc		(this_bar.left.tdc_corr);
-		hits[mult].setPmtRtdc		(this_bar.right.tdc_corr);
-		hits[mult].setPmtLtfadc		(this_bar.left.ftdc_corr);
-		hits[mult].setPmtRtfadc		(this_bar.right.ftdc_corr);
+		hits[mult].setRawLtdccorr	(this_bar.left.tdc_corr);					//TW corrected time
+		hits[mult].setRawLtdc		(this_bar.left.tdc);						// 0.02345 conversion and phase corr
+		hits[mult].setPmtLtdc		( (this_bar.left.tdc + this_bar.left.trigphase)/0.02345 );	// raw TDC channel
+
+		hits[mult].setRawRtdccorr	(this_bar.right.tdc_corr);					//TW corrected time
+		hits[mult].setRawRtdc		(this_bar.right.tdc);						// 0.02345 conversion and phase corr
+		hits[mult].setPmtRtdc		( (this_bar.right.tdc + this_bar.right.trigphase)/0.02345 );	// raw TDC channel
+		
+		hits[mult].setRawLtfadc		(this_bar.left.ftdc_corr);	// any additional correction to FTDC but not used at the moment
+		hits[mult].setPmtLtfadc		(this_bar.left.ftdc);		// copy of above since there are no additional corrections
+		hits[mult].setRawRtfadc		(this_bar.right.ftdc_corr);
+		hits[mult].setPmtLtfadc		(this_bar.right.ftdc);
+
+		hits[mult].setRawLadc		(this_bar.AdcL);		// attenuation-corrected ADC
+		hits[mult].setRawRadc		(this_bar.AdcR);
+		hits[mult].setRawLamp		(this_bar.AmpL);		// attenuation-corrected AMP
+		hits[mult].setRawRamp		(this_bar.AmpR);
+
 		hits[mult].setPmtLamp		(this_bar.left.amp);
 		hits[mult].setPmtRamp		(this_bar.right.amp);
 		hits[mult].setPmtLadc		(this_bar.left.adc);
 		hits[mult].setPmtRadc		(this_bar.right.adc);
 		hits[mult].setPmtLped		(this_bar.left.ped);
 		hits[mult].setPmtRped		(this_bar.right.ped);
-
+	
 		hits[mult].setStatus		(0.);
 		hits[mult].setDL		( TVector3(hits[mult].getX(),hits[mult].getY(),hits[mult].getZ()) );
 
-		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
-		//if( hits[mult].getLayer() == 6 ){
-			//hits[hit].setX			( bar_x[band_hits.getBarKey		(hit)	]	);
-			//int rawhit_idx = -1;
-			//if( hits[hit].getSector() == 4 ) rawhit_idx = band_hits.getRpmtindex(hit);
-			//else{ rawhit_idx = band_hits.getLpmtindex(hit); }
-
-			//hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
-			//hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
-			//hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
-			//hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
-			//hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
-
-			//hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
-			//hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
-			//hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
-			//hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
-			//hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
-
-			////Use average Edep per channel for vetos (could be either RawLadc or RawRadc)
-			//hits[hit].setEdep		(hits[hit].getRawLadc()	);
-
-			//// Using the rawhit struct, get the raw PMT information to use later
-			//int pmtTdc	= band_rawhits.getInt( 10 , rawhit_idx );
-			//int pmtAdc	= band_rawhits.getInt( 11 , rawhit_idx );
-			////	Get the raw pmt information corresponding to the band hit above
-			//hits[hit].setPmtLtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
-			//hits[hit].setPmtRtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
-			//hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
-			//hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
-			//hits[hit].setPmtLamp		(band_adc.getInt( 5 	, pmtAdc )		);
-			//hits[hit].setPmtRamp		(band_adc.getInt( 5 	, pmtAdc )		);
-			//hits[hit].setPmtLadc		(band_adc.getInt( 4 	, pmtAdc )		);
-			//hits[hit].setPmtRadc		(band_adc.getInt( 4 	, pmtAdc )		);
-			//hits[hit].setPmtLped		(band_adc.getInt( 7 	, pmtAdc )		);
-			//hits[hit].setPmtRped		(band_adc.getInt( 7 	, pmtAdc )		);
-		//}
-		//else{
-			// Using the band hit struct, get the raw hit PMT information to use later
-			//int rawhit_idxL = band_hits.getLpmtindex(hit);
-			//int rawhit_idxR = band_hits.getRpmtindex(hit);
-			//// 	Get the raw hit information corresponding to the band hit above
-			//hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
-			//hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
-			//hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
-			//hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
-			//hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
-			//hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
-			//hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
-			//hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
-			//hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
-			//hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
-
-			//// Using the rawhit struct, get the raw PMT information to use later
-			//int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
-			//int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
-			//int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
-			//int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
-			////	Get the raw pmt information corresponding to the band hit above
-			//hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
-			//hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
-			//hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
-			//hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
-			//hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
-			//hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
-			//hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
-			//hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
-			//hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
-			//hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
-		//}
-
-		//If Edep maps are not empty, use them to calibrate Edep in MeV for each bar
-		//For MC Edep other file is used with constants
-		//if ( !bar_edep.empty() ) {
-			//Calibration values are in channel/MeV
-			//cout << "applying energycorrection before value: " << hits[hit].getEdep() << endl;
-			//	hits[hit].setEdep		(band_hits.getEnergy	(hit)	/ bar_edep[band_hits.getBarKey	(hit)	]		);
-			//		cout << "applying energycorrection after value: " << hits[hit].getEdep() << endl;
-		//}
-
-		// After all corrections to positions, set the pathlength and status:
-		//hits[hit].setStatus		(band_hits.getStatus		(hit)			);
-		//hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
-		// Save how many neutron hits we have
 		mult++;
 	}
 	return;

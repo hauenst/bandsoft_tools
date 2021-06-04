@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("nHits"		,&nHits			);
 
 	
-	period = atoi(argv[1]);
+	period = atoi(argv[1]); // TODO just get it from run number directly
 
 	// Initialize our BAND reconstruction engine:
 	BANDReco * BAND = new BANDReco();
@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 	BAND->readPaddleOffset();
 	BAND->readGeometry();
 	BAND->readEnergyCalib();
+	BAND->readStatus();
 
 
 	// Create histograms for storage
@@ -109,7 +110,7 @@ int main(int argc, char** argv) {
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
-			if( event_counter > 500000 ) break;
+			//if( event_counter > 500000 ) break;
 			event_counter++;
 
 			// Load data structure for this event:
@@ -129,7 +130,7 @@ int main(int argc, char** argv) {
 			// Form the PMTs and Bars for BAND:
 			BAND->createPMTs( &band_adc, &band_tdc, &run_config );
 			BAND->createBars();
-			BAND->storeHits( nMult , nHit , starttime );		
+			BAND->storeHits( nMult , nHit , starttime , -3 ); // no electron info being read so take as -3
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
