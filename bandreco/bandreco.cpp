@@ -153,6 +153,51 @@ void BANDReco::readPaddleOffset(){
 	return;
 }
 
+void BANDReco::readLayerOffset(){
+	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	if( SPRING2019 ) path += "/spring2019";
+	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else{ cerr << "cannot load file\n"; exit(-1); }
+	std::string line;
+	std::ifstream f;
+
+	// Load Layer offset file:
+	int LAYERREF = -1;
+	f.open(path+"/layer_offsets.txt");
+	if( f.is_open() ){
+		while( getline(f,line) ){
+			std::istringstream ss(line);
+			int sector,layer,component;
+			double tdc_amp, tdc_mean, tdc_sigma;
+			double ftdc_amp, ftdc_mean, ftdc_sigma;
+			sector = layer = component = 
+				tdc_amp = tdc_mean = tdc_sigma =
+				ftdc_amp = ftdc_mean = ftdc_sigma = 0;
+			ss >> sector >> layer >> component >> 
+				tdc_amp >> tdc_mean >> tdc_sigma >>
+				ftdc_amp >> ftdc_mean >> ftdc_sigma;
+
+			int BARID = sector*100 + layer*10 + component;
+			if( tdc_mean != 0 && ftdc_mean != 0 ) LAYERREF = sector*100 + component;
+			TDCLayer[BARID] = tdc_mean;
+			FTDCLayer[BARID] = ftdc_mean;
+		}
+	}
+	f.close();
+	
+	// Now what we need to do is go through and overwrite the offsets to be the same in each
+	// layer based on the reference we have in the file:
+	map<int,double>::iterator bar_it;
+	for( bar_it = TDCLayer.begin() ; bar_it != TDCLayer.end() ; ++bar_it ){
+		int Bar_ID = bar_it->first;
+		int layer = int((Bar_ID - int(Bar_ID/100)*100)/10);
+		TDCLayer[Bar_ID] 	= TDCLayer[LAYERREF+layer*10];
+		FTDCLayer[Bar_ID] 	= FTDCLayer[LAYERREF+layer*10];
+	}
+
+	return;
+}
+
 void BANDReco::readGeometry(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";

@@ -75,6 +75,7 @@ class BANDReco{
 		void readTW();
 		void readLROffset();
 		void readPaddleOffset();
+		void readLayerOffset();
 		void readGeometry();
 		void readEnergyCalib();
 		void readStatus();
