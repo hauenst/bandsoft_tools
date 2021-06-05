@@ -52,6 +52,17 @@ install( TARGETS ncalibration
 
 
 #################################################################################################
+add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ../../bandreco/bandreco.cpp )
+target_link_libraries(ncalibration_newbandclass ${ROOT_LIBRARIES} Hipo4 Banks4  
+				clashit_tree bandhit_tree taghit_tree genpart_tree 
+				clas12fiducial e_pid DC_fiducial
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS ncalibration_newbandclass
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+#################################################################################################
+
+
+#################################################################################################
 add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
 target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
