@@ -8,10 +8,18 @@ include_directories(${INCLUDES})
 
 
 #################################################################################################
-add_executable(paddle paddle.cpp )
-target_link_libraries(paddle ${ROOT_LIBRARIES} Hipo4 Banks4  
+add_executable(paddle_class paddle_class.cpp ../../bandreco/bandreco.cpp )
+target_link_libraries(paddle_class ${ROOT_LIBRARIES} Hipo4 Banks4  
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
-install( TARGETS paddle
+install( TARGETS paddle_class
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
+
+#################################################################################################
+add_executable(layer_class layer_class.cpp ../../bandreco/bandreco.cpp )
+target_link_libraries(layer_class ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS layer_class
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
 #################################################################################################
 
