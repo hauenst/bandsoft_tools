@@ -87,6 +87,7 @@ class BANDReco{
 	private:
 		bool SPRING2019 = false;
 		bool FALL2019_WINTER2020 = false;
+		bool CALIBRATION = false;
 		double BAND_MOTHER_OFFSET = 0.; // [cm]
 
 		double timewalk( const double *x , const double *p);

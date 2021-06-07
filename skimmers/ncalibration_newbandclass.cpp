@@ -170,6 +170,9 @@ int main(int argc, char** argv) {
 				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
 					period = 0;
 				}
+				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data
+					period = 1;
+				}		
 				else {
 					cout << "No bar by bar offsets loaded " << endl;
 					cout << "Check shift option when starting program. Exit " << endl;

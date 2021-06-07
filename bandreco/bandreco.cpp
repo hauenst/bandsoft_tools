@@ -349,6 +349,7 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		int component 	= (int) band_adc->getInt( 2, row );
 		int order	= (int) band_adc->getInt( 3, row );
 		int PMT_ID	= sector*1000 + layer*100 + component*10 + order;
+		if( PMT_ID == 6661 || PMT_ID == 6660 ) continue; // filter out the photodiode in the data -- TODO FIX THIS FOR CALIBRATION
 
 		int adc		= (int) band_adc->getInt( 4, row );
 		int amp		= (int) band_adc->getInt( 5, row );
