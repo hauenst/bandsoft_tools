@@ -463,7 +463,7 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	}
 	//just give out warning for electron in first particle bank row
 	if (index == -1 && pbankIndex == 0) {
-		cout << "getElectronInfo Warning: DC index is -1" << endl;
+		//cout << "getElectronInfo Warning: DC index is -1" << endl;
 	}
 
 
