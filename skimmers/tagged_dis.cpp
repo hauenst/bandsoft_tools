@@ -269,10 +269,6 @@ int main(int argc, char** argv) {
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 
-			// Get integrated charge, livetime and start-time from REC::Event
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
-
 			//for option 2 just fill the generated infos in the output file, skip remaining part of event loop
 			if( MC_DATA_OPT == 2){
 				// Store the mc particles in TClonesArray
@@ -284,7 +280,14 @@ int main(int argc, char** argv) {
 				continue;
 			}
 
-			//Till the end of the for loop is only executed for MC_DATA_OPT = 0 and 1
+				//Till the end of the for loop is only executed for MC_DATA_OPT = 0 and 1
+			// Get integrated charge, livetime and start-time from REC::Event
+			if( event_info.getRows() == 0 ) continue;
+			getEventInfo( event_info, gated_charge, livetime, starttime );
+
+
+
+
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
 
