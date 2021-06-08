@@ -198,6 +198,54 @@ void BANDReco::readLayerOffset(){
 	return;
 }
 
+void BANDReco::readGlobalOffset(){
+	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	if( SPRING2019 ) path += "/spring2019";
+	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else{ cerr << "cannot load file\n"; exit(-1); }
+	std::string line;
+	std::ifstream f;
+	f.open(path+"/global_offsets_tdc.txt");
+	if( f.is_open() ){
+		while( getline(f,line) ){
+			std::istringstream ss(line);
+			int sector, layer, component;
+			double amp, mean, sigma, integral, flag;
+			sector = layer = component = 
+				amp = mean = sigma = integral = flag = 0;
+			ss >> sector >> layer >> component >>
+				amp >> mean >> sigma >> integral >> flag;
+
+			int BAR_ID = sector*100+layer*10+component;
+
+			TDCGlobal[BAR_ID] = mean;
+			TDCToFRes[BAR_ID] = sigma;
+		}
+	}
+	f.close();
+
+	f.open(path+"/global_offsets_fadc.txt");
+	if( f.is_open() ){
+		while( getline(f,line) ){
+			std::istringstream ss(line);
+			int sector, layer, component;
+			double amp, mean, sigma, integral, flag;
+			sector = layer = component = 
+				amp = mean = sigma = integral = flag = 0;
+			ss >> sector >> layer >> component >>
+				amp >> mean >> sigma >> integral >> flag;
+
+			int BAR_ID = sector*100+layer*10+component;
+
+			FTDCGlobal[BAR_ID] = mean;
+			FTDCToFRes[BAR_ID] = sigma;
+		}
+	}
+	f.close();
+
+	return;
+}
+
 void BANDReco::readGeometry(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
@@ -349,7 +397,8 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		int component 	= (int) band_adc->getInt( 2, row );
 		int order	= (int) band_adc->getInt( 3, row );
 		int PMT_ID	= sector*1000 + layer*100 + component*10 + order;
-		if( PMT_ID == 6661 || PMT_ID == 6660 ) continue; // filter out the photodiode in the data -- TODO FIX THIS FOR CALIBRATION
+		// filter out the photodiode in the data -- TODO FIX THIS FOR CALIBRATION
+		if( PMT_ID == 6661 || PMT_ID == 6660 ) continue;
 
 		int adc		= (int) band_adc->getInt( 4, row );
 		int amp		= (int) band_adc->getInt( 5, row );
@@ -429,6 +478,7 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 			candidate.sector 	= this_pmt.sector;
 			candidate.layer		= this_pmt.layer;
 			candidate.component	= this_pmt.component;
+			candidate.PMT_ID	= this_pmt.PMT_ID;
 			candidate.order		= this_pmt.order;
 			candidate.adc		= this_pmt.adc;
 			candidate.amp		= this_pmt.amp;
@@ -555,8 +605,10 @@ void BANDReco::createBars(  ){
 			double tdiff_ftdc	= (newbar.left.ftdc_corr - newbar.right.ftdc_corr) - FTDCOffsets[Bar_ID];
 			double maxTdiff		= bar_lengths[sector-1] / TDCVelocity[Bar_ID];
 			double maxTdiff_ftdc	= bar_lengths[sector-1] / FTDCVelocity[Bar_ID];
-			if( fabs(tdiff) > maxTdiff 		) continue;
-			if( fabs(tdiff_ftdc) > maxTdiff_ftdc 	) continue;
+			if( maxTdiff == maxTdiff || maxTdiff_ftdc == maxTdiff_ftdc ){
+				if( fabs(tdiff) > maxTdiff 		) continue;
+				if( fabs(tdiff_ftdc) > maxTdiff_ftdc 	) continue;
+			}
 	
 			// Create the ToF:
 			double meantime		= 0.5*(newbar.left.tdc_corr + newbar.right.tdc_corr - TDCOffsets[Bar_ID]	) - TDCPaddle[Bar_ID] - TDCLayer[Bar_ID] - TDCGlobal[Bar_ID];

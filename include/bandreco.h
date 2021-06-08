@@ -76,6 +76,7 @@ class BANDReco{
 		void readLROffset();
 		void readPaddleOffset();
 		void readLayerOffset();
+		void readGlobalOffset();
 		void readGeometry();
 		void readEnergyCalib();
 		void readStatus();
@@ -111,6 +112,8 @@ class BANDReco{
 		map<int,int> STATUS;
 		map<int,double> TDCGlobal; 
 		map<int,double> FTDCGlobal; 
+		map<int,double> TDCToFRes; 
+		map<int,double> FTDCToFRes; 
 
 		// Storage containers for each event:
 		map<int,PMT> candidate_pmts;
