@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
 				BAND->readGeometry();		// geometry table for each bar
 				BAND->readEnergyCalib();	// energy calibration for Adc->MeVee 
 				BAND->readStatus();		// status table for 0,1 = bad,good bar
-				//if( loadshifts_opt ) BAND->readGlobalOffset();	// final global alignment relative to electron trigger
+				if( loadshifts_opt ) BAND->readGlobalOffset();	// final global alignment relative to electron trigger
 			}
 
 			// Get integrated charge, livetime and start-time from REC::Event
