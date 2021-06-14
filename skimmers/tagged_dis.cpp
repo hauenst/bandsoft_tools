@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 	if( argc < 5 ){
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
-		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
+		cerr << "\t\t[<MC,DATA, MC generated info for each event> = <0, 1, 2> \n";
 		cerr << "\t\t[<load shifts N,Y> = <0, 1> \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
 	if( MC_DATA_OPT == 1){ //Data
 		getBANDEdepCalibration("../include/band-bar-edep.txt", bar_edep);
 	}
-	else if( MC_DATA_OPT == 0){ //MC
+	else if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){ //MC
 		getBANDEdepCalibration("../include/band-bar-edep-mc.txt", bar_edep);
 	}
 	else {
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
-		if( MC_DATA_OPT == 0){
+		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
 		}
@@ -265,37 +265,32 @@ int main(int argc, char** argv) {
 
 
 			// For simulated events, get the weight for the event
-			if( MC_DATA_OPT == 0){
+			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 
+			//for option 2 just fill the generated infos in the output file, skip remaining part of event loop
+			if( MC_DATA_OPT == 2){
+				// Store the mc particles in TClonesArray
+				for( int n = 0 ; n < maxGens ; n++ ){
+					new(saveMC[n]) genpart;
+					saveMC[n] = &mcPart[n];
+				}
+				outTree->Fill();
+				continue;
+			}
+
+				//Till the end of the for loop is only executed for MC_DATA_OPT = 0 and 1
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
-			// Grab the neutron information:
-			// 											do the hotfix for x-position
-			if( MC_DATA_OPT == 0 ){
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
-			}
-			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep,
-						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
-							FADC_LROFF_S6291,	TDC_LROFF_S6291,
-							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
-							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
-			}
-			if( loadshifts_opt ){
-				for( int n = 0 ; n < nMult ; n++ ){
-					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
-					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
-				}
-			}
 
 
 
 			// Grab the electron information:
 			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
@@ -331,7 +326,24 @@ int main(int argc, char** argv) {
 			//check if any of the fiducials is false i.e. electron does not pass all DC fiducials
 			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
 
-
+			// Grab the neutron information:
+			// 											do the hotfix for x-position only for data
+			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){ //in principle MC_DATA_OPT should not be 2 here but lets play it safe
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
+			}
+			else{
+				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep,
+						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
+							FADC_LROFF_S6291,	TDC_LROFF_S6291,
+							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
+							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
+			}
+			if( loadshifts_opt ){
+				for( int n = 0 ; n < nMult ; n++ ){
+					nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_INITBAR[(int)nHit[n].getBarID()] );
+					nHit[n].setTof(		nHit[n].getTof() 	- TDC_INITBAR[(int)nHit[n].getBarID()]  );
+				}
+			}
 
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
@@ -365,7 +377,7 @@ int main(int argc, char** argv) {
 			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
-			else if( MC_DATA_OPT == 0 ){
+			else if( MC_DATA_OPT == 0 ||  MC_DATA_OPT == 2 ){
 				outTree->Fill();
 			}
 

@@ -42,7 +42,7 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 				hits[hit].setY			( bar_y[band_hits.getBarKey		(hit)	]		);
 		}
 		if ( !bar_z.empty() ) {
-		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 - VERTEX_OFFSET	);
+		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 + BAND_OFFSET	- VERTEX_OFFSET	);
 		}
 
 
