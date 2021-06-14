@@ -210,11 +210,11 @@ void BANDReco::readGlobalOffset(){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
 			int sector, layer, component;
-			double amp, mean, sigma, integral, flag;
+			double bkg, amp, mean, sigma, integral, flag;
 			sector = layer = component = 
-				amp = mean = sigma = integral = flag = 0;
+				bkg = amp = mean = sigma = integral = flag = 0;
 			ss >> sector >> layer >> component >>
-				amp >> mean >> sigma >> integral >> flag;
+				bkg >> amp >> mean >> sigma >> integral >> flag;
 
 			int BAR_ID = sector*100+layer*10+component;
 
@@ -229,11 +229,11 @@ void BANDReco::readGlobalOffset(){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
 			int sector, layer, component;
-			double amp, mean, sigma, integral, flag;
+			double bkg, amp, mean, sigma, integral, flag;
 			sector = layer = component = 
-				amp = mean = sigma = integral = flag = 0;
+				bkg = amp = mean = sigma = integral = flag = 0;
 			ss >> sector >> layer >> component >>
-				amp >> mean >> sigma >> integral >> flag;
+				bkg >> amp >> mean >> sigma >> integral >> flag;
 
 			int BAR_ID = sector*100+layer*10+component;
 

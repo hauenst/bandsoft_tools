@@ -165,16 +165,32 @@ int main(int argc, char ** argv){
 				}
 				else if( (layer+1)==6 ){
 					ToF_spec[sector][layer][component]->Rebin(4);
+
+
+					double background_lvl = 0.;
+					for( int i = 1; i < 11; i++){
+						background_lvl += ToF_spec[sector][layer][component]->GetBinContent(i);
+					}
+					background_lvl /= 10;
+					
+					double edge_height = background_lvl*2;
+					double edge_pos = ToF_spec[sector][layer][component]->GetXaxis()->GetBinCenter( ToF_spec[sector][layer][component]->FindFirstBinAbove(edge_height) );
+					double max = ToF_spec[sector][layer][component]->GetMaximum();
+					TLine * line = new TLine(edge_pos,0,edge_pos,max);
+					line->SetLineColor(8);
+					line->SetLineWidth(2);
+					
+					/*
 					double max = ToF_spec[sector][layer][component]->GetMaximum();
 					double max_pos = ToF_spec[sector][layer][component]->GetXaxis()->GetBinCenter( ToF_spec[sector][layer][component]->GetMaximumBin() );
 					TLine * line = new TLine(max_pos,0,max_pos,max);
 					line->SetLineColor(8);
 					line->SetLineWidth(2);
+					*/
 					
-
 					out_file << (sector+1) << " " << (layer+1) << " " << (component+1) << " " 
-						<< 0 << " " << max << " " 
-						<< max_pos << " " << 0 << " "
+						<< background_lvl << " " << max << " " 
+						<< edge_pos << " " << 0 << " "
 						<< 0 << " " << 1 << "\n";
 
 					cSLC[sector][layer][component]->cd(1);
