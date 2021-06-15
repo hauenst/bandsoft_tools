@@ -62,6 +62,7 @@ class BANDReco{
 		~BANDReco(){};
 
 		void Clear();
+		void Print();
 
 		void setPeriod(const int period);
 

@@ -6,6 +6,42 @@ void BANDReco::Clear(){
 	return;
 }
 
+void BANDReco::Print(){
+	map<int,Bar>::const_iterator bar_i;
+	for( bar_i = candidate_bars.begin() ; bar_i != candidate_bars.end() ; ++bar_i ){
+		int Bar_ID = bar_i->first;
+		Bar bar = bar_i->second;
+	
+		std::cout << "Bar ID: " << Bar_ID << " " << bar.Bar_ID << "\n";
+		std::cout << "\tS L C: " << bar.sector << " " << bar.layer << " " << bar.component << "\n";
+		std::cout << "\tEdep: " << bar.Edep << "\n";
+		std::cout << "\tAdcL, AdcR: " << bar.AdcL << " " << bar.AdcR << "\n";
+		std::cout << "\tAmpL, AmpR: " << bar.AmpL << " " << bar.AmpR << "\n";
+		std::cout << "\tToF, ToFFadc: " << bar.Tof << " " << bar.TofFtdc << "\n";
+		std::cout << "\tx,y,z: " << bar.X << " " << bar.Y << " " << bar.Z << "\n";
+		std::cout << "\txFtdc: " << bar.XFtdc << "\n";
+		std::cout << "\tTdiff: " << bar.Tdiff << " " << bar.TdiffFtdc << "\n";
+
+		std::cout << "\tPmtLadc: " 		<< bar.left.adc << "\n";
+		std::cout << "\tPmtLamp: " 		<< bar.left.amp << "\n";
+		std::cout << "\tPmtLftdc: " 		<< bar.left.ftdc << "\n";
+		std::cout << "\tPmtLftdc_corr: " 	<< bar.left.ftdc_corr << "\n";
+		std::cout << "\tPmtLped: " 		<< bar.left.ped << "\n";
+		std::cout << "\tPmtLtdc: " 		<< bar.left.tdc << "\n";
+		std::cout << "\tPmtLtdc_corr: " 	<< bar.left.tdc_corr << "\n";
+		std::cout << "\tPmtRadc: " 		<< bar.right.adc << "\n";
+		std::cout << "\tPmtRamp: " 		<< bar.right.amp << "\n";
+		std::cout << "\tPmtRftdc: " 		<< bar.right.ftdc << "\n";
+		std::cout << "\tPmtRftdc_corr: " 	<< bar.right.ftdc_corr << "\n";
+		std::cout << "\tPmtRped: " 		<< bar.right.ped << "\n";
+		std::cout << "\tPmtRtdc: " 		<< bar.right.tdc << "\n";
+		std::cout << "\tPmtRtdc_corr: " 	<< bar.right.tdc_corr << "\n\n";
+	}
+	
+
+	return;
+}
+
 void BANDReco::setPeriod( const int period ){
 	(period == 0) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
 	
@@ -404,7 +440,8 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		int amp		= (int) band_adc->getInt( 5, row );
 		double ftdc	= (double) band_adc->getFloat( 6, row );
 		int ped		= (int) band_adc->getInt( 7, row );
-
+		
+		amp -= ped; // subtract off pedestal since it's not in the ExtendedFADCFitter
 		if( amp < 250 || amp >= 4095 ) continue;  // cut for TW 
 
 		PMT this_pmt;
@@ -690,9 +727,9 @@ void BANDReco::storeHits( int& mult , bandhit * hits , const double starttime , 
 		hits[mult].setPmtRtdc		( (this_bar.right.tdc + this_bar.right.trigphase)/0.02345 );	// raw TDC channel
 		
 		hits[mult].setRawLtfadc		(this_bar.left.ftdc_corr);	// any additional correction to FTDC but not used at the moment
-		hits[mult].setPmtLtfadc		(this_bar.left.ftdc);		// copy of above since there are no additional corrections
 		hits[mult].setRawRtfadc		(this_bar.right.ftdc_corr);
-		hits[mult].setPmtLtfadc		(this_bar.right.ftdc);
+		hits[mult].setPmtLtfadc		(this_bar.left.ftdc);		// copy of above since there are no additional corrections
+		hits[mult].setPmtRtfadc		(this_bar.right.ftdc);
 
 		hits[mult].setRawLadc		(this_bar.AdcL);		// attenuation-corrected ADC
 		hits[mult].setRawRadc		(this_bar.AdcR);
