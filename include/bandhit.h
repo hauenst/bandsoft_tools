@@ -5,6 +5,8 @@
 #include "TVector3.h"
 #include "constants.h"
 
+#include <iostream>
+
 class bandhit : public TObject {
 	public:
 		bandhit();
@@ -12,6 +14,7 @@ class bandhit : public TObject {
 
 
 		void Clear();
+		void Print();
 		
 		// Some custom get functions
 		double getBeta		(void)		{return DL.Mag() / Tof / cAir; }
