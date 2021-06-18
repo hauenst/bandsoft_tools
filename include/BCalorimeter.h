@@ -47,7 +47,11 @@ class BCalorimeter : public hipo::bank {
 		float getLU      (int row) { return getFloat(lu_order        ,row);}
 		float getLV      (int row) { return getFloat(lv_order        ,row);}
 		float getLW      (int row) { return getFloat(lw_order        ,row);}
-
+		float getX    	 (int row) { return getFloat(x_order         ,row);}
+		float getY    	 (int row) { return getFloat(y_order         ,row);}
+		float getZ       (int row) { return getFloat(z_order         ,row);}
+		float getTime    (int row) { return getFloat(time_order      ,row);}
+		float getPath    (int row) { return getFloat(path_order      ,row);}
 
 		int   getElectronSector  (int pindex);
 		int   getPcalRow( int pindex);

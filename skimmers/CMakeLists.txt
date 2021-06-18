@@ -9,8 +9,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 #################################################################################################
 add_executable(neutrons neutrons.cpp readhipo_helper.cpp )
-target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4 
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS neutrons
@@ -20,8 +20,8 @@ install( TARGETS neutrons
 
 #################################################################################################
 add_executable(electrons electrons.cpp readhipo_helper.cpp )
-target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4 
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS electrons
@@ -31,8 +31,8 @@ install( TARGETS electrons
 
 #################################################################################################
 add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp )
-target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4 
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS tagged_dis
@@ -42,8 +42,8 @@ install( TARGETS tagged_dis
 
 #################################################################################################
 add_executable(ncalibration ncalibration.cpp readhipo_helper.cpp )
-target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4  
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS ncalibration
@@ -53,8 +53,8 @@ install( TARGETS ncalibration
 
 #################################################################################################
 add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ../../bandreco/bandreco.cpp )
-target_link_libraries(ncalibration_newbandclass ${ROOT_LIBRARIES} Hipo4 Banks4  
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(ncalibration_newbandclass ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS ncalibration_newbandclass
@@ -64,8 +64,8 @@ install( TARGETS ncalibration_newbandclass
 
 #################################################################################################
 add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
-target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4 
-				clashit_tree bandhit_tree taghit_tree genpart_tree 
+target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS quasielastic
@@ -78,6 +78,18 @@ install( TARGETS get_Q_Tag0
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 
 ##################################################################################################
+
+
+#################################################################################################
+add_executable(ecalneutrals ecalneutrals.cpp readhipo_helper.cpp )
+target_link_libraries(ecalneutrals ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
+				clas12fiducial e_pid DC_fiducial
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS ecalneutrals
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+#################################################################################################
+
 #add_executable(EC_cuts EC_cuts.cpp readhipo_helper.cpp )
 #target_link_libraries(EC_cuts ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial e_pid -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 #install( TARGETS EC_cuts
@@ -97,4 +109,3 @@ install( TARGETS get_Q_Tag0
 #target_link_libraries(DC_fid_test ${ROOT_LIBRARIES} Hipo4 Banks4 clashit_tree clas12fiducial DC_fiducial -lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 #install( TARGETS DC_fid_test
 #		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
-
