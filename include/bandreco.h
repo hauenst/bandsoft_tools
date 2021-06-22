@@ -92,6 +92,8 @@ class BANDReco{
 		bool CALIBRATION = false;
 		double BAND_MOTHER_OFFSET = 0.; // [cm]
 
+		bool loaded_TW = false;
+
 		double timewalk( const double *x , const double *p);
 		double getTriggerPhase( const long timeStamp ) ;
 		bool check_bar(const Bar * this_bar);

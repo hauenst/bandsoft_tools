@@ -121,6 +121,8 @@ void BANDReco::readTW(){
 		}
 	}
 	f.close();
+
+	loaded_TW = true;
 	return;
 }
 
@@ -383,6 +385,7 @@ double BANDReco::getTriggerPhase( const long timeStamp ) {
 }
 
 double BANDReco::timewalk( const double *x , const double *p){
+	if( !loaded_TW ) return 0.;
 	double A = *x;
 	double f0 = p[0] + p[1]/pow(A,p[2]); 				// p[3]-p[5] not used
 	double f1 = p[6]/A + p[7]/(exp((A-p[8])/p[9]) + p[10] );	// p[11] not used
@@ -441,8 +444,9 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		double ftdc	= (double) band_adc->getFloat( 6, row );
 		int ped		= (int) band_adc->getInt( 7, row );
 		
+		if( amp >= 4095 ) continue;
 		amp -= ped; // subtract off pedestal since it's not in the ExtendedFADCFitter
-		if( amp < 250 || amp >= 4095 ) continue;  // cut for TW 
+		if( loaded_TW && amp < 250 ) continue;		// cut for TW fits
 
 		PMT this_pmt;
 		this_pmt.PMT_ID 	= PMT_ID;
