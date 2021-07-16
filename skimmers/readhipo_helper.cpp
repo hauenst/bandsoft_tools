@@ -570,9 +570,24 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		double E_n 	= sqrt( mN*mN + p_n*p_n );
 		double W_primeSq = mD*mD - eHit.getQ2() + mN*mN + 2.*mD*(eHit.getOmega()-E_n) - 2.*eHit.getOmega()*E_n + 2.*eHit.getQ()*p_n*cos(theta_nq);
 		double Wp = sqrt(W_primeSq);
-		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
 		double As = (E_n - p_n*CosTheta_nq)/mN;
-		double Xp2 = eHit.getQ2()/(W_primeSq - mN*mN + eHit.getQ2());
+
+		// Different definitions of x'
+		// Bonus definition is the default
+		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
+		// W' definition
+		double Xp_WP  = eHit.getQ2()/(W_primeSq - mN*mN + eHit.getQ2());
+		// Bjorken definition
+		double Xp_Bj  = eHit.getXb()/(2. - As);
+		// PRC definition
+		double Ei = mD - E_n;
+		double ps_plus = mD/2. * As;
+		double virt = (Ei*Ei - p_n*p_n - mN*mN)/(mN*mN);
+		double p_plus = mD - ps_plus;
+		double q_plus = eHit.getOmega() - eHit.getQ();
+		double tP = virt * mN * mN
+		double Xp_PRC = (eHit.Q2() - (q_plus/p_plus)*tP)/(W_primeSq - mN*mN + eHit.Q2() - (q_plus/p_plus)*tP);
+
 
 		TVector3 Pt;
 		TVector3 pN_par_q = nVec.Dot(qVec) / (qVec.Mag2()) * qVec;
@@ -586,10 +601,12 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		tag[hit].setPhiNQ	(phi_nq		);
 		tag[hit].setThetaNQ	(theta_nq	);
 		tag[hit].setWp		(Wp		);
-		tag[hit].setXp		(Xp		);
 		tag[hit].setAs		(As		);
 		tag[hit].setPt		(Pt		);
-		tag[hit].setXp2		(Xp2		);
+		tag[hit].setXp		(Xp		);
+		tag[hit].setXp_WP	(Xp_WP		);
+		tag[hit].setXp_Bj	(Xp_Bj		);
+		tag[hit].setXp_PRC	(Xp_PRC		);
 	}
 
 	//beta = dL / (ToF*cAir);
