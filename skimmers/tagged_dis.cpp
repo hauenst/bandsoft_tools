@@ -232,6 +232,7 @@ int main(int argc, char** argv) {
 			nHits->Clear();
 			// Tag
 			taghit tag[maxNeutrons];
+			taghit tag_smeared[maxNeutrons];
 			tags->Clear();
 			// Electron
 			eHit.Clear();
@@ -378,8 +379,6 @@ int main(int argc, char** argv) {
 
 				//Recalculate Electron Kinematics with smeared values
 				recalculate_clashit_kinematics(eHit_smeared, Ebeam, reco_electron);
-
-				taghit tag_smeared[maxNeutrons];
 
 				// Create the tagged smeared information from the smeared electron and neutron information:
 				getTaggedInfo(	eHit_smeared	,  nHit	 ,  tag_smeared , Ebeam , nMult );
