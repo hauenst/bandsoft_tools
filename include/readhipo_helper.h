@@ -15,6 +15,7 @@
 #include "clashit.h"
 #include "taghit.h"
 #include "genpart.h"
+#include "TRandom3.h"
 
 using namespace std;
 
@@ -89,5 +90,8 @@ void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momen
 								double time[maxParticles], int charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], int status[maxParticles] , int index[maxParticles], int& multiplicity );
 void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z);
 void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep);
+//Parametrization from Giovanni (GWU) and FX based on double pion analysis in RGA
+void smearRGA(TVector3 &vpar);
+void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron);
 
 #endif

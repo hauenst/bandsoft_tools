@@ -695,9 +695,24 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		double E_n 	= sqrt( mN*mN + p_n*p_n );
 		double W_primeSq = mD*mD - eHit.getQ2() + mN*mN + 2.*mD*(eHit.getOmega()-E_n) - 2.*eHit.getOmega()*E_n + 2.*eHit.getQ()*p_n*cos(theta_nq);
 		double Wp = sqrt(W_primeSq);
-		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
 		double As = (E_n - p_n*CosTheta_nq)/mN;
-		double Xp2 = eHit.getQ2()/(W_primeSq - mN*mN + eHit.getQ2());
+
+		// Different definitions of x'
+		// Bonus definition is the default
+		double Xp = eHit.getQ2()/(2.*( eHit.getOmega()*(mD-E_n) + p_n*eHit.getQ()*CosTheta_nq));
+		// W' definition
+		double Xp_WP  = eHit.getQ2()/(W_primeSq - mN*mN + eHit.getQ2());
+		// Bjorken definition
+		double Xp_Bj  = eHit.getXb()/(2. - As);
+		// PRC definition
+		double Ei = mD - E_n;
+		double ps_plus = mD/2. * As;
+		double virt = (Ei*Ei - p_n*p_n - mN*mN)/(mN*mN);
+		double p_plus = mD - ps_plus;
+		double q_plus = eHit.getOmega() - eHit.getQ();
+		double tP = virt * mN * mN;
+		double Xp_PRC = (eHit.getQ2() - (q_plus/p_plus)*tP)/(W_primeSq - mN*mN + eHit.getQ2() - (q_plus/p_plus)*tP);
+
 
 		TVector3 Pt;
 		TVector3 pN_par_q = nVec.Dot(qVec) / (qVec.Mag2()) * qVec;
@@ -711,10 +726,12 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		tag[hit].setPhiNQ	(phi_nq		);
 		tag[hit].setThetaNQ	(theta_nq	);
 		tag[hit].setWp		(Wp		);
-		tag[hit].setXp		(Xp		);
 		tag[hit].setAs		(As		);
 		tag[hit].setPt		(Pt		);
-		tag[hit].setXp2		(Xp2		);
+		tag[hit].setXp		(Xp		);
+		tag[hit].setXp_WP	(Xp_WP		);
+		tag[hit].setXp_Bj	(Xp_Bj		);
+		tag[hit].setXp_PRC	(Xp_PRC		);
 	}
 
 	//beta = dL / (ToF*cAir);
@@ -729,6 +746,8 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 
 	return;
 }
+
+
 
 void getScinHits( BScintillator scintillator, int pindex[maxScinHits], int detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
 	 TVector3 posVector[maxScinHits], double path[maxScinHits], int status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
@@ -768,6 +787,11 @@ void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momen
 		}
 	}
 }
+
+
+
+
+
 
 void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
 	ifstream f;
@@ -1020,4 +1044,61 @@ double * shiftsReader::getTdcLrOff(int Runno){
 	else{
 		return S6291TdcLrOffsets;
 	}
+}
+
+
+//Parametrization from Giovanni (GWU) and FX based on double pion analysis in RGA
+
+void smearRGA(TVector3 &vpar){
+
+  TRandom3 myRand(0);
+
+  double mom = vpar.Mag(); // GeV
+  double theta = vpar.Theta(); //radians
+  double theta_deg = theta * 180 / M_PI; //degree
+  double phi = vpar.Phi(); //radians
+
+  //Determine mom resolution value dependent on theta
+  double mom_S1 = 0.0184291 -0.0110083*theta_deg + 0.00227667*theta_deg*theta_deg -0.000140152*theta_deg*theta_deg*theta_deg + 3.07424e-06*theta_deg*theta_deg*theta_deg*theta_deg;
+  double mom_S2 = 0.02*theta_deg;
+  double mom_R = 0.01 * sqrt( pow(mom_S1*mom, 2) + pow(mom_S2, 2));
+  mom_R *= 2.0; // <- to match data resolution, value on % of momentum
+
+  //Determine theta resolution dependent on mom
+  double theta_S1 = 0.004*theta_deg + 0.1;
+  double theta_S2 = 0;
+  double theta_R = sqrt(pow(theta_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(theta_S2,2));
+  theta_R *= 2.5; // <- to match data resolution. value in Degree
+
+  //Determine phi resolution dependent on theta and momentum
+  double phi_S1 = 0.85-0.015*theta_deg;
+  double phi_S2 = 0.17-0.003*theta_deg;
+  double phi_R = sqrt(pow(phi_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(phi_S2,2) );
+  phi_R *= 3.5; // <- to match data resolution, value in degree
+
+  //Add smearing to mom, theta and phi values based on Gaussian distributions
+  mom += myRand.Gaus(0,mom_R * mom);
+  theta += myRand.Gaus(0,theta_R * (M_PI / 180));
+  phi += myRand.Gaus(0,phi_R * (M_PI / 180));
+  vpar.SetMagThetaPhi(mom,theta,phi);
+}
+
+void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron) {
+
+  TVector3 	beamVec(0,0,Ebeam);
+  TVector3	qVec; qVec = beamVec - smeared_electron;
+
+  input_ehit.setMomentum		(	smeared_electron.Mag()						);
+  input_ehit.setTheta		  (	smeared_electron.Theta()					);
+  input_ehit.setPhi			  (	smeared_electron.Phi()						);
+
+  input_ehit.setQ			  (	qVec.Mag()						);
+  input_ehit.setThetaQ		(	qVec.Theta()						);
+  input_ehit.setPhiQ		  (	qVec.Phi()						);
+
+  input_ehit.setOmega		(	Ebeam - sqrt( pow(smeared_electron.Mag(),2) + mE*mE )		);
+  input_ehit.setQ2			  (	qVec.Mag()*qVec.Mag() - pow(input_ehit.getOmega(),2)	);
+  input_ehit.setXb			  (	input_ehit.getQ2()/(2.*mP*input_ehit.getOmega())		);
+  input_ehit.setW2		  	(	mP*mP - input_ehit.getQ2() + 2.*input_ehit.getOmega()*mP	);
+
 }

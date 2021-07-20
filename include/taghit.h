@@ -11,7 +11,7 @@ class taghit : public TObject {
 		~taghit();
 
 		void Clear();
-		
+
 		void setMomentumE	(TVector3	iMomentumE	)	{MomentumE	= iMomentumE	; return;}
 		void setMomentumN	(TVector3	iMomentumN	)	{MomentumN	= iMomentumN	; return;}
 		void setMomentumQ	(TVector3	iMomentumQ	)	{MomentumQ	= iMomentumQ	; return;}
@@ -20,10 +20,12 @@ class taghit : public TObject {
 		void setPhiNQ		(double		iPhiNQ		)	{PhiNQ		= iPhiNQ	; return;}
 		void setThetaNQ		(double		iThetaNQ	)	{ThetaNQ	= iThetaNQ	; return;}
 		void setWp		(double		iWp		)	{Wp		= iWp		; return;}
-		void setXp		(double		iXp		)	{Xp		= iXp		; return;}
 		void setAs		(double		iAs		)	{As		= iAs		; return;}
 		void setPt		(TVector3	iPt		)	{Pt		= iPt		; return;}
-		void setXp2		(double		iXp2		)	{Xp2		= iXp2		; return;}
+		void setXp		(double		iXp		)	{Xp		= iXp		; return;}
+		void setXp_WP		(double		iXp_WP		)	{Xp_WP		= iXp_WP	; return;}
+		void setXp_Bj		(double		iXp_Bj		)	{Xp_Bj		= iXp_Bj	; return;}
+		void setXp_PRC		(double		iXp_PRC		)	{Xp_PRC		= iXp_PRC	; return;}
 
 		TVector3 getMomentumE	(void)	{return MomentumE;}
 		TVector3 getMomentumN	(void)	{return MomentumN;}
@@ -33,12 +35,14 @@ class taghit : public TObject {
 		double getPhiNQ		(void)	{return PhiNQ	;}
 		double getThetaNQ	(void)	{return ThetaNQ	;}
 		double getWp		(void)	{return Wp	;}
-		double getXp		(void)	{return Xp	;}
 		double getAs		(void)	{return As	;}
 		TVector3 getPt		(void)	{return Pt	;}
-		double getXp2		(void)	{return Xp2	;}
+		double getXp		(void)	{return Xp	;}
+		double getXp_WP		(void)	{return Xp_WP	;}
+		double getXp_Bj		(void)	{return Xp_Bj	;}
+		double getXp_PRC	(void)	{return Xp_PRC	;}
 
-		ClassDef(taghit,2);
+		ClassDef(taghit,3);
 	private:
 		TVector3	MomentumE;
 		TVector3	MomentumN;
@@ -48,10 +52,12 @@ class taghit : public TObject {
 		double		PhiNQ;
 		double		ThetaNQ;
 		double		Wp;
-		double 		Xp;
 		double		As;
 		TVector3	Pt;
-		double		Xp2;
+		double		Xp;
+		double		Xp_WP;
+		double		Xp_Bj;
+		double		Xp_PRC;
 };
 
 

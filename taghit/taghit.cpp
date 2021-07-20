@@ -10,12 +10,14 @@ void taghit::Clear(){
 	MomentumN.Clear();
 	MomentumQ.Clear();
 	MomentumB.Clear();
-		     
+
 	PhiNQ		= 0;
 	ThetaNQ		= 0;
 	Wp		= 0;
-	Xp		= 0;
 	As		= 0;
 	Pt.Clear();
-	Xp2		= 0;
+	Xp		= 0;
+	Xp_WP		= 0;
+	Xp_Bj		= 0;
+	Xp_PRC		= 0;
 }
