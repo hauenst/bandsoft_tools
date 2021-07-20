@@ -35,7 +35,7 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 5 ){
+	if( argc < 6 ){
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Peroid] [load shifts] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[MC,DATA, MC generated info for each event] = 0, 1, 2 \n";
