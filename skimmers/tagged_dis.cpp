@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
-		hipo::bank  run_config (factory.getSchema("RUN::config"));
+		hipo::bank  	run_config 		(factory.getSchema("RUN::config"));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::event 	readevent;
@@ -345,6 +345,16 @@ int main(int argc, char** argv) {
 				}
 			}
 
+			if( band_hits.getRows() > 0 ){
+				cout << event_counter << " " << eventnumber << "\n";
+				band_hits.show();
+				for( int n = 0 ; n < nMult ; n++ ){
+					nHit[n].Print();
+				}
+				
+
+			}
+
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
 
@@ -370,7 +380,8 @@ int main(int argc, char** argv) {
 			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
 			if (nMult > 1) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT);
+				int test = 0;
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, test );
 			}
 
 			// Fill tree based on d(e,e'n)X for data

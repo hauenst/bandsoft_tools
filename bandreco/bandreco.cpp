@@ -43,16 +43,26 @@ void BANDReco::Print(){
 }
 
 void BANDReco::setPeriod( const int period ){
-	(period == 0) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
+	// period == 0 : 10.6
+	// period == 1 : 10.2
+	// period == 2 : 10.4
+	// period == 3 : LER
+	// calibration tables are same for 10.6 & 10.2 (spring), except for global offset
+	// and then same for 10.4 (fall/winter), except for global offset
+	(period == 0 || period == 1) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
 	
 	// Set the vertex offset of the target:
 	if( SPRING2019 ){
 		BAND_MOTHER_OFFSET = -3; // [cm]
+		RGB_VERTEX_OFFSET = -3; // [cm]
 	}
 	else if(FALL2019_WINTER2020){
 		BAND_MOTHER_OFFSET = -3; // [cm]
+		RGB_VERTEX_OFFSET = -3; // [cm]
 	}
 
+	// store period for reading global offset table
+	PERIOD = period;
 	return;
 }
 
@@ -149,6 +159,10 @@ void BANDReco::readLROffset(){
 				ftdc_off >> ftdc_veff >> ftdc_width;
 
 			int BARID = sector*100 + layer*10 + component;
+			if( MONTECARLO ){
+				tdc_off = 0.;
+				ftdc_off = 0.;
+			}
 			TDCOffsets[BARID] = tdc_off;
 			TDCVelocity[BARID] = tdc_veff;
 			FTDCOffsets[BARID] = ftdc_off;
@@ -183,6 +197,10 @@ void BANDReco::readPaddleOffset(){
 				ftdc_amp >> ftdc_mean >> ftdc_sigma;
 
 			int BARID = sector*100 + layer*10 + component;
+			if( MONTECARLO ){
+				tdc_mean = 0.;
+				ftdc_mean = 0.;
+			}
 			TDCPaddle[BARID] = tdc_mean;
 			FTDCPaddle[BARID] = ftdc_mean;
 		}
@@ -217,6 +235,10 @@ void BANDReco::readLayerOffset(){
 
 			int BARID = sector*100 + layer*10 + component;
 			if( tdc_mean != 0 && ftdc_mean != 0 ) LAYERREF = sector*100 + component;
+			if( MONTECARLO ){
+				tdc_mean = 0.;
+				ftdc_mean = 0.;
+			}
 			TDCLayer[BARID] = tdc_mean;
 			FTDCLayer[BARID] = ftdc_mean;
 		}
@@ -255,7 +277,9 @@ void BANDReco::readGlobalOffset(){
 				bkg >> amp >> mean >> sigma >> integral >> flag;
 
 			int BAR_ID = sector*100+layer*10+component;
-
+			if( MONTECARLO ){
+				mean = 0.;
+			}
 			TDCGlobal[BAR_ID] = mean;
 			TDCToFRes[BAR_ID] = sigma;
 		}
@@ -274,7 +298,9 @@ void BANDReco::readGlobalOffset(){
 				bkg >> amp >> mean >> sigma >> integral >> flag;
 
 			int BAR_ID = sector*100+layer*10+component;
-
+			if( MONTECARLO ){
+				mean = 0.;
+			}
 			FTDCGlobal[BAR_ID] = mean;
 			FTDCToFRes[BAR_ID] = sigma;
 		}
@@ -335,6 +361,9 @@ void BANDReco::readEnergyCalib(){
 			ss >> sector >> layer >> component >> AdcToMeVee;
 
 			int BARID = sector*100 + layer*10 + component;
+			if( MONTECARLO ){
+				AdcToMeVee = 1E4;
+			}
 			ADCtoMEV[BARID] = AdcToMeVee;
 		}
 	}
@@ -386,6 +415,7 @@ double BANDReco::getTriggerPhase( const long timeStamp ) {
 
 double BANDReco::timewalk( const double *x , const double *p){
 	if( !loaded_TW ) return 0.;
+	if( MONTECARLO ) return 0.;
 	double A = *x;
 	double f0 = p[0] + p[1]/pow(A,p[2]); 				// p[3]-p[5] not used
 	double f1 = p[6]/A + p[7]/(exp((A-p[8])/p[9]) + p[10] );	// p[11] not used
@@ -443,10 +473,13 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		int amp		= (int) band_adc->getInt( 5, row );
 		double ftdc	= (double) band_adc->getFloat( 6, row );
 		int ped		= (int) band_adc->getInt( 7, row );
+
+		if( adc == 0 || ftdc == 0 ) continue; 		// don't store a hit that has no adc or timestamp
+		if( MONTECARLO && (adc/1E4 < 0.5 ) ) continue; 	// if in MC, don't take anything with an incredibly small Edep
 		
-		if( amp >= 4095 ) continue;
+		if( amp >= 4095 and !MONTECARLO) continue;	// if not MC, kill over saturated hits
 		amp -= ped; // subtract off pedestal since it's not in the ExtendedFADCFitter
-		if( loaded_TW && amp < 250 ) continue;		// cut for TW fits
+		if( loaded_TW && amp < 250 && !MONTECARLO) continue;	// cut for TW fits for data
 
 		PMT this_pmt;
 		this_pmt.PMT_ID 	= PMT_ID;
@@ -470,6 +503,7 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		int PMT_ID	= sector*1000 + layer*100 + component*10 + order;
 
 		int tdc_raw	= (int) band_tdc->getInt( 4 , row );
+		if( MONTECARLO ) tdc_raw /= 1E4;
 		double tdc	= tdc_raw * 0.02345 - phaseCorr;
 
 		// If we do not have a matching FTDC hit for the PMT, we 
@@ -501,8 +535,14 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 
 		// If we have more than one ADC, let's not consider this
 		if( it->second.size() > 1 ){
+			//cerr << "\t" << it->second.size() << "\n";
+			//for( int size = 0 ; size < it->second.size() ; ++size ){
+			//	PMT this_pmt = it->second[size];
+			//	cout << this_pmt.adc << " " << this_pmt.ftdc << "\n";
+			//}
 			cerr << "unexpected behavior with double adc hit for single pmt. exiting...\n";
-			exit(-1);
+			continue;
+			//exit(-1);
 		}
 		
 		// If we have more than one TDC, let's not deal with this for the moment
@@ -553,7 +593,6 @@ void BANDReco::createBars(  ){
 	for( pmt_i = candidate_pmts.begin() ; pmt_i != candidate_pmts.end() ; ++pmt_i ){
 		int PMT_ID1 	= pmt_i->first;
 		PMT candidate1 	= pmt_i->second;
-
 		if( candidate1.layer == 6 ){
 			// set all bar quantities as just 1 sided, same for each
 			Bar newbar;
@@ -690,7 +729,6 @@ void BANDReco::createBars(  ){
 			candidate_bars[Bar_ID] = newbar;
 		}
 	}
-
 	return;
 }
 
@@ -703,8 +741,8 @@ void BANDReco::storeHits( int& mult , bandhit * hits , const double starttime , 
 		int Bar_ID 	= bar_it->first;
 		Bar this_bar 	= bar_it->second;
 
-		// If Edep < 2, let's not store the hit:
-		if( this_bar.Edep < 2 && this_bar.layer != 6 ) continue;
+		if( this_bar.Edep < 2 && this_bar.layer != 6 ) continue;		// for main bars, require Edep > 2
+		if( this_bar.Edep < (2./7.2)*2 && this_bar.layer == 6 ) continue;	// for veto bars, require Edep > 0.5
 
 		// Set the hits information
 		hits[mult].setSector		(this_bar.sector);

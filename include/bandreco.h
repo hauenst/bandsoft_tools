@@ -65,6 +65,7 @@ class BANDReco{
 		void Print();
 
 		void setPeriod(const int period);
+		void setMC(void){ MONTECARLO=true; };
 
 		map<int,Bar> getCandidateBars(void){return candidate_bars;};
 		map<int,PMT> getCandidatePMTs(void){return candidate_pmts;};
@@ -72,6 +73,8 @@ class BANDReco{
 		void createPMTs( const hipo::bank * band_adc , const hipo::bank * band_tdc , const hipo::bank * run_config  );
 		void createBars( );
 		void storeHits( int& mult , bandhit * hits , const double starttime , const double vtx_z );
+
+		double getRGBVertexOffset(void){ return RGB_VERTEX_OFFSET; };
 
 		void readTW();
 		void readLROffset();
@@ -87,10 +90,12 @@ class BANDReco{
 		const int slc[6][5] = {{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,5,5,0},{3,7,6,6,2}};
 
 	private:
+		bool MONTECARLO = false;
 		bool SPRING2019 = false;
 		bool FALL2019_WINTER2020 = false;
-		bool CALIBRATION = false;
+		int PERIOD = -1;
 		double BAND_MOTHER_OFFSET = 0.; // [cm]
+		double RGB_VERTEX_OFFSET = 0.; // [cm]
 
 		bool loaded_TW = false;
 

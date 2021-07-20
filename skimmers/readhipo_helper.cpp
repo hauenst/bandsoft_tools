@@ -178,31 +178,156 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 
 }
 
-bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect){
+bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect, int& nPass ){
+	
+	if( nMult > maxNeutrons ){
+		cerr << "readhipo_helper::Multiplicity larger than storage container.\n\t...exiting...\n";
+		exit(-1);
+	}
 
-	double time_thres = time_thresBANDhit; //300
+	//cout << "ENTERING GOOD NEUTRON\n";	
+	int unblocked_hits = 0;
+	bool passed[maxNeutrons];
+	// First let's skim the hit list to those hits that are NOT blocked:
+	for( int i1 = 0; i1 < nMult; ++i1){
+		bandhit checkMe = hits[i1];
 
-	bool vetoHit = false;
-	bool accept = false;
+		if( checkMe.getLayer() == 6 ){
+			passed[i1]=false;
+			continue; 
+		}// this hit cannot be blocked by anyone since it's in layer 6 but we don't want to count it as a good hit
+		
+		passed[i1] = true;
+		//cout << "i1 information: \n";
+		//checkMe.Print();
+		for( int i2 = 0; i2 < nMult; ++i2 ){
+			if( i2 == i1 ) continue;
+			bandhit checkAgainst = hits[i2];
+			//cout << "i2 information: \n";
+			//checkAgainst.Print();
+			//cout << "\n";
+			
+			if( checkAgainst.getLayer() - checkMe.getLayer() != 1 ) continue; 
+			// this means i2 is not DIRECTLY in front of i1 
+			
+			// if checkAgainst is a VETO, then we have some special rules:
+			if( checkAgainst.getLayer() == 6 ){
+				if( fabs( checkMe.getDL().Y() - checkAgainst.getDL().Y() ) > 8 ) continue; 
+				// this means i2 is DIRECTLY in front of i1 -- BUT it is NOT +/- 1 bar of i1 (i.e. i2 is not blocking i1)
 
-	// Loop over all hits in BAND and get the earliest hit in time
-	// but filter out hits that have low Edep
+				if( fabs( checkAgainst.getTof() - checkMe.getTof() ) > 15 ) continue; 	
+				// this means i2 does not have a similar time as i1, so it does not block i1.
+			}
+			
+			else{
+				if( fabs( checkMe.getDL().Y() - checkAgainst.getDL().Y() ) > 8 ) continue; 	
+				// this means i2 is DIRECTLY in front of i1 -- BUT it is NOT +/- 1 bar of i1 (i.e. i2 is not blocking i1)
+				
+				if( fabs( checkAgainst.getDL().X() - checkMe.getDL().X() ) > 15 ) continue;  
+				// this means i2 is DIRECTLY in front of i1 AND it is +/- 1 bar of i2, but it is NOT a similar x (i.e. i2 is not blocking i1)
+
+				if( fabs( checkAgainst.getTof() - checkMe.getTof() ) > 3 ) continue; 		
+				// this means i2 does not have a similar time as i1, so it does not block i1.
+			}
+
+			// otherwise, i2 is blocking i1
+			passed[i1] = false;
+		}
+		//cout << "is i1 blocked?: " << passed[i1] << "\n";
+		if( passed[i1] == true ) ++unblocked_hits;
+	}
+
+	nPass = unblocked_hits;
+	leadindex = -1;
+	//cout << unblocked_hits << " ";
+	// Now we have a list of hits that have PASSED and are NOT blocked.
+	if( unblocked_hits == 0 || unblocked_hits > 2 ){
+		// these events are ambiguous so let's not use them
+		//cout << "don't take\n";
+		return false;
+	}
+	else if( unblocked_hits == 2 ){
+		for( int i1 = 0; i1 < nMult; ++i1){
+			if( passed[i1] != 1 ) continue;
+			bandhit this_hit = hits[i1];
+
+			for( int i2 = 0; i2 < nMult; ++i2 ){
+				if( i2 == i1 ) continue;
+				if( passed[i2] != 1 ) continue;
+				bandhit other_hit = hits[i2];
+
+				// if checkAgainst is in the SAME layer as checkMe, then let's see if all the blocking conditions are
+				// true, and if they are, let's CLUSTER them and take the one that is earliest in time
+				if( this_hit.getLayer() - other_hit.getLayer() == 0 ){
+					
+					if( fabs( this_hit.getDL().Y()  - other_hit.getDL().Y() ) > 8 	) 	continue; 	
+					if( fabs( this_hit.getDL().X()  - other_hit.getDL().X() ) > 15 ) 	continue;  
+					if( fabs( this_hit.getTof() 	- other_hit.getTof() ) > 3 	) 	continue;
+
+					// These two hits can be clustered together so let's just take
+					// one of them:
+
+					if( this_hit.getTof() < other_hit.getTof() ){
+						leadindex = i1;
+						//cout << "clustered two\n";
+						return true;
+					}
+					else{
+						leadindex = i2;
+						//cout << "clustered two\n";
+						return true;
+					}
+
+					continue;
+					
+				} // end if on layer
+			} // end loop over i2
+		} // end loop over i1
+
+		// Could not cluster so just skip ambiguous event
+		//cout << "don't take\n";
+		return false;
+	}
+	else if( unblocked_hits == 1 ){
+		for( int i1 = 0; i1 < nMult; ++i1){
+			bandhit this_hit = hits[i1];
+			if( passed[i1] != 1 ) continue;
+			//cout << "just one\n";
+			leadindex = i1;
+			return true;
+		}
+	}
+	else{ std::cerr << "unexpected nalgorithm issue\n\t...exiting...\n"; exit(-1); }
+	
+	//cout <<"wtf\n";
+	return false;
+
+
+	/*
+	// Loop over all hits in BAND and get the earliest hit in time and the closest hit to the target
 	double fastestTime = 1E5;
 	int fastestTimeIdx = -1;
+	double closestHit = 1E5;
+	int closestHitIdx = -1;
 	for( int thishit = 0; thishit < nMult ; thishit++){
 		bandhit neutron = hits[thishit];
-		//if the Edep in this PMT is less than 2MeVee, do not count it
-		//Edep is assumed to be calibrated to MeV for each bar
-		//MC
-		if (mcdataselect == 0 && neutron.getEdep() < 2) 	continue;
-		//Data
-		if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
+
+		// If this is a veto hit, ignore it as it cannot be the fastest hit
+		if( neutron.getLayer() == 6 ) continue;
 
 		if( neutron.getTof() < fastestTime ){
 			fastestTime = neutron.getTof();
 			fastestTimeIdx = thishit;
 		}
+
+		if( neutron.getDL().Mag() < closestHit ){
+			closestHit = neutron.getDL().Mag();
+			closestHitIdx = thishit;
+		}
 	}
+
+
+
 
 	// Once we have the fastest hit, ask how many other hits there
 	// are in the same event and flag how far in time they are,
@@ -214,7 +339,7 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			bandhit neutron = hits[thishit];
 			// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
 			//Edep is assumed to be calibrated to MeV for each bar
-			if( neutron.getLayer() == 6 && neutron.getEdep() > 0.25 ) vetoHit = true;
+			if( neutron.getLayer() == 6 && neutron.getEdep() > 0.5 ) vetoHit = true;
 
 			//if this bar does not have > 2MeVee, do not count the hit
 			//MC
@@ -253,7 +378,7 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 	leadindex = fastestTimeIdx ;
 
 	return accept && !vetoHit;
-
+	*/
 }
 
 

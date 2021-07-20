@@ -36,16 +36,18 @@ using namespace std;
 int main(int argc, char** argv) {
 	// check number of arguments
 	if( argc < 5 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [load shifts] [inputFile] \n\n";
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Peroid] [load shifts] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
-		cerr << "\t\t[<MC,DATA, MC generated info for each event> = <0, 1, 2> \n";
-		cerr << "\t\t[<load shifts N,Y> = <0, 1> \n";
+		cerr << "\t\t[MC,DATA, MC generated info for each event] = 0, 1, 2 \n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
+		cerr << "\t\t[load shifts N,Y] = 0, 1 \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
 
 	int MC_DATA_OPT = atoi(argv[2]);
-	int loadshifts_opt = atoi(argv[3]);
+	int PERIOD = atoi(argv[3]);
+	int loadshifts_opt = atoi(argv[4]);
 
 	// Initialize our BAND reconstruction engine:
 	BANDReco * BAND = new BANDReco();
@@ -70,6 +72,7 @@ int main(int argc, char** argv) {
 	TClonesArray &saveMC = *mcParts;
 	// 	Neutron info:
 	int nMult		= 0;
+	int passed		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
 	TClonesArray &saveHit = *nHits;
 	//	Electron info:
@@ -88,6 +91,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
+	outTree->Branch("passed"	,&passed		);
 	outTree->Branch("nHits"		,&nHits			);
 	//Branches to store if good Neutron event and leadindex
 	outTree->Branch("goodneutron"		,&goodneutron	);
@@ -110,10 +114,14 @@ int main(int argc, char** argv) {
 
 
 	// Load input file
-	for( int i = 4 ; i < argc ; i++ ){
+	for( int i = 5 ; i < argc ; i++ ){
 		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
+			if( PERIOD == 0 ) Ebeam = 10.6;
+			if( PERIOD == 1 ) Ebeam = 10.2;
+			if( PERIOD == 2 ) Ebeam = 10.4;
+			if( PERIOD == 3 ) Ebeam = 4.2;
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -166,6 +174,7 @@ int main(int argc, char** argv) {
 			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
+			passed		= 0;
 			nleadindex = -1;
 			goodneutron = false;
 			bandhit nHit[maxNeutrons];
@@ -183,7 +192,7 @@ int main(int argc, char** argv) {
 
 
 			// Count events
-			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
+			//if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			//if( event_counter > 30 ) break;
 			event_counter++;
 
@@ -206,25 +215,42 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
-
+			
 			if( event_counter == 1 ){
+				//cout << Runno << "\n";
 				int period = -1;
 				//Load of shifts depending on run number
-				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
-				}
-				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
 					period = 0;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
 				}
-				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data
+				else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
 					period = 1;
-				}		
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
+					period = 2;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}	
+				else if (Runno >= 11286 && Runno < 11304) { //LER runs
+					period = 3;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if( Runno == 11 ){
+					period = PERIOD;
+					BAND->setMC();
+					BAND->setPeriod(period); // what is the simulated period (used for status table)
+				}	
 				else {
 					cout << "No bar by bar offsets loaded " << endl;
 					cout << "Check shift option when starting program. Exit " << endl;
 					exit(-1);
 				}
 				if( period == -1 ){ cerr << "invalid period\n"; exit(-1); }
-				BAND->setPeriod(period);
 				BAND->readTW();			// TW calibration values for each PMT
 				BAND->readLROffset();		// (L-R) offsets for each bar
 				BAND->readPaddleOffset();	// bar offsets relative to bar 2X7 in each layer X
@@ -234,7 +260,6 @@ int main(int argc, char** argv) {
 				BAND->readStatus();		// status table for 0,1 = bad,good bar
 				if( loadshifts_opt ) BAND->readGlobalOffset();	// final global alignment relative to electron trigger
 			}
-
 
 
 			//Get Event number from RUN::config
@@ -311,7 +336,8 @@ int main(int argc, char** argv) {
 				// Form the PMTs and Bars for BAND:
 			BAND->createPMTs( &band_adc, &band_tdc, &run_config );
 			BAND->createBars();
-			BAND->storeHits( nMult , nHit , starttime , eHit.getVtz() ); // use event-by-event electron vertex for pathlength-z
+			//BAND->storeHits( nMult , nHit , starttime , eHit.getVtz() ); // use event-by-event electron vertex for pathlength-z
+			BAND->storeHits( nMult , nHit , starttime , BAND->getRGBVertexOffset() ); // use average z-offset of the target for pathlength-z
 
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
@@ -330,19 +356,23 @@ int main(int argc, char** argv) {
 				new(saveMC[n]) genpart;
 				saveMC[n] = &mcPart[n];
 			}
-
-			if (nMult == 1) {
-				goodneutron =  true;
-				nleadindex = 0;
-			}
+	
+			//if (nMult == 1) {
+			//	cout << nMult << " " << 0 << "\n";
+			//	if() // layer 6 check
+			//	goodneutron =  true;
+			//	passed = 1;
+			//	nleadindex = 0;
+			//}
 			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
-			if (nMult > 1) {
+			if (nMult > 0) {
+				//cout << nMult << " ";
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT);
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, passed );
 			}
 
 			// Fill tree based on d(e,e'n)X for data
-			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
+			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
 			else if( MC_DATA_OPT == 0 ||  MC_DATA_OPT == 2 ){

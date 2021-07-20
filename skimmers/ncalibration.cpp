@@ -341,7 +341,8 @@ int main(int argc, char** argv) {
 			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
 			if (nMult > 1) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT);
+				int test=0;
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT,test);
 			}
 
 			// Fill tree based on d(e,e'n)X for data
