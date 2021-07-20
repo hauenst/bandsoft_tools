@@ -34,7 +34,7 @@ using namespace std;
 //from readhipo_helper maxScinHits = 100;
 //from readhipo_helper maxNeutrons = 200;
 //TODO:  Check for memory leaks(memset??). IMplement Fiducial cuts. Update RUN::config read to BConfig read
-
+//TODO: ADD Scintillator sector
 
 int main(int argc, char** argv) {
 	// check number of arguments
@@ -72,7 +72,8 @@ int main(int argc, char** argv) {
 	TClonesArray &saveHit = *nHits;
 	//	Electron info:
 	clashit eHit;
-
+	//Smeared info
+	clashit eHit_smeared;
 
 
 
@@ -162,6 +163,8 @@ int main(int argc, char** argv) {
 	//	MC branches:
 		outTree->Branch("genMult"	,&genMult		);
 		outTree->Branch("mcParts"	,&mcParts		);
+		//	Smeared Electron branches:
+		outTree->Branch("eHit_smeared"		,&eHit_smeared			);
 	}
 
 	// Connect to the RCDB
@@ -301,6 +304,10 @@ int main(int argc, char** argv) {
 			weight = 1;
 			genpart mcPart[maxGens];
 			mcParts->Clear();
+			if( MC_DATA_OPT == 0 ){ // if this is a MC file, clear smeared and input branches
+				//Clear output smear branches
+				eHit_smeared.Clear();
+			}
 
 
 			pMult		= 0;
@@ -443,6 +450,22 @@ int main(int argc, char** argv) {
 
 			//check if any of the fiducials is false i.e. electron does not pass all DC fiducials
 			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
+
+			//MC smearing
+			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
+
+				// Grab the electron information for the smeared eHit Object
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit_smeared , starttime , Runno , Ebeam );
+
+				//read electron vector
+				TVector3 reco_electron(0,0,0);
+				reco_electron.SetMagThetaPhi(eHit.getMomentum(),eHit.getTheta(),eHit.getPhi());
+				//Smear Reconstructed electron in Momentum, Theta and Phi
+				smearRGA(reco_electron);
+
+				//Recalculate Electron Kinematics with smeared values
+				recalculate_clashit_kinematics(eHit_smeared, Ebeam, reco_electron);
+			}
 
 
 			//check other particles for electron or negative charge

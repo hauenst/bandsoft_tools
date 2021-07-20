@@ -72,6 +72,11 @@ int main(int argc, char** argv) {
 	//	Tagged info:
 	TClonesArray * tags = new TClonesArray("taghit");
 	TClonesArray &saveTags = *tags;
+	//Smeared info
+	clashit eHit_smeared;
+	//	Smeared Tagged info:
+	TClonesArray * tags_smeared = new TClonesArray("taghit");
+	TClonesArray &saveTags_smeared = *tags_smeared;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -94,6 +99,13 @@ int main(int argc, char** argv) {
 	//	MC branches:
 	outTree->Branch("genMult"	,&genMult		);
 	outTree->Branch("mcParts"	,&mcParts		);
+	if( MC_DATA_OPT == 0 ){ // if this is a MC file, define smeared branches
+		//	Smeared Electron branches:
+		outTree->Branch("eHit_smeared"		,&eHit_smeared			);
+		//	Smeared Tagged branches:
+		outTree->Branch("tag_smeared"		,&tags_smeared			);
+	}
+
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -220,6 +232,7 @@ int main(int argc, char** argv) {
 			nHits->Clear();
 			// Tag
 			taghit tag[maxNeutrons];
+			taghit tag_smeared[maxNeutrons];
 			tags->Clear();
 			// Electron
 			eHit.Clear();
@@ -228,7 +241,11 @@ int main(int argc, char** argv) {
 			weight = 1;
 			genpart mcPart[maxGens];
 			mcParts->Clear();
-
+			if( MC_DATA_OPT == 0 ){ // if this is a MC file, clear smeared and input branches
+				//Clear output smear branches
+				eHit_smeared.Clear();
+				tags_smeared->Clear();
+			}
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -347,6 +364,30 @@ int main(int argc, char** argv) {
 
 			// Create the tagged information if we have neutrons appropriately aligned in time:
 			getTaggedInfo(	eHit	,  nHit	 ,  tag  , Ebeam , nMult );
+
+			//MC smearing
+			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
+
+				// Grab the electron information for the smeared eHit Object
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit_smeared , starttime , Runno , Ebeam );
+
+				//read electron vector
+				TVector3 reco_electron(0,0,0);
+				reco_electron.SetMagThetaPhi(eHit.getMomentum(),eHit.getTheta(),eHit.getPhi());
+				//Smear Reconstructed electron in Momentum, Theta and Phi
+				smearRGA(reco_electron);
+
+				//Recalculate Electron Kinematics with smeared values
+				recalculate_clashit_kinematics(eHit_smeared, Ebeam, reco_electron);
+
+				// Create the tagged smeared information from the smeared electron and neutron information:
+				getTaggedInfo(	eHit_smeared	,  nHit	 ,  tag_smeared , Ebeam , nMult );
+
+				for( int n = 0 ; n < nMult ; n++ ){
+					new(saveTags_smeared[n]) taghit;
+					saveTags_smeared[n] = &tag_smeared[n];
+					}
+			}
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
