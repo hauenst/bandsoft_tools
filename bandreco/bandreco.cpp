@@ -138,8 +138,9 @@ void BANDReco::readTW(){
 
 void BANDReco::readLROffset(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
-	if( SPRING2019 ) path += "/spring2019";
-	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	if( MONTECARLO ) path += "/simulation";
+	else if( !MONTECARLO && SPRING2019 ) path += "/spring2019";
+	else if( !MONTECARLO && FALL2019_WINTER2020 ) path += "/fall2019";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -154,15 +155,17 @@ void BANDReco::readLROffset(){
 			double ftdc_off, ftdc_veff, ftdc_width;
 			tdc_off = tdc_veff = tdc_width = 
 			ftdc_off = ftdc_veff = ftdc_width = 0;
-			ss >> sector >> layer >> component >>
-				tdc_off >> tdc_veff >> tdc_width >>
-				ftdc_off >> ftdc_veff >> ftdc_width;
+			if( MONTECARLO ){
+				ss >> sector >> layer >> component >>
+					tdc_veff >> ftdc_veff >> tdc_off >> ftdc_off;			
+			}
+			else{
+				ss >> sector >> layer >> component >>
+					tdc_off >> tdc_veff >> tdc_width >>
+					ftdc_off >> ftdc_veff >> ftdc_width;
+			}
 
 			int BARID = sector*100 + layer*10 + component;
-			if( MONTECARLO ){
-				tdc_off = 0.;
-				ftdc_off = 0.;
-			}
 			TDCOffsets[BARID] = tdc_off;
 			TDCVelocity[BARID] = tdc_veff;
 			FTDCOffsets[BARID] = ftdc_off;
@@ -175,8 +178,9 @@ void BANDReco::readLROffset(){
 
 void BANDReco::readPaddleOffset(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
-	if( SPRING2019 ) path += "/spring2019";
-	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	if( MONTECARLO ) path += "/simulation";
+	else if( !MONTECARLO && SPRING2019 ) path += "/spring2019";
+	else if( !MONTECARLO && FALL2019_WINTER2020 ) path += "/fall2019";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -192,15 +196,17 @@ void BANDReco::readPaddleOffset(){
 			sector = layer = component = 
 				tdc_amp = tdc_mean = tdc_sigma =
 				ftdc_amp = ftdc_mean = ftdc_sigma = 0;
-			ss >> sector >> layer >> component >> 
-				tdc_amp >> tdc_mean >> tdc_sigma >>
-				ftdc_amp >> ftdc_mean >> ftdc_sigma;
+			if( MONTECARLO ){
+				ss >> sector >> layer >> component >>
+					ftdc_mean >> ftdc_sigma >> tdc_mean >> tdc_sigma;
+			}
+			else{
+				ss >> sector >> layer >> component >> 
+					tdc_amp >> tdc_mean >> tdc_sigma >>
+					ftdc_amp >> ftdc_mean >> ftdc_sigma;
+			}
 
 			int BARID = sector*100 + layer*10 + component;
-			if( MONTECARLO ){
-				tdc_mean = 0.;
-				ftdc_mean = 0.;
-			}
 			TDCPaddle[BARID] = tdc_mean;
 			FTDCPaddle[BARID] = ftdc_mean;
 		}
@@ -403,9 +409,17 @@ void BANDReco::readStatus(){
 double BANDReco::getTriggerPhase( const long timeStamp ) {
 	double tPh = 0.;
 
-	long Period = 4.0;
-	long Cycles = 6.0;
-	long Phase  = 3.0;
+	long Period;
+	long Cycles;
+	long Phase;
+	if( !MONTECARLO ){
+		Period = 4.0;
+		Cycles = 6.0;
+		Phase  = 3.0;
+	}
+	else{
+		return 0.;
+	}
 
 	if( timeStamp != -1 ) 
 		tPh = (double)(Period *( (timeStamp + Phase) % Cycles ));
