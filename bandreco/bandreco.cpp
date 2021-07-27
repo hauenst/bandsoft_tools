@@ -700,8 +700,8 @@ void BANDReco::createBars(  ){
 			double maxTdiff		= bar_lengths[sector-1] / TDCVelocity[Bar_ID];
 			double maxTdiff_ftdc	= bar_lengths[sector-1] / FTDCVelocity[Bar_ID];
 			if( maxTdiff == maxTdiff || maxTdiff_ftdc == maxTdiff_ftdc ){
-				if( fabs(tdiff) > maxTdiff 		) continue;
-				if( fabs(tdiff_ftdc) > maxTdiff_ftdc 	) continue;
+				if( fabs(tdiff) > maxTdiff              ) continue;
+				if( fabs(tdiff_ftdc) > maxTdiff_ftdc    ) continue;
 			}
 	
 			// Create the ToF:
