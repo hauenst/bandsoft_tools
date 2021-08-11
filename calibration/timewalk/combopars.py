@@ -8,7 +8,7 @@ with open("/Users/efrainsegarra/work/band/software/bandsoft_tools/include/bar_li
 
 
 files = ["init_paramsamp","iter0_paramsamp","iter1_paramsamp","iter2_paramsamp"]
-parameters = [3,5,2,5]
+parameters = [3,5,2,3]
 PARAMETERS = {}
 for PMT in ['L','R']:
     for i in range(len(files)):
@@ -16,7 +16,7 @@ for PMT in ['L','R']:
         orig = {};
         iters = {};
         new = {};
-        path = "/Users/efrainsegarra/work/band/documentation/calibrations/fall2019/time_walk/"
+        path = "/Users/efrainsegarra/work/band/documentation/calibrations/spring2019/time_walk/"
         with open(path+fi+PMT+".txt") as f:
             for line in f:
                 parse = line.strip().split()

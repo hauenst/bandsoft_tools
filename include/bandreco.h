@@ -62,8 +62,10 @@ class BANDReco{
 		~BANDReco(){};
 
 		void Clear();
+		void Print();
 
 		void setPeriod(const int period);
+		void setMC(void){ MONTECARLO=true; };
 
 		map<int,Bar> getCandidateBars(void){return candidate_bars;};
 		map<int,PMT> getCandidatePMTs(void){return candidate_pmts;};
@@ -72,10 +74,13 @@ class BANDReco{
 		void createBars( );
 		void storeHits( int& mult , bandhit * hits , const double starttime , const double vtx_z );
 
+		double getRGBVertexOffset(void){ return RGB_VERTEX_OFFSET; };
+
 		void readTW();
 		void readLROffset();
 		void readPaddleOffset();
 		void readLayerOffset();
+		void readGlobalOffset();
 		void readGeometry();
 		void readEnergyCalib();
 		void readStatus();
@@ -85,10 +90,14 @@ class BANDReco{
 		const int slc[6][5] = {{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,5,5,0},{3,7,6,6,2}};
 
 	private:
+		bool MONTECARLO = false;
 		bool SPRING2019 = false;
 		bool FALL2019_WINTER2020 = false;
-		bool CALIBRATION = false;
+		int PERIOD = -1;
 		double BAND_MOTHER_OFFSET = 0.; // [cm]
+		double RGB_VERTEX_OFFSET = 0.; // [cm]
+
+		bool loaded_TW = false;
 
 		double timewalk( const double *x , const double *p);
 		double getTriggerPhase( const long timeStamp ) ;
@@ -111,6 +120,8 @@ class BANDReco{
 		map<int,int> STATUS;
 		map<int,double> TDCGlobal; 
 		map<int,double> FTDCGlobal; 
+		map<int,double> TDCToFRes; 
+		map<int,double> FTDCToFRes; 
 
 		// Storage containers for each event:
 		map<int,PMT> candidate_pmts;

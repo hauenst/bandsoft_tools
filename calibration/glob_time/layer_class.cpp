@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 	BAND->readTW();			// TW calibration values for each PMT
 	BAND->readLROffset();		// (L-R) offsets for each bar
 	BAND->readPaddleOffset();	// bar offsets relative to bar 2X7 in each layer X
-	BAND->readLayerOffset();	// layer offsets relative to layer 5
+	//BAND->readLayerOffset();	// layer offsets relative to layer 5
 	BAND->readGeometry();		// geometry table for each bar
 	BAND->readEnergyCalib();	// energy calibration for Adc->MeVee 
 	BAND->readStatus();		// status table for 0,1 = bad,good bar

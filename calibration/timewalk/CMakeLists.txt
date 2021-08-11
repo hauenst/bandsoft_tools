@@ -7,10 +7,42 @@ include_directories(${INCLUDES})
 
 
 #################################################################################################
-add_executable(timewalk timewalk.cpp )
-target_link_libraries(timewalk ${ROOT_LIBRARIES} Hipo4 Banks4  
+add_executable(timewalk_class timewalk_class.cpp ../../bandreco/bandreco.cpp)
+target_link_libraries(timewalk_class ${ROOT_LIBRARIES} Hipo4 Banks4  
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
-install( TARGETS timewalk
+install( TARGETS timewalk_class
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
+
+#################################################################################################
+add_executable(timewalk_class_v1 timewalk_class_v1.cpp ../../bandreco/bandreco.cpp)
+target_link_libraries(timewalk_class_v1 ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS timewalk_class_v1
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
+
+#################################################################################################
+add_executable(timewalk_class_v2 timewalk_class_v2.cpp ../../bandreco/bandreco.cpp)
+target_link_libraries(timewalk_class_v2 ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS timewalk_class_v2
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
+
+#################################################################################################
+add_executable(timewalk_class_v3 timewalk_class_v3.cpp ../../bandreco/bandreco.cpp)
+target_link_libraries(timewalk_class_v3 ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS timewalk_class_v3
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
+#################################################################################################
+
+#################################################################################################
+add_executable(timewalk_class_v4 timewalk_class_v4.cpp ../../bandreco/bandreco.cpp)
+target_link_libraries(timewalk_class_v4 ${ROOT_LIBRARIES} Hipo4 Banks4  
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS timewalk_class_v4
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )
 #################################################################################################
 
