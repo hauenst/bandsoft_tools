@@ -164,6 +164,7 @@ int main(int argc, char** argv) {
 
 			if( event_counter == 1 ){
 				int period = -1;
+				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
 				}
