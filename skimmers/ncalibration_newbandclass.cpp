@@ -166,21 +166,32 @@ int main(int argc, char** argv) {
 				int period = -1;
 				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
-				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
-				}
-				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
+				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
+					Ebeam = 10.6;
 					period = 0;
+					BAND->setPeriod(period);
 				}
-				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data
+				else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
+					Ebeam = 10.2;
 					period = 1;
-				}		
+					BAND->setPeriod(period);
+				}
+				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
+					Ebeam = 10.4;
+					period = 2;
+					BAND->setPeriod(period);
+				}	
+				else if (Runno >= 11286 && Runno < 11304) { //LER runs
+					Ebeam = 4.2;
+					period = 3;
+					BAND->setPeriod(period);
+				}
 				else {
 					cout << "No bar by bar offsets loaded " << endl;
 					cout << "Check shift option when starting program. Exit " << endl;
 					exit(-1);
 				}
 				if( period == -1 ){ cerr << "invalid period\n"; exit(-1); }
-				BAND->setPeriod(period);
 				BAND->readTW();			// TW calibration values for each PMT
 				BAND->readLROffset();		// (L-R) offsets for each bar
 				BAND->readPaddleOffset();	// bar offsets relative to bar 2X7 in each layer X
