@@ -292,12 +292,19 @@ void BANDReco::readLayerOffset(){
 
 void BANDReco::readGlobalOffset(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	std::string tdc_path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	std::string ftdc_path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
-	f.open(path+"/global_offsets_tdc.txt");
+
+	if( Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( Runno <= 6399 ) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
+	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
+
+	f.open(tdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -322,7 +329,11 @@ void BANDReco::readGlobalOffset(){
 	}
 	f.close();
 
-	f.open(path+"/global_offsets_fadc.txt");
+	if( Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( Runno <= 6399 ) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
+	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
+
+	f.open(ftdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);

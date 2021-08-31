@@ -236,6 +236,7 @@ int main(int argc, char** argv) {
 			if( event_counter == 1 ){
 				//cout << Runno << "\n";
 				int period = -1;
+				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
 					period = 0;
