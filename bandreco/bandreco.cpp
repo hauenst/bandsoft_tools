@@ -74,6 +74,7 @@ void BANDReco::readTW(){
 	std::string line;
 	std::ifstream f;
 	// Load L PMT file:
+	cout << "reading file: " << path+"/time_walk_amp_L.txt" << "\n";
 	f.open(path+"/time_walk_amp_L.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -107,6 +108,7 @@ void BANDReco::readTW(){
 	}
 	f.close();
 	// Load R PMT file:
+	cout << "reading file: " << path+"/time_walk_amp_R.txt" << "\n";
 	f.open(path+"/time_walk_amp_R.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -156,6 +158,7 @@ void BANDReco::readLROffset(){
 	if( Runno <= 6290 ) path += "/lr_offsets_006290_10pt6.txt";
 	else{ path += "/lr_offsets.txt"; }
 	// Load L-R offset file:
+	cout << "reading file: " << path << "\n";
 	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -202,6 +205,7 @@ void BANDReco::readPaddleOffset(){
 	if( Runno <= 6290 ) path += "/paddle_offsets_006290_10pt6.txt";
 	else{ path += "/paddle_offsets.txt"; }
 	// Load Paddle offset file:
+	cout << "reading file: " << path << "\n";
 	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -247,6 +251,7 @@ void BANDReco::readLayerOffset(){
 	else{ path += "/layer_offsets.txt"; }
 	// Load Layer offset file:
 	int LAYERREF = -1;
+	cout << "reading file: " << path << "\n";
 	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -304,6 +309,7 @@ void BANDReco::readGlobalOffset(){
 	else if( Runno <= 6399 ) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
 	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
 
+	cout << "reading file: " << tdc_path << "\n";
 	f.open(tdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -333,6 +339,7 @@ void BANDReco::readGlobalOffset(){
 	else if( Runno <= 6399 ) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
 	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
 
+	cout << "reading file: " << ftdc_path << "\n";
 	f.open(ftdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -370,6 +377,7 @@ void BANDReco::readGeometry(){
 	std::ifstream f;
 
 	// Load the Geometry positions:
+	cout << "reading file: " << path+"/band_geometry.txt" << "\n";
 	f.open(path+"/band_geometry.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -405,6 +413,7 @@ void BANDReco::readEnergyCalib(){
 	std::ifstream f;
 
 	// Load the Edep calibration:
+	cout << "reading file: " << path+"/edep_calibration.txt" << "\n";
 	f.open(path+"/edep_calibration.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -440,6 +449,7 @@ void BANDReco::readStatus(){
 	std::ifstream f;
 
 	// Load the Edep calibration:
+	cout << "reading file: " << path+"/status_list.txt" << "\n";
 	f.open(path+"/status_list.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
