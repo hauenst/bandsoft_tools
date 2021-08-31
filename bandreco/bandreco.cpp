@@ -43,12 +43,13 @@ void BANDReco::Print(){
 }
 
 void BANDReco::setPeriod( const int period ){
-	// period == 0 : 10.6
-	// period == 1 : 10.2
-	// period == 2 : 10.4
-	// period == 3 : LER
-	// calibration tables are same for 10.6 & 10.2 (spring), except for global offset
-	// and then same for 10.4 (fall/winter), except for global offset
+	// Periods are:
+	// 	0 == 10.6
+	// 	1 == 10.2
+	// 	2 == 10.4
+	// 	3 == 4.2 / LER
+	//  (0,1) share folder for constants (spring2019)
+	//  (2,3) share folder for constants (fall2019)
 	(period == 0 || period == 1) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
 	
 	// Set the vertex offset of the target:

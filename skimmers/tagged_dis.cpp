@@ -239,26 +239,31 @@ int main(int argc, char** argv) {
 				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
+					Ebeam = 10.6;
 					period = 0;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
 				else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
+					Ebeam = 10.2;
 					period = 1;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
 				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
+					Ebeam = 10.4;
 					period = 2;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}	
 				else if (Runno >= 11286 && Runno < 11304) { //LER runs
+					Ebeam = 4.2;
 					period = 3;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
 				else if( Runno == 11 ){
+					// already set the beam energy for MC runs and the period is the user input period
 					period = PERIOD;
 					BAND->setMC();
 					BAND->setPeriod(period); // what is the simulated period (used for status table)
