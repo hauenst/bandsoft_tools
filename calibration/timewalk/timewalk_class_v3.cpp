@@ -157,6 +157,8 @@ int main(int argc, char** argv) {
 				int order = 	this_pmt.order;
 				int component = this_pmt.component;
 
+				if( amp < 250 ) continue;
+
 				// get the reference pmt:
 				if( candidate_pmts.count(REFID) == 0 ) continue;
 				double TREF 		= candidate_pmts[REFID].tdc;
@@ -552,19 +554,16 @@ void fitTW(TH2D * hist , TCanvas * c, int cd, int s, int l, int co, int o, doubl
 
 	int dim = xs.size();
 	TGraphErrors *g = new TGraphErrors(dim, &xs[0], &ys[0], &xErrs[0], &yErrs[0]);
-	for(int bin = 1 ; bin <= dim ; ++bin ){
-		cout << xs[bin-1] << " " << ys[bin-1] << " " << xErrs[bin-1] << " " << yErrs[bin-1] << "\n";
-	}
 	//g->GetHistogram()->SetMaximum(0.1);	// third iteration (check results)
 	//g->GetHistogram()->SetMinimum(-0.1);	// third iteration (check results)
 	int max = (int)cut;
 	g->GetXaxis()->SetLimits(0,max);	// third iteration (check results)
-	TF1 * model = new TF1("timeWalk",wlk,0,20000,5);
+	TF1 * model = new TF1("timeWalk",wlk,0,20000,3);
 	model->SetParameter(0,0.06);
 	model->SetParameter(1,1000);
 	model->SetParameter(2,400);
-	model->SetParameter(3,-300);
-	model->SetParameter(4,1.5);
+	//model->SetParameter(3,-300);
+	//model->SetParameter(4,1.5);
 	//model->SetParLimits(0,0,4E4);
 	//model->SetParameter(0,1000);
 	//model->SetParameter(1,-11);
@@ -628,7 +627,7 @@ void walkCorr(	vector<double> *adcs		,
 	while( currBin < maxBin ){
 		double xPt, yPt, yEr, ySig, ySigEr;
 		double currBin_x = hist->GetXaxis()->GetBinCenter(currBin);
-		int nEvents = 2000;
+		int nEvents = 8000;
 		//if( currBin_x > 600 ) nEvents = 4000;	// first iteration
 		//if( currBin_x > 1000 ) nEvents = 2000;	// first iteration
 		//if( currBin_x < 1000 ) nEvents = 250;	// first iteration
@@ -654,7 +653,8 @@ double wlk( double *x , double *p){
 	double var = *x;
 	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) ;
 	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) + p[5]*pow(var,5);
-	return p[0]*sin( (var-p[1])/p[2] ) ;//+ p[3]/pow(var,p[4]);
+	return p[0]*sin( (var-p[1])/p[2] );
+	//return p[0]*sin( (var-p[1])/p[2] ) + p[3]/pow(var,p[4]);
 	return p[0] + p[1]*var;
 	return p[0]/var + p[1]/( p[4]+exp((var-p[2])/p[3]) );
 	return p[0] + p[1] / pow(var,p[2]); // first iteration
