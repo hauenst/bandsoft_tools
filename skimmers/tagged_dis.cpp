@@ -130,10 +130,10 @@ int main(int argc, char** argv) {
 		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
-			if( PERIOD == 0 ) Ebeam = 10.6;
-			if( PERIOD == 1 ) Ebeam = 10.2;
-			if( PERIOD == 2 ) Ebeam = 10.4;
-			if( PERIOD == 3 ) Ebeam = 4.2;
+			if( PERIOD == 0 ) Ebeam = 10.598; // from RCDB: 10598.6
+			if( PERIOD == 1 ) Ebeam = 10.199; // from RCDB: 10199.8
+			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
+			if( PERIOD == 3 ) Ebeam = 4.171;  // from RCDB: 4171.79
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
