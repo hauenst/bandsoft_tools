@@ -130,10 +130,10 @@ int main(int argc, char** argv) {
 		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
-			if( PERIOD == 0 ) Ebeam = 10.598; // from RCDB: 10598.6
-			if( PERIOD == 1 ) Ebeam = 10.199; // from RCDB: 10199.8
+			if( PERIOD == 0 ) Ebeam = 10.599; // from RCDB: 10598.6
+			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
-			if( PERIOD == 3 ) Ebeam = 4.171;  // from RCDB: 4171.79
+			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -141,6 +141,11 @@ int main(int argc, char** argv) {
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+			if (runNum >= 11286 && runNum < 11304)
+			{
+				//Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
+			}
 		}
 		else{
 			exit(-1);
