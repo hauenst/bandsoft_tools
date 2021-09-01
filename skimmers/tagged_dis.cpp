@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
+			// Set the initial Ebeam value so that it can be used for the PID class
 			if( PERIOD == 0 ) Ebeam = 10.599; // from RCDB: 10598.6
 			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
@@ -139,12 +140,14 @@ int main(int argc, char** argv) {
 			int runNum = getRunNumber(argv[i]);
 			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
+			// For data, get Ebeam from RCDB:
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
-			if (runNum >= 11286 && runNum < 11304)
-			{
-				//Ebeam *= 1.018; //fudge factor for Low energy run due to miscalibration in RCDB
+			if (runNum >= 11286 && runNum < 11304){
+				// Manual change of Ebeam for LER since RCDB is wrong by ~1.018 due to magnet setting issue
 				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
+						// NOTE: this does NOT match the MC beam energy by 3MeV because it doesn't matter and 
+						// we don't know the exact value.
 			}
 		}
 		else{
@@ -244,25 +247,21 @@ int main(int argc, char** argv) {
 				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
-					Ebeam = 10.6;
 					period = 0;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
 				else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
-					Ebeam = 10.2;
 					period = 1;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
 				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
-					Ebeam = 10.4;
 					period = 2;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}	
 				else if (Runno >= 11286 && Runno < 11304) { //LER runs
-					Ebeam = 4.2;
 					period = 3;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
@@ -300,6 +299,8 @@ int main(int argc, char** argv) {
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
+				// For MC, the above Ebeam has already been set, but we will reset it based on 
+				// any new information in the header file:
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 
