@@ -130,17 +130,25 @@ int main(int argc, char** argv) {
 		if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 			int runNum = 11;
 			Runno = runNum;
-			if( PERIOD == 0 ) Ebeam = 10.6;
-			if( PERIOD == 1 ) Ebeam = 10.2;
-			if( PERIOD == 2 ) Ebeam = 10.4;
-			if( PERIOD == 3 ) Ebeam = 4.2;
+			// Set the initial Ebeam value so that it can be used for the PID class
+			if( PERIOD == 0 ) Ebeam = 10.599; // from RCDB: 10598.6
+			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
+			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
+			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
 			Runno = runNum;
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
+			// For data, get Ebeam from RCDB:
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+			if (runNum >= 11286 && runNum < 11304){
+				// Manual change of Ebeam for LER since RCDB is wrong by ~1.018 due to magnet setting issue
+				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
+						// NOTE: this does NOT match the MC beam energy by 3MeV because it doesn't matter and 
+						// we don't know the exact value.
+			}
 		}
 		else{
 			exit(-1);
@@ -236,6 +244,7 @@ int main(int argc, char** argv) {
 			if( event_counter == 1 ){
 				//cout << Runno << "\n";
 				int period = -1;
+				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
 					period = 0;
@@ -258,6 +267,7 @@ int main(int argc, char** argv) {
 					BAND->setPeriod(period);
 				}
 				else if( Runno == 11 ){
+					// already set the beam energy for MC runs and the period is the user input period
 					period = PERIOD;
 					BAND->setMC();
 					BAND->setPeriod(period); // what is the simulated period (used for status table)
@@ -289,6 +299,8 @@ int main(int argc, char** argv) {
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
+				// For MC, the above Ebeam has already been set, but we will reset it based on 
+				// any new information in the header file:
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 

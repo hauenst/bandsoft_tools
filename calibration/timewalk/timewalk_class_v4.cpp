@@ -48,6 +48,7 @@ void walkCorr(	vector<double> *adcs		,
 		TH2D * hist			);
 int doProj( TH2D * hist , int bin , bool write , int flag , double &x, double &y, double &yE,double &sig, double &sigE, int thres, int lastBin );
 void readParameters(void);
+double wlk( double *x , double *p);
 
 int period = -1;
 
@@ -173,7 +174,7 @@ int main(int argc, char** argv) {
 				tdc_adccorr -= ( TWParamsADC_It0[PMT_ID][0]/adc + TWParamsADC_It0[PMT_ID][1]/(TWParamsADC_It0[PMT_ID][4] + exp((adc-TWParamsADC_It0[PMT_ID][2])/TWParamsADC_It0[PMT_ID][3]) ) );
 				tdc_ampcorr -= ( TWParamsAMP_It1[PMT_ID][0] + TWParamsAMP_It1[PMT_ID][1] * amp );
 				tdc_adccorr -= ( TWParamsADC_It1[PMT_ID][0] + TWParamsADC_It1[PMT_ID][1] * adc );
-				if( TWParamsAMP_It2[PMT_ID][0] != 0 && period == 0)
+				if( TWParamsAMP_It2[PMT_ID][0] != 0 )
 					tdc_ampcorr -= ( TWParamsAMP_It2[PMT_ID][0]*sin( (amp-TWParamsAMP_It2[PMT_ID][1])/TWParamsAMP_It2[PMT_ID][2] ) );
 
 				h2_tamp[sector-1][layer-1][component-1][order].Fill( amp , tdc_ampcorr - TREF );
@@ -638,17 +639,16 @@ void fitTW(TH2D * hist , TCanvas * c, int cd, int s, int l, int co, int o, doubl
 
 	int dim = xs.size();
 	TGraphErrors *g = new TGraphErrors(dim, &xs[0], &ys[0], &xErrs[0], &yErrs[0]);
-	for(int bin = 1 ; bin <= dim ; ++bin ){
-		cout << xs[bin-1] << " " << ys[bin-1] << " " << xErrs[bin-1] << " " << yErrs[bin-1] << "\n";
-	}
 	g->GetHistogram()->SetMaximum(0.1);	// third iteration (check results)
 	g->GetHistogram()->SetMinimum(-0.1);	// third iteration (check results)
 	int max = (int)cut;
 	g->GetXaxis()->SetLimits(0,max);	// third iteration (check results)
 	//TF1 * model = new TF1("timeWalk",wlk,0,20000,3);
 	//model->SetParameter(0,0.06);
-	//model->SetParameter(1,1500);
+	//model->SetParameter(1,1000);
 	//model->SetParameter(2,400);
+	//
+	//
 	//model->SetParLimits(0,0,4E4);
 	//model->SetParameter(0,1000);
 	//model->SetParameter(1,-11);
@@ -712,7 +712,7 @@ void walkCorr(	vector<double> *adcs		,
 	while( currBin < maxBin ){
 		double xPt, yPt, yEr, ySig, ySigEr;
 		double currBin_x = hist->GetXaxis()->GetBinCenter(currBin);
-		int nEvents = 4000;
+		int nEvents = 2000;
 		//if( currBin_x > 600 ) nEvents = 4000;	// first iteration
 		//if( currBin_x > 1000 ) nEvents = 2000;	// first iteration
 		//if( currBin_x < 1000 ) nEvents = 250;	// first iteration
@@ -773,4 +773,16 @@ int doProj( TH2D * hist , int bin , bool write , int flag , double &x, double &y
 	delete trash;
 
 	return step;
+}
+double wlk( double *x , double *p){
+	double var = *x;
+	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) ;
+	//return p[0] + p[1]*var + p[2]*pow(var,2) + p[3]*pow(var,3) + p[4]*pow(var,4) + p[5]*pow(var,5);
+	return p[0]*sin( (var-p[1])/p[2] );
+	//return p[0]*sin( (var-p[1])/p[2] ) + p[3]/pow(var,p[4]);
+	return p[0] + p[1]*var;
+	return p[0]/var + p[1]/( p[4]+exp((var-p[2])/p[3]) );
+	return p[0] + p[1] / pow(var,p[2]); // first iteration
+	//return p[0] + p[1]*var; // second iteration
+
 }

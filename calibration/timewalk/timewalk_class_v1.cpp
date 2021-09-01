@@ -397,7 +397,7 @@ void fitTW(TH2D * hist , TCanvas * c, int cd, int s, int l, int co, int o, doubl
 	model->SetParameter(2,-16E3);
 	model->SetParameter(3,4E3);
 	model->SetParameter(4,-40);
-	TFitResultPtr ptr = g->Fit(model,"QESBR","",0,1050);
+	TFitResultPtr ptr = g->Fit(model,"QESBR","",0,700);
 	par1 = ptr->Parameter(0);
 	par1_err = ptr->ParError(0);
 

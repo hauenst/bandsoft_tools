@@ -43,12 +43,13 @@ void BANDReco::Print(){
 }
 
 void BANDReco::setPeriod( const int period ){
-	// period == 0 : 10.6
-	// period == 1 : 10.2
-	// period == 2 : 10.4
-	// period == 3 : LER
-	// calibration tables are same for 10.6 & 10.2 (spring), except for global offset
-	// and then same for 10.4 (fall/winter), except for global offset
+	// Periods are:
+	// 	0 == 10.6
+	// 	1 == 10.2
+	// 	2 == 10.4
+	// 	3 == 4.2 / LER
+	//  (0,1) share folder for constants (spring2019)
+	//  (2,3) share folder for constants (fall2019)
 	(period == 0 || period == 1) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
 	
 	// Set the vertex offset of the target:
@@ -74,6 +75,7 @@ void BANDReco::readTW(){
 	std::string line;
 	std::ifstream f;
 	// Load L PMT file:
+	cout << "reading file: " << path+"/time_walk_amp_L.txt" << "\n";
 	f.open(path+"/time_walk_amp_L.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -101,8 +103,13 @@ void BANDReco::readTW(){
 			TWParamsAMP[PMTID] = temp;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: TW left\n";
+		exit(-1);
+	}
 	f.close();
 	// Load R PMT file:
+	cout << "reading file: " << path+"/time_walk_amp_R.txt" << "\n";
 	f.open(path+"/time_walk_amp_R.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -130,6 +137,10 @@ void BANDReco::readTW(){
 			TWParamsAMP[PMTID] = temp;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: TW right\n";
+		exit(-1);
+	}
 	f.close();
 
 	loaded_TW = true;
@@ -145,8 +156,11 @@ void BANDReco::readLROffset(){
 	std::string line;
 	std::ifstream f;
 
+	if( Runno <= 6290 ) path += "/lr_offsets_006290_10pt6.txt";
+	else{ path += "/lr_offsets.txt"; }
 	// Load L-R offset file:
-	f.open(path+"/lr_offsets.txt");
+	cout << "reading file: " << path << "\n";
+	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -172,6 +186,10 @@ void BANDReco::readLROffset(){
 			FTDCVelocity[BARID] = ftdc_veff;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: LR offset\n";
+		exit(-1);
+	}
 	f.close();
 	return;
 }
@@ -185,8 +203,11 @@ void BANDReco::readPaddleOffset(){
 	std::string line;
 	std::ifstream f;
 
+	if( Runno <= 6290 ) path += "/paddle_offsets_006290_10pt6.txt";
+	else{ path += "/paddle_offsets.txt"; }
 	// Load Paddle offset file:
-	f.open(path+"/paddle_offsets.txt");
+	cout << "reading file: " << path << "\n";
+	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -211,6 +232,10 @@ void BANDReco::readPaddleOffset(){
 			FTDCPaddle[BARID] = ftdc_mean;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: paddle offset\n";
+		exit(-1);
+	}
 	f.close();
 	return;
 }
@@ -223,9 +248,12 @@ void BANDReco::readLayerOffset(){
 	std::string line;
 	std::ifstream f;
 
+	if( Runno <= 6290 ) path += "/layer_offsets_006290_10pt6.txt";
+	else{ path += "/layer_offsets.txt"; }
 	// Load Layer offset file:
 	int LAYERREF = -1;
-	f.open(path+"/layer_offsets.txt");
+	cout << "reading file: " << path << "\n";
+	f.open(path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -249,6 +277,10 @@ void BANDReco::readLayerOffset(){
 			FTDCLayer[BARID] = ftdc_mean;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: layer offset\n";
+		exit(-1);
+	}
 	f.close();
 	
 	// Now what we need to do is go through and overwrite the offsets to be the same in each
@@ -266,12 +298,20 @@ void BANDReco::readLayerOffset(){
 
 void BANDReco::readGlobalOffset(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	std::string tdc_path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
+	std::string ftdc_path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
-	f.open(path+"/global_offsets_tdc.txt");
+
+	if( Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( Runno <= 6399 ) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
+	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
+
+	cout << "reading file: " << tdc_path << "\n";
+	f.open(tdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -290,9 +330,18 @@ void BANDReco::readGlobalOffset(){
 			TDCToFRes[BAR_ID] = sigma;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: global tdc\n";
+		exit(-1);
+	}
 	f.close();
 
-	f.open(path+"/global_offsets_fadc.txt");
+	if( Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( Runno <= 6399 ) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
+	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
+
+	cout << "reading file: " << ftdc_path << "\n";
+	f.open(ftdc_path);
 	if( f.is_open() ){
 		while( getline(f,line) ){
 			std::istringstream ss(line);
@@ -311,6 +360,10 @@ void BANDReco::readGlobalOffset(){
 			FTDCToFRes[BAR_ID] = sigma;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: global ftdc\n";
+		exit(-1);
+	}
 	f.close();
 
 	return;
@@ -325,6 +378,7 @@ void BANDReco::readGeometry(){
 	std::ifstream f;
 
 	// Load the Geometry positions:
+	cout << "reading file: " << path+"/band_geometry.txt" << "\n";
 	f.open(path+"/band_geometry.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -342,6 +396,10 @@ void BANDReco::readGeometry(){
 
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: geometry\n";
+		exit(-1);
+	}
 	f.close();
 
 	return;
@@ -356,6 +414,7 @@ void BANDReco::readEnergyCalib(){
 	std::ifstream f;
 
 	// Load the Edep calibration:
+	cout << "reading file: " << path+"/edep_calibration.txt" << "\n";
 	f.open(path+"/edep_calibration.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -373,6 +432,10 @@ void BANDReco::readEnergyCalib(){
 			ADCtoMEV[BARID] = AdcToMeVee;
 		}
 	}
+	else{
+		std::cerr << "\t***Could not open file: edep calib\n";
+		exit(-1);
+	}
 	f.close();
 
 	return;
@@ -387,6 +450,7 @@ void BANDReco::readStatus(){
 	std::ifstream f;
 
 	// Load the Edep calibration:
+	cout << "reading file: " << path+"/status_list.txt" << "\n";
 	f.open(path+"/status_list.txt");
 	if( f.is_open() ){
 		while( getline(f,line) ){
@@ -400,6 +464,10 @@ void BANDReco::readStatus(){
 			int BARID = sector*100 + layer*10 + component;
 			STATUS[BARID] = status;
 		}
+	}
+	else{
+		std::cerr << "\t***Could not open file: status list\n";
+		exit(-1);
 	}
 	f.close();
 
@@ -601,6 +669,12 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 
 
 void BANDReco::createBars(  ){
+
+	if( Runno == -1 ){
+		std::cerr << "\t***Run number has not been set. This causes issues creating bars. Exiting...\n"; 
+		exit(-1);
+	}
+
 	map<int,PMT>::const_iterator pmt_i;
 	map<int,PMT>::const_iterator pmt_j;
 

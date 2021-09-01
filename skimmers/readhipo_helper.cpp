@@ -432,18 +432,19 @@ void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime
 
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult ){
-	TVector3 	beamVec(0,0,Ebeam);
-	TVector3	eVec;
-	bool setElectron = false;
 
 	// Grab the weight for the event:
 	weight 	= gen_info.getFloat(9,0);
 	// Grab the beam energy for this generated file:
-	Ebeam 	= gen_info.getFloat(6,0);
-	//ugly temporary fix for the MC beam energy for the QE simulations
-	if (Ebeam > 4 && Ebeam < 4.5) {
-		Ebeam = 4.247;
-	}
+	double file_Ebeam = gen_info.getFloat(6,0);
+	if( fabs(Ebeam - file_Ebeam)>0.001 ) 
+		std::cerr << "---WARNING-- getMcInfo shows different beam energy than the expected period energy!\n";
+	Ebeam = file_Ebeam;
+
+	// using the header Ebeam, create the beamvector:
+	TVector3 	beamVec(0,0,Ebeam);
+	TVector3	eVec;
+	bool setElectron = false;
 
 	// Loop over all generated particles and find the electron to put that one first
 	for( int hit = 0 ; hit < gen_particles.getRows() ; hit++ ){

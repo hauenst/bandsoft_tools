@@ -66,6 +66,7 @@ class BANDReco{
 
 		void setPeriod(const int period);
 		void setMC(void){ MONTECARLO=true; };
+		void setRunno(const int runnumber){ Runno = runnumber; };
 
 		map<int,Bar> getCandidateBars(void){return candidate_bars;};
 		map<int,PMT> getCandidatePMTs(void){return candidate_pmts;};
@@ -94,6 +95,7 @@ class BANDReco{
 		bool SPRING2019 = false;
 		bool FALL2019_WINTER2020 = false;
 		int PERIOD = -1;
+		int Runno = -1;
 		double BAND_MOTHER_OFFSET = 0.; // [cm]
 		double RGB_VERTEX_OFFSET = 0.; // [cm]
 

@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 	// check number of arguments
 	if( argc < 2 ){
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [calibration period] [inputFile1] [inputFile2] ... \n";
-		cerr << "\t\t[calibration peroid] -- 0 = SPRING2019 / 1 == FALL2019_WINTER2020\n";
+		cerr << "\t\t[calibration peroid] -- 0 = 10.6 & 10.2 / 2 == 10.4 & LER\n";
 		cerr << "\t\t[inputFile] = ____.hipo\n\n";
 		return -1;
 	}
@@ -43,9 +43,11 @@ int main(int argc, char** argv) {
 
 	// Initialize our BAND reconstruction engine:
 	BANDReco * BAND = new BANDReco();
+	BAND->setRunno( 11030 ); //bogus run number for 10.4 since it doesn't matter
 	BAND->setPeriod(period);
 	BAND->readTW();
 	BAND->readStatus();
+	//BAND->readLROffset();
 
 
 	// Create histograms for storage

@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	// check number of arguments
 	if( argc < 2 ){
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [calibration period] [inputFile1] [inputFile2] ... \n";
-		cerr << "\t\t[calibration peroid] -- 0 = SPRING2019 / 1 == FALL2019_WINTER2020\n";
+		cerr << "\t\t[calibration peroid] -- 0 = 10.6 & 10.2 / 2 == 10.4 & LER\n";
 		cerr << "\t\t[inputFile] = ____.hipo\n\n";
 		return -1;
 	}
@@ -41,6 +41,8 @@ int main(int argc, char** argv) {
 	// Initialize our BAND reconstruction engine:
 	BANDReco * BAND = new BANDReco();
 	BAND->setPeriod(period);
+	//BAND->setRunno( 6100 ); // force using LR file of 10pt6 pre-jump
+	BAND->setRunno( 11030 ); // dummy number for 10.4 beam energy
 	BAND->readTW();
 	BAND->readLROffset();
 	//BAND->readPaddleOffset();
