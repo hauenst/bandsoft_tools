@@ -437,6 +437,7 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 	weight 	= gen_info.getFloat(9,0);
 	// Grab the beam energy for this generated file:
 	double file_Ebeam = gen_info.getFloat(6,0);
+	if( file_beam == 0 ) return; // don't do anything if there is no event information
 	if( fabs(Ebeam - file_Ebeam)>0.001 ) 
 		std::cerr << "---WARNING-- getMcInfo shows different beam energy than the expected period energy!\n";
 	Ebeam = file_Ebeam;
