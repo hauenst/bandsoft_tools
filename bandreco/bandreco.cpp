@@ -156,7 +156,7 @@ void BANDReco::readLROffset(){
 	std::string line;
 	std::ifstream f;
 
-	if( Runno <= 6290 ) path += "/lr_offsets_006290_10pt6.txt";
+	if( !MONTECARLO && Runno <= 6290 ) path += "/lr_offsets_006290_10pt6.txt";
 	else{ path += "/lr_offsets.txt"; }
 	// Load L-R offset file:
 	cout << "reading file: " << path << "\n";
@@ -203,7 +203,7 @@ void BANDReco::readPaddleOffset(){
 	std::string line;
 	std::ifstream f;
 
-	if( Runno <= 6290 ) path += "/paddle_offsets_006290_10pt6.txt";
+	if( !MONTECARLO && Runno <= 6290 ) path += "/paddle_offsets_006290_10pt6.txt";
 	else{ path += "/paddle_offsets.txt"; }
 	// Load Paddle offset file:
 	cout << "reading file: " << path << "\n";
@@ -248,7 +248,7 @@ void BANDReco::readLayerOffset(){
 	std::string line;
 	std::ifstream f;
 
-	if( Runno <= 6290 ) path += "/layer_offsets_006290_10pt6.txt";
+	if( !MONTECARLO && Runno <= 6290 ) path += "/layer_offsets_006290_10pt6.txt";
 	else{ path += "/layer_offsets.txt"; }
 	// Load Layer offset file:
 	int LAYERREF = -1;
@@ -306,8 +306,8 @@ void BANDReco::readGlobalOffset(){
 	std::string line;
 	std::ifstream f;
 
-	if( Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
-	else if( Runno <= 6399 ) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
+	if( !MONTECARLO && Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( !MONTECARLO && Runno <= 6399 ) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
 	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << tdc_path << "\n";
@@ -336,8 +336,8 @@ void BANDReco::readGlobalOffset(){
 	}
 	f.close();
 
-	if( Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
-	else if( Runno <= 6399 ) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
+	if( !MONTECARLO && Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
+	else if( !MONTECARLO && Runno <= 6399 ) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
 	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << ftdc_path << "\n";
