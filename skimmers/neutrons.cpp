@@ -25,6 +25,9 @@
 #include "e_pid.h"
 #include "DC_fiducial.h"
 
+#include "bandreco.h"
+
+
 using namespace std;
 
 
@@ -34,13 +37,18 @@ int main(int argc, char** argv) {
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
-		cerr << "\t\t[<load shifts N,Y> = <0, 1> \n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
+		cerr << "\t\t[load shifts N,Y] = 0, 1 \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
 
 	int MC_DATA_OPT = atoi(argv[2]);
-	int loadshifts_opt = atoi(argv[3]);
+	int PERIOD = atoi(argv[3]);
+	int loadshifts_opt = atoi(argv[4]);
+
+	// Initialize our BAND reconstruction engine:
+	BANDReco * BAND = new BANDReco();
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
@@ -62,6 +70,7 @@ int main(int argc, char** argv) {
 	TClonesArray &saveMC = *mcParts;
 	// 	Neutron info:
 	int nMult		= 0;
+	int passed		= 0;
 	TClonesArray * nHits = new TClonesArray("bandhit");
 	TClonesArray &saveHit = *nHits;
 	// 	Event branches:
@@ -75,6 +84,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("weight"	,&weight		);
 	//	Neutron branches:
 	outTree->Branch("nMult"		,&nMult			);
+	outTree->Branch("passed"	,&passed		);
 	outTree->Branch("nHits"		,&nHits			);
 	//Branches to store if good Neutron event and leadindex
 	outTree->Branch("goodneutron"		,&goodneutron	);
@@ -86,62 +96,21 @@ int main(int argc, char** argv) {
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
 
-	//Load Bar shifts
-	shiftsReader shifts;
-	double * FADC_BARSHIFTS;
-	double * TDC_BARSHIFTS;
-
-	// Effective velocity for re-doing x- calculation
-	double * FADC_EFFVEL_S6200;
-	double *  TDC_EFFVEL_S6200;
-	double * FADC_EFFVEL_S6291;
-	double *  TDC_EFFVEL_S6291;
-	double *  FADC_LROFF_S6200;
-	double *   TDC_LROFF_S6200;
-	double *  FADC_LROFF_S6291;
-	double *   TDC_LROFF_S6291;
-	shifts.LoadEffVel	("../include/EffVelocities_S6200.txt",	"../include/EffVelocities_S6291.txt");
-	shifts.LoadLrOff	("../include/LrOffsets_S6200.txt",	"../include/LrOffsets_S6291.txt");
-	FADC_EFFVEL_S6200	= (double*) shifts.getFadcEffVel(6200);
-	TDC_EFFVEL_S6200	= (double*)  shifts.getTdcEffVel(6200);
-	FADC_EFFVEL_S6291	= (double*) shifts.getFadcEffVel(6291);
-	TDC_EFFVEL_S6291	= (double*)  shifts.getTdcEffVel(6291);
-
-	FADC_LROFF_S6200	= (double*) shifts.getFadcLrOff(6200);
-	TDC_LROFF_S6200		= (double*)  shifts.getTdcLrOff(6200);
-	FADC_LROFF_S6291	= (double*) shifts.getFadcLrOff(6291);
-	TDC_LROFF_S6291		= (double*)  shifts.getTdcLrOff(6291);
-
-	//Maps for geometry positions
-	std::map<int,double> bar_pos_x;
-	std::map<int,double> bar_pos_y;
-	std::map<int,double> bar_pos_z;
-	//Load geometry position of bars
-	getBANDBarGeometry("../include/band-bar-geometry.txt", bar_pos_x, bar_pos_y,bar_pos_z);
-	//Maps for energy deposition
-	std::map<int,double> bar_edep;
-	//Load edep calibration of bars if not MC
-	if( MC_DATA_OPT == 1){ //Data
-		getBANDEdepCalibration("../include/band-bar-edep.txt", bar_edep);
-	}
-	else if( MC_DATA_OPT == 0){ //MC
-		getBANDEdepCalibration("../include/band-bar-edep-mc.txt", bar_edep);
-	}
-	else {
-		cout << "No BAND Edep file is loaded " << endl;
-	}
-
-
 		// Load the electron PID class:
 		e_pid ePID;
 		// Load the DC fiducial class for electrons;
 		DCFiducial DCfid_electrons;
 
 	// Load input file
-	for( int i = 4 ; i < argc ; i++ ){
+	for( int i = 5 ; i < argc ; i++ ){
 		if( MC_DATA_OPT == 0){
 			int runNum = 11;
 			Runno = runNum;
+			// Set the initial Ebeam value so that it can be used for the PID class
+			if( PERIOD == 0 ) Ebeam = 10.599; // from RCDB: 10598.6
+			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
+			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
+			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -149,6 +118,12 @@ int main(int argc, char** argv) {
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+			if (runNum >= 11286 && runNum < 11304){
+			// Manual change of Ebeam for LER since RCDB is wrong by ~1.018 due to magnet setting issue
+			Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
+					// NOTE: this does NOT match the MC beam energy by 3MeV because it doesn't matter and
+					// we don't know the exact value.
+		}
 		}
 		else{
 			exit(-1);
@@ -188,6 +163,7 @@ int main(int argc, char** argv) {
 			eventnumber = 0;
 			// Neutron
 			nMult		= 0;
+			passed = 0;
 			nleadindex = -1;
 			goodneutron = false;
 			bandhit nHit[maxNeutrons];
@@ -216,25 +192,50 @@ int main(int argc, char** argv) {
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
 
-			if( loadshifts_opt && event_counter == 1 && MC_DATA_OPT !=0){
-				//Load of shifts depending on run number
-				if (Runno >= 11286 && Runno < 11304)	{ //LER runs
-					shifts.LoadInitBarFadc("../include/LER_FADC_shifts.txt");
-					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
-					shifts.LoadInitBar("../include/LER_TDC_shifts.txt");
-					TDC_BARSHIFTS = (double*) shifts.getInitBar();
-				}
-				else if (Runno > 6100 && Runno < 6800) { //Spring 19 data
-					shifts.LoadInitBarFadc	("../include/FADC_pass1v0_initbar.txt");
-					FADC_BARSHIFTS = (double*) shifts.getInitBarFadc();
-					shifts.LoadInitBar	("../include/TDC_pass1v0_initbar.txt");
-					TDC_BARSHIFTS = (double*) shifts.getInitBar();
-				}
-				else {
-					cout << "No bar by bar offsets loaded " << endl;
-					cout << "Check shift option when starting program. Exit " << endl;
-					exit(-1);
-				}
+			if( event_counter == 1 ){
+						int period = -1;
+						BAND->setRunno(Runno);
+						//Load of shifts depending on run number
+						if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
+						period = 0;
+						if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+						BAND->setPeriod(period);
+					}
+					else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
+						period = 1;
+						if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+						BAND->setPeriod(period);
+					}
+					else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
+						period = 2;
+						if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+						BAND->setPeriod(period);
+					}
+					else if (Runno >= 11286 && Runno < 11304) { //LER runs
+						period = 3;
+						if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+						BAND->setPeriod(period);
+					}
+					else if( Runno == 11 ){
+						// already set the beam energy for MC runs and the period is the user input period
+						period = PERIOD;
+						BAND->setMC();
+						BAND->setPeriod(period); // what is the simulated period (used for status table)
+					}
+					else {
+						cout << "No bar by bar offsets loaded " << endl;
+						cout << "Check shift option when starting program. Exit " << endl;
+						exit(-1);
+					}
+					if( period == -1 ){ cerr << "invalid period\n"; exit(-1); }
+						BAND->readTW();			// TW calibration values for each PMT
+						BAND->readLROffset();		// (L-R) offsets for each bar
+						BAND->readPaddleOffset();	// bar offsets relative to bar 2X7 in each layer X
+						BAND->readLayerOffset();	// layer offsets relative to layer 5
+						BAND->readGeometry();		// geometry table for each bar
+						BAND->readEnergyCalib();	// energy calibration for Adc->MeVee
+						BAND->readStatus();		// status table for 0,1 = bad,good bar
+						if( loadshifts_opt ) BAND->readGlobalOffset();	// final global alignment relative to electron trigger
 			}
 
 
@@ -260,24 +261,12 @@ int main(int argc, char** argv) {
 				getMcInfo( mc_particle , mc_event_info , mcPart , starttime, weight, Ebeam , genMult );
 			}
 
-			// Grab the neutron information:
-			if( MC_DATA_OPT == 0 ){
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep);
-			}
-			else{
-				getNeutronInfo( band_hits, band_rawhits, band_adc, band_tdc, nMult, nHit , starttime , Runno, bar_pos_x, bar_pos_y, bar_pos_z, bar_edep,
-						1, 	FADC_LROFF_S6200,	TDC_LROFF_S6200,
-							FADC_LROFF_S6291,	TDC_LROFF_S6291,
-							FADC_EFFVEL_S6200,	TDC_EFFVEL_S6200,
-							FADC_EFFVEL_S6291,	TDC_EFFVEL_S6291	);
-			}
+			/// Grab the neutron information:
+				// Form the PMTs and Bars for BAND:
+			BAND->createPMTs( &band_adc, &band_tdc, &run_config );
+			BAND->createBars();
+			BAND->storeHits( nMult , nHit , starttime , BAND->getRGBVertexOffset() ); // use average z-offset of the target for pathlength-z
 
-			if( loadshifts_opt && MC_DATA_OPT !=0){
-					for( int n = 0 ; n < nMult ; n++ ){
-						nHit[n].setTofFadc(	nHit[n].getTofFadc() 	- FADC_BARSHIFTS[(int)nHit[n].getBarID()] );
-						nHit[n].setTof(		nHit[n].getTof() 	- TDC_BARSHIFTS[(int)nHit[n].getBarID()]  );
-					}
-			}
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
@@ -297,17 +286,17 @@ int main(int argc, char** argv) {
 			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
 			if (nMult > 1) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				int test=0;
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT,test);
+
+				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT,passed);
 			}
 
-			// Fill tree based on d(e,e'n)X for data
-			if( (nMult == 1 || (nMult > 1 && goodneutron) )&& MC_DATA_OPT == 1 ){
-				outTree->Fill();
-			} // else fill tree on d(en,)enX for MC
-			else if( MC_DATA_OPT == 0 ){
-				outTree->Fill();
-			}
+			// Fill tree based on d(e,n)X for data
+					if(  (nMult == 1 || (nMult > 1 && goodneutron) ) && MC_DATA_OPT == 1  ){
+						outTree->Fill();
+					}
+					else if( MC_DATA_OPT == 0 ){
+						outTree->Fill();
+					}// else fill tree on d(e,n)
 
 		} // end loop over events
 	}// end loop over files
