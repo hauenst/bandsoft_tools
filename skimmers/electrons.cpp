@@ -32,15 +32,17 @@ using namespace std;
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 4 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [inputFile] \n\n";
+	if( argc < 5 ){
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
 
 	int MC_DATA_OPT = atoi(argv[2]);
+	int PERIOD = atoi(argv[3]);
 
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
@@ -92,11 +94,16 @@ int main(int argc, char** argv) {
 	DCFiducial DCfid_electrons;
 
 	// Load input file
-	for( int i = 3 ; i < argc ; i++ ){
+	for( int i = 4 ; i < argc ; i++ ){
 
 		if( MC_DATA_OPT == 0){
 			int runNum = 11;
 			Runno = runNum;
+			// Set the initial Ebeam value so that it can be used for the PID class
+			if( PERIOD == 0 ) Ebeam = 10.599; // from RCDB: 10598.6
+			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
+			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
+			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -104,6 +111,12 @@ int main(int argc, char** argv) {
 			auto cnd = connection.GetCondition(runNum, "beam_energy");
 			Ebeam = cnd->ToDouble() / 1000.; // [GeV]
 			current = connection.GetCondition( runNum, "beam_current") ->ToDouble(); // [nA]
+			if (runNum >= 11286 && runNum < 11304){
+				// Manual change of Ebeam for LER since RCDB is wrong by ~1.018 due to magnet setting issue
+				Ebeam = 4.244; //fix beam energy for low energy run to currently known number 02/08/21
+						// NOTE: this does NOT match the MC beam energy by 3MeV because it doesn't matter and 
+						// we don't know the exact value.
+			}
 		}
 		else{
 			exit(-1);

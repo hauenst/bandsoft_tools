@@ -50,13 +50,13 @@ install( TARGETS tagged_dis
 #################################################################################################
 
 #################################################################################################
-add_executable(ncalibration ncalibration.cpp readhipo_helper.cpp )
-target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4
-				clashit_tree bandhit_tree taghit_tree genpart_tree
-				clas12fiducial e_pid DC_fiducial
-				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
-install( TARGETS ncalibration
-		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+#add_executable(ncalibration ncalibration.cpp readhipo_helper.cpp )
+#target_link_libraries(ncalibration ${ROOT_LIBRARIES} Hipo4 Banks4
+#				clashit_tree bandhit_tree taghit_tree genpart_tree
+#				clas12fiducial e_pid DC_fiducial
+#				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+#install( TARGETS ncalibration
+#		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 #################################################################################################
 
 
