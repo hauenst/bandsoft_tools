@@ -48,8 +48,9 @@ namespace hipo {
     for(int i = 0; i < schemaList.size(); i++){
         std::string schemaString = writerDictionary.getSchema(schemaList[i].c_str()).getSchemaString();
         std::string schemaStringJson = writerDictionary.getSchema(schemaList[i].c_str()).getSchemaStringJson();
-        printf("STR  : %s\n",schemaString.c_str());
-        printf("JSON : %s\n",schemaStringJson.c_str());
+        //---> Can open after debug level is introduced in the class
+        //printf("STR  : %s\n",schemaString.c_str());
+        //printf("JSON : %s\n",schemaStringJson.c_str());
         schemaEvent.reset();
         structure schemaNode(120,2,schemaString);
         structure schemaNodeJson(120,1,schemaStringJson);
@@ -179,6 +180,27 @@ void writer::close(){
   writeRecord(recordBuilder);
   writeIndexTable();
   outputStream.close();
+}
+
+/***
+* Function to change the record builder user word one
+*/
+void writer::setUserIntegerOne(long userIntOne){
+  recordBuilder.setUserWordOne(userIntOne);
+}
+
+/***
+*Function to change the record builder user word two
+*/
+void writer::setUserIntegerTwo(long userIntTwo){
+  recordBuilder.setUserWordTwo(userIntTwo);
+}
+
+/***
+*Function to write buffer.
+*/
+void writer::flush(){
+  writeRecord(recordBuilder);
 }
 
 }

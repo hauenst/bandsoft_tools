@@ -118,28 +118,28 @@
 
 namespace hipo {
 
-  typedef struct {
-    int  uniqueid;
-    int  filenumber;
-    int  headerLength; // in words (usually 14)
-    int  recordCount;
-    int  indexArrayLength; // in bytes
-    int  bitInfo;
-    int  version;
-    int  userHeaderLength;
-    int  magicNumber;
-    long userRegister;
-    long trailerPosition;
-    long firstRecordPosition;
+  typedef struct fileHeader_t {
+    int  uniqueid{};
+    int  filenumber{};
+    int  headerLength{}; // in words (usually 14)
+    int  recordCount{};
+    int  indexArrayLength{}; // in bytes
+    int  bitInfo{};
+    int  version{};
+    int  userHeaderLength{};
+    int  magicNumber{};
+    long userRegister{};
+    long trailerPosition{};
+    long firstRecordPosition{};
   } fileHeader_t;
 
 
-  typedef struct {
-      long recordPosition;
-      int  recordLength;
-      int  recordEntries;
-      long userWordOne;
-      long userWordTwo;
+  typedef struct recordInfo_t {
+      long recordPosition{};
+      int  recordLength{};
+      int  recordEntries{};
+      long userWordOne{};
+      long userWordTwo{};
   } recordInfo_t;
 
 
@@ -209,7 +209,8 @@ namespace hipo {
         hipo::record       inputRecord;
         hipo::readerIndex  readerEventIndex;
         std::vector<long>  tagsToRead;
-
+	short _verbose = {0} ;
+	
         void  readHeader();
         void  readIndex();
     public:
@@ -219,27 +220,28 @@ namespace hipo {
 
         ~reader();
 
+        void  about();
         void  readDictionary(hipo::dictionary &dict);
         void  getStructure(hipo::structure &structure,int group, int item);
         void  getStructureNoCopy(hipo::structure &structure,int group, int item);
 
         void  open(const char *filename);
         void  setTags(int tag){ tagsToRead.push_back(tag);}
-	      void  setTags(std::vector<long> tags){ tagsToRead=std::move(tags);}
-
-
-	      bool  hasNext();
+	void  setTags(std::vector<long> tags){ tagsToRead=std::move(tags);}
+	void  setVerbose(short level=1){_verbose=level;}
+	      
+	bool  hasNext();
         bool  next();
         bool  gotoEvent(int eventNumber);
         bool  gotoRecord(int irec);
         bool  next(hipo::event &dataevent);
         void  read(hipo::event &dataevent);
         void  printWarning();
-	//dglazier
- 	      int getNRecords() const {return readerEventIndex.getNRecords()-1;}
-	      bool  nextInRecord();
-	      bool loadRecord(int irec);
-	      int  getEntries(){return readerEventIndex.getMaxEvents();}
-      };
+
+	int getNRecords() const {return readerEventIndex.getNRecords()-1;}
+	bool  nextInRecord();
+	bool loadRecord(int irec);
+	int  getEntries(){return readerEventIndex.getMaxEvents();}
+  };
 }
 #endif /* HIPOREADER_H */

@@ -59,6 +59,9 @@ namespace hipo {
         getStructure(b,b.getSchema().getGroup(),b.getSchema().getItem());
     }
 
+    void   event::read(hipo::bank &b){
+        getStructure(b,b.getSchema().getGroup(),b.getSchema().getItem());
+    }
 
 
     void event::getStructure(hipo::structure &str, int group, int item){
@@ -111,6 +114,11 @@ namespace hipo {
 	            printf("event::add : error adding structure with size = %5d (capacity = %5d, size = %5d)\n",
 		            str_size,evt_capacity, evt_size);
 	         }
+    }
+
+    int  event::getTag(){
+      int eventTag = *(reinterpret_cast<const uint32_t*>(&dataBuffer[8]));
+      return eventTag;
     }
 
     void event::init(std::vector<char> &buffer){
