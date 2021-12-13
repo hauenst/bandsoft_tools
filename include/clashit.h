@@ -48,9 +48,9 @@ class clashit : public TObject {
 		void setXb		(double	iXb		)		{Xb		= iXb		; return;}
 		void setW2		(double	iW2		)		{W2		= iW2		; return;}
 
-		void setDC_chi2   (double iDC_chi2   	)		{DC_chi2	= iDC_chi2	; return;}
-		void setDC_NDF		(int    iDC_NDF			)		{DC_NDF 	= iDC_NDF 	; return;}
-		void setDC_sector (int    iDC_sector  ) 	{DC_sector      = iDC_sector    ; return;}
+		void setDC_chi2   	(double iDC_chi2   	)		{DC_chi2	= iDC_chi2	; return;}
+		void setDC_NDF		(int    iDC_NDF		)		{DC_NDF 	= iDC_NDF 	; return;}
+		void setDC_sector 	(int    iDC_sector  	) 		{DC_sector      = iDC_sector    ; return;}
 
 		void setDC_x1		(double iDC_x1		)		{DC_x1   	= iDC_x1 	; return;}
 		void setDC_y1		(double iDC_y1		)		{DC_y1   	= iDC_y1   	; return;}
@@ -63,6 +63,31 @@ class clashit : public TObject {
 		void setDC_x3		(double iDC_x3		)		{DC_x3   	= iDC_x3 	; return;}
 		void setDC_y3		(double iDC_y3		)		{DC_y3   	= iDC_y3   	; return;}
 		void setDC_z3		(double iDC_z3		)		{DC_z3   	= iDC_z3   	; return;}
+	
+		// Cherenkov banks
+		void setNphe		(double iNphe		)		{Nphe		= iNphe		; return;}
+		void setKov_x		(double iKov_x		)		{Kov_x		= iKov_x	; return;}
+		void setKov_y		(double iKov_y		)		{Kov_y		= iKov_y	; return;}
+		void setKov_z		(double iKov_z		)		{Kov_z		= iKov_z	; return;}
+		void setKov_chi2	(double iKov_chi2	)		{Kov_chi2	= iKov_chi2	; return;}
+		void setKov_time	(double iKov_time	)		{Kov_time	= iKov_time	; return;}
+		void setKov_path	(double iKov_path	)		{Kov_path	= iKov_path	; return;}
+		void setKov_det		(int    iKov_det	)		{Kov_det	= iKov_det	; return;}
+		void setKov_sector	(int    iKov_sec	)		{Kov_sec	= iKov_sec	; return;}
+		void setKov_status	(int    iKov_status	)		{Kov_status	= iKov_status	; return;}
+	
+		// Scintillator banks
+		void setScint_status	(int    iScint_status		)	{Scint_status		.push_back( iScint_status	)	; return; }
+		void setScint_sector	(int    iScint_sector		)	{Scint_sector		.push_back( iScint_sector	)	; return; }
+		void setScint_layer	(int    iScint_layer		)	{Scint_layer		.push_back( iScint_layer	)	; return; }
+		void setScint_component	(int    iScint_component	)	{Scint_component	.push_back( iScint_component	)	; return; }
+		void setScint_Edep	(double iScint_Edep		)	{Scint_Edep		.push_back( iScint_Edep		)	; return; }
+		void setScint_time	(double iScint_time		)	{Scint_time		.push_back( iScint_time		)	; return; }
+		void setScint_path	(double iScint_path		)	{Scint_path		.push_back( iScint_path		)	; return; }
+		void setScint_chi2	(double iScint_chi2		)	{Scint_chi2		.push_back( iScint_chi2		)	; return; }
+		void setScint_x		(double iScint_x		)	{Scint_x		.push_back( iScint_x		)	; return; }
+		void setScint_y		(double iScint_y		)	{Scint_y		.push_back( iScint_y		)	; return; }
+		void setScint_z		(double iScint_z		)	{Scint_z		.push_back( iScint_z		)	; return; }
 
 		int	getSector	(void)		{return Sector		;}
 		int	getPID		(void)		{return PID		;}
@@ -116,7 +141,30 @@ class clashit : public TObject {
 		double  getDC_y3        (void)          {return DC_y3           ;}
 		double  getDC_z3        (void)          {return DC_z3           ;}
 
-		ClassDef(clashit,3);
+		double getNphe		(void)		{return Nphe		;}
+		double getKov_x		(void)		{return Kov_x		;}
+		double getKov_y		(void)		{return Kov_y		;}
+		double getKov_z		(void)		{return Kov_z		;}
+		double getKov_chi2	(void)		{return Kov_chi2	;}
+		double getKov_time	(void)		{return Kov_time	;}
+		double getKov_path	(void)		{return Kov_path	;}
+		int    getKov_det	(void)		{return Kov_det		;}
+		int    getKov_sector	(void)		{return Kov_sec		;}
+		int    getKov_status	(void)		{return Kov_status	;}
+
+		std::vector<int>    getScint_status		(void)		{return Scint_status	;}
+		std::vector<int>    getScint_sector		(void)		{return Scint_sector	;}
+		std::vector<int>    getScint_layer		(void)		{return Scint_layer	;}
+		std::vector<int>    getScint_component		(void)		{return Scint_component	;}
+		std::vector<double> getScint_Edep		(void)		{return Scint_Edep	;}
+		std::vector<double> getScint_time		(void)		{return Scint_time	;}
+		std::vector<double> getScint_path		(void)		{return Scint_path	;}
+		std::vector<double> getScint_chi2		(void)		{return Scint_chi2	;}
+		std::vector<double> getScint_x			(void)		{return Scint_x		;}
+		std::vector<double> getScint_y			(void)		{return Scint_y		;}
+		std::vector<double> getScint_z			(void)		{return Scint_z		;}
+
+		ClassDef(clashit,6);
 
 	private:
 		int	Sector		;
@@ -169,6 +217,29 @@ class clashit : public TObject {
 		double DC_x3            ;
 		double DC_y3            ;
 		double DC_z3            ;
+
+		double Nphe		;
+                double Kov_x		;
+                double Kov_y		;
+                double Kov_z		;
+                double Kov_chi2		;
+                double Kov_time		;
+                double Kov_path		;
+                int    Kov_det		;
+                int    Kov_sec		;
+                int    Kov_status	;
+
+		std::vector<int>	Scint_status	;
+		std::vector<int>	Scint_sector	;
+		std::vector<int>	Scint_layer	;
+		std::vector<int>	Scint_component	;
+		std::vector<double>	Scint_Edep	;
+		std::vector<double>	Scint_time	;
+		std::vector<double>	Scint_path	;
+		std::vector<double>	Scint_chi2	;
+		std::vector<double>	Scint_x		;
+		std::vector<double>	Scint_y		;
+		std::vector<double>	Scint_z		;
 };
 
 

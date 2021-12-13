@@ -76,8 +76,9 @@ void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_a
 			double* s6291_fadc_lroffset=NULL,	double* s6291_tdc_lroffset=NULL,
 			double* s6200_fadc_effvel=NULL,	double* s6200_tdc_effvel=NULL,
 	       		double* s6291_fadc_effvel=NULL,	double* s6291_tdc_effvel=NULL	);
-void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
-			int pbankIndex, clashit &electron,
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank scintillator, hipo::bank DC_Track, hipo::bank DC_Traj, hipo::bank cherenkov,
+			int pbankIndex,
+			clashit &electron,
 			double starttime , int thisRun , double Ebeam );
 void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutrons] ,
 		double Ebeam , int nMult );

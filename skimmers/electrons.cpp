@@ -133,13 +133,14 @@ int main(int argc, char** argv) {
 		reader.readDictionary(factory);
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
-		hipo::bank  run_config (factory.getSchema("RUN::config"));
+		hipo::bank  	run_config 		(factory.getSchema("RUN::config"	));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
+		hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		hipo::event 	readevent;
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
-		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
 
@@ -183,12 +184,13 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+			readevent.getStructure(cherenkov);
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
 
 			//from first event get RUN::config torus Setting
-		 // inbending = negative torussetting, outbending = torusseting
+		 		// inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
 
 			// For simulated events, get the weight for the event
@@ -199,11 +201,12 @@ int main(int argc, char** argv) {
 			// Get integrated charge, livetime and start-time from REC::Event
 			if( event_info.getRows() == 0 ) continue;
 			getEventInfo( event_info, gated_charge, livetime, starttime );
-
+			
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
+
 
 
 			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
@@ -242,7 +245,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);

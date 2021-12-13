@@ -266,9 +266,10 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
-		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank      DC_Track      (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj      (factory.getSchema("REC::Traj"          ));
+		hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
@@ -359,6 +360,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_tdc);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+			readevent.getStructure(cherenkov);
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
@@ -414,7 +416,7 @@ int main(int argc, char** argv) {
 
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
@@ -455,7 +457,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov,  0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -495,7 +497,7 @@ int main(int argc, char** argv) {
 			}
 
 			TVector3 hitVector[maxScinHits];
-			getScinHits( scintillator, hit_pindex, hit_detid, hit_energy, hit_time, hitVector, hit_path, hit_status, pIndex, pMult, scinHits);
+			//getScinHits( scintillator, hit_pindex, hit_detid, hit_energy, hit_time, hitVector, hit_path, hit_status, pIndex, pMult, scinHits);
 			for( int hit = 0 ; hit < scinHits ; hit++ ){
 				  hit_x[hit] = hitVector[hit].X();
 				  hit_y[hit] = hitVector[hit].Y();

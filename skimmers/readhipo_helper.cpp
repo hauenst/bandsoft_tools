@@ -515,19 +515,20 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 }
 
 
-void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank scintillator, hipo::bank DC_Track, hipo::bank DC_Traj, hipo::bank cherenkov,
 			int pbankIndex,
 			clashit &electron,
 			double starttime , int thisRun , double Ebeam ){
 
 	TVector3	momentum = particles.getV3P(pbankIndex);
 	TVector3	vertex	 = particles.getV3v(pbankIndex);
+	if( particles.getPid(pbankIndex) != 11 || particles.getCharge(pbankIndex) != -1 ) 	return;
 
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	qVec; qVec = beamVec - momentum;
 
-//for Calorimeter information it is the Particle bank index for the first particle (usually electron)
-//for Particle bank it is bank index 0
+	//for Calorimeter information it is the Particle bank index for the first particle (usually electron)
+	//for Particle bank it is bank index 0
 	electron.setSector		(	calorimeter.getElectronSector(pbankIndex)				);
 	electron.setPID			  (	particles.getPid(pbankIndex)					);
 	electron.setCharge		(	particles.getCharge(pbankIndex)					);
@@ -643,18 +644,103 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 
 	}
 
+	// Cherenkov banks
+	int cher_ectr = 0;
+	for( int cher_rows = 0 ; cher_rows < cherenkov.getRows() ; ++cher_rows ){
+		int cher_index 	= cherenkov.getInt(0,cher_rows);
+		int cher_pindex	= cherenkov.getInt(1,cher_rows);
+		int cher_det		= cherenkov.getInt(2,cher_rows);
+		if( cher_pindex == pbankIndex && cher_det == 15){ // our electron information with the HTCC
+			++cher_ectr;
+			int cher_sec		= cherenkov.getInt(3,cher_rows);
+			double cher_nphe	= cherenkov.getFloat(4,cher_rows);
+			double cher_time	= cherenkov.getFloat(5,cher_rows);
+			double cher_path	= cherenkov.getFloat(6,cher_rows);
+			double cher_chi2	= cherenkov.getFloat(7,cher_rows);
+			double cher_x	= cherenkov.getFloat(8,cher_rows);
+			double cher_y	= cherenkov.getFloat(9,cher_rows);
+			double cher_z	= cherenkov.getFloat(10,cher_rows);
+			int cher_status	= cherenkov.getInt(13,cher_rows);
 
-	//if( pid != 11 || charge != -1 ) return false;
-	//if( lV < 2 || lW < 2 ) return false;
-	//if( momentum.Mag() < 1 || momentum.Mag() > 4.2 ) return false;
-	//if( chi2pid == 0 || chi2pid > 1 ) return false;
-	//if( E_tot/momentum.Mag() > 0.4 || E_tot/momentum.Mag() < 0.1 ) return false;
-	//if( vertex.X() < -2 || vertex.X() > 2) return false;
-	//if( vertex.Y() < -2 || vertex.Y() > 2) return false;
-	//if( vertex.Z() < -7 || vertex.Z() > 2) return false;
-	//if( time < 15 ) return false;
-	//if( momentum.Mag() < 2 || momentum.Mag() > 10.6 ) return false;
-	//if( E_tot / momentum.Mag() < 0.15 || E_tot / momentum.Mag() > 0.3 ) return false;
+			electron.setNphe	( cher_nphe 	);
+			electron.setKov_x	( cher_x	);
+			electron.setKov_y	( cher_y	);
+			electron.setKov_z	( cher_z	);
+			electron.setKov_chi2	( cher_chi2	);
+			electron.setKov_time	( cher_time	);
+			electron.setKov_path	( cher_path	);
+			electron.setKov_det	( cher_det	);
+			electron.setKov_sector	( cher_sec	);
+			electron.setKov_status	( cher_status	);
+		}
+	}
+	if( cher_ectr > 1 ){ cout << "ERROR in readhipo_helper::getElectronInfo with cherenkov having more than one entry\n"; exit(-1); }
+
+	// Scntillator banks for electron
+	for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
+		int sci_index		= scintillator.getInt(0,sci_rows);
+		int sci_pindex		= scintillator.getInt(1,sci_rows);
+		int sci_det		= scintillator.getInt(2,sci_rows);
+		if( sci_pindex == pbankIndex && sci_det == 12 ){ // our electron information in FTOF
+			int sci_sec	= scintillator.getInt(3,sci_rows);
+			int sci_lay	= scintillator.getInt(4,sci_rows);
+			int sci_comp	= scintillator.getInt(5,sci_rows);
+
+			double sci_edep = scintillator.getFloat(6,sci_rows);
+			double sci_time = scintillator.getFloat(7,sci_rows);
+			double sci_path = scintillator.getFloat(8,sci_rows);
+			double sci_chi2 = scintillator.getFloat(9,sci_rows);
+
+			double sci_x	= scintillator.getFloat(10,sci_rows);
+			double sci_y	= scintillator.getFloat(11,sci_rows);
+			double sci_z	= scintillator.getFloat(12,sci_rows);
+
+			int sci_status	= scintillator.getFloat(16,sci_rows);
+
+			electron.setScint_status	( sci_status	);
+			electron.setScint_sector	( sci_sec	);
+			electron.setScint_layer		( sci_lay	);
+			electron.setScint_component	( sci_comp	);
+			electron.setScint_Edep		( sci_edep	);
+			electron.setScint_time		( sci_time	);
+			electron.setScint_path		( sci_path	);
+			electron.setScint_chi2		( sci_chi2	);
+			electron.setScint_x		( sci_x		);
+			electron.setScint_y		( sci_y		);
+			electron.setScint_z		( sci_z		);
+		}
+	}
+
+	if( electron.getScint_sector().size() == 0 ){
+		electron.Clear();
+		return;
+	}
+
+	if( electron.getScint_sector()[0] == -999 || electron.getSector() == -999 || electron.getSector() == -1 ){
+		electron.Clear();
+		return;
+	}
+
+	// If the sectors do not match, do not store:
+	if( 	electron.getScint_sector()[0] 	!= electron.getSector() 	||
+		electron.getScint_sector()[0] 	!= electron.getDC_sector() 	||
+		electron.getScint_sector()[0] 	!= electron.getKov_sector() 	||
+
+		electron.getDC_sector()		!= electron.getSector()		||
+		electron.getDC_sector()		!= electron.getKov_sector()	||
+
+		electron.getSector()		!= electron.getKov_sector()	){
+
+
+		//particles.show();
+		//calorimeter.show();
+		//scintillator.show();
+		//cherenkov.show();
+
+		electron.Clear(); // do not store an electron
+		return;
+	}
+
 
 	return;
 }

@@ -154,9 +154,10 @@ int main(int argc, char** argv) {
 		BEvent		event_info		(factory.getSchema("REC::Event"		));
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
-		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank      DC_Track      (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj      (factory.getSchema("REC::Traj"          ));
+		hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
 		hipo::bank  run_config (factory.getSchema("RUN::config"));
 		hipo::event 	readevent;
@@ -211,6 +212,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+			readevent.getStructure(cherenkov);
 
 			// Get integrated charge, livetime and start-time from REC::Event
 			//Currently, REC::Event has uncalibrated livetime / charge, so these will have to work
@@ -233,7 +235,7 @@ int main(int argc, char** argv) {
 			//}
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov,  0, eHit , starttime , Runno , Ebeam );
 
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
