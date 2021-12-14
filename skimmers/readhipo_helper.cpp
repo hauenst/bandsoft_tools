@@ -715,25 +715,25 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank 
 		}
 	}
 
-	if( electron.getScint_sector().size() == 0 ){
+	if( electron.getScint_sector().size() == 0 ){ // if we don't have any FTOF info, skip the event
 		electron.Clear();
 		return;
 	}
 
-	if( electron.getScint_sector()[0] == -999 || electron.getSector() == -999 || electron.getSector() == -1 ){
+	if( electron.getScint_sector()[0] == -999 || electron.getSector() == -999 || electron.getSector() == -1 ){ // if scint sector != pcal sector
 		electron.Clear();
 		return;
 	}
 
 	// If the sectors do not match, do not store:
-	if( 	electron.getScint_sector()[0] 	!= electron.getSector() 	||
-		electron.getScint_sector()[0] 	!= electron.getDC_sector() 	||
-		electron.getScint_sector()[0] 	!= electron.getKov_sector() 	||
+	if( 	electron.getScint_sector()[0] 	!= electron.getSector() 	||	// scint sector != pcal sector
+		electron.getScint_sector()[0] 	!= electron.getDC_sector() 	||	// scint sector != DC sector
+		electron.getScint_sector()[0] 	!= electron.getKov_sector() 	||	// scint sector != htcc sector
 
-		electron.getDC_sector()		!= electron.getSector()		||
-		electron.getDC_sector()		!= electron.getKov_sector()	||
+		electron.getDC_sector()		!= electron.getSector()		||	// DC sector != pcal sector
+		electron.getDC_sector()		!= electron.getKov_sector()	||	// DC sector != htcc sector
 
-		electron.getSector()		!= electron.getKov_sector()	){
+		electron.getSector()		!= electron.getKov_sector()	){	// pcal sector != htcc sector
 
 
 		//particles.show();
@@ -780,7 +780,7 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 			phi_nq *= (-1);
 		}
 
-		double beta = nHit[hit].getDL().Mag() / (nHit[hit].getTofFadc()*cAir);
+		double beta = nHit[hit].getDL().Mag() / (nHit[hit].getTof()*cAir);
 		double p_n = mN / sqrt( 1./pow(beta,2) - 1. );
 		nVec.SetMagThetaPhi(p_n,nHit[hit].getDL().Theta(),nHit[hit].getDL().Phi());
 
