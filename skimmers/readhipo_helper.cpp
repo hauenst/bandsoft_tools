@@ -419,14 +419,18 @@ int getRunNumber( string filename ){
 }
 
 
-void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime ){
+void getEventInfo( hipo::bank eventInfo, double &integrated_charge, double &livetime, double &starttime ){
 	if( eventInfo.getRows() != 1 ){
 		cerr << "getEventInfo::NotImplementedFunction\n";
 		exit(-1);
 	}
-	integrated_charge       = (double)eventInfo.getBCG(0); 	// not calibrated currently
-	livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
-	starttime		= (double)eventInfo.getSTTime(0);
+	livetime 		= eventInfo.getDouble(3,0);
+	integrated_charge 	= eventInfo.getFloat(2,0);
+	starttime 		= eventInfo.getFloat(4,0);
+
+	//integrated_charge       = (double)eventInfo.getBCG(0); 	// not calibrated currently
+	//livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
+	//starttime		= (double)eventInfo.getSTTime(0);
 	return;
 }
 

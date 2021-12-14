@@ -19,8 +19,6 @@
 
 #include "BParticle.h"
 #include "BCalorimeter.h"
-#include "BScintillator.h"
-#include "BEvent.h"
 
 #include "RCDB/Connection.h"
 
@@ -131,7 +129,7 @@ int main(int argc, char** argv) {
 		hipo::dictionary  factory;
 		hipo::schema	  schema;
 		reader.readDictionary(factory);
-		BEvent		event_info		(factory.getSchema("REC::Event"		));
+		hipo::bank	event_info		(factory.getSchema("REC::Event"		));
 		hipo::bank	scaler			(factory.getSchema("RUN::scaler"	));
 		hipo::bank  	run_config 		(factory.getSchema("RUN::config"	));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));

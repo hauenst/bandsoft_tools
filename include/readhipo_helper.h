@@ -68,7 +68,7 @@ class shiftsReader {
 
 
 int getRunNumber( string filename );
-void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime );
+void getEventInfo( hipo::bank eventInfo, double &integrated_charge, double &livetime, double &starttime );
 void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
 			int& mult, bandhit hits[maxNeutrons],
 			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z,
