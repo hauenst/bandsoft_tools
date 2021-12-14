@@ -574,44 +574,98 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 }
 
 
+void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
 
-void getScinHits( BScintillator scintillator, int pindex[maxScinHits], int detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-		TVector3 posVector[maxScinHits], double path[maxScinHits], int status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
-	scinHits = 0;
-	for( int row = 0 ; row < scintillator.getRows() ; row++ ){
-		for ( int i = 0 ; i < posMult ; i++) { //loop over all other particles
-			if (scintillator.getPindex(row) == posIndex[i]) { //check if hit Pindex corresponds to particle index = row from REC::Particles bank
-				pindex[scinHits ] 		= scintillator.getPindex(row); //int
-				detid[scinHits ] 		= scintillator.getDetector(row); //int
-				energy[scinHits ] 		= scintillator.getEnergy(row); //float
-				time[scinHits ] 		= scintillator.getTime(row);//float
-				path[scinHits ] 		= scintillator.getPath(row);//float
-				posVector[scinHits].SetXYZ(	scintillator.getX(row), scintillator.getY(row), scintillator.getZ(row) 	);
-				status		[scinHits]	= scintillator.getStatus(row); //int
-				scinHits ++;
-			}
-		}
-	}
-}
-
-void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],	double time[maxParticles],
-		int charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], int status[maxParticles] , int index[maxParticles], int& multiplicity ){
-	// Takes all particles in REC::Particles other than leading particle
 	multiplicity = 0;
-	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
-		if( particles.getCharge(row) == 1 || particles.getCharge(row) == -1 ){ //checks for positive and negative charge
-			pid[multiplicity] 		= particles.getPid(row); //int
-			charge[multiplicity]		= particles.getCharge(row); //int
-			momentum 	[multiplicity]	= particles.getV3P(row); //TVector3
-			vertex		[multiplicity]	= particles.getV3v(row);//TVector3
-			time		[multiplicity]	= particles.getVt(row);//float
-			beta		[multiplicity]	= particles.getBeta(row);//float
-			chi2pid		[multiplicity]	= particles.getChi2pid(row);//float
-			status		[multiplicity]	= particles.getStatus(row); //int
-			index [multiplicity] = row;
-			multiplicity ++;
-		}
-	}
+	// Loop over particle bank and store info in particle class:
+	for( int row = 1; row < claspart.getRows() ; ++row ){
+		// Only look at +/- particles (no neutrals):
+		if( claspart.getCharge(row) == 1 || claspart.getCharge(row) == -1 ){
+			TVector3	momentum = claspart.getV3P(row);
+			TVector3	vertex	 = claspart.getV3v(row);
+
+			part[multiplicity].setPID		(	claspart.getPid(row)		);
+			part[multiplicity].setCharge		(	claspart.getCharge(row)	);
+			part[multiplicity].setStatus		(	claspart.getStatus(row)	);
+			part[multiplicity].setTime		(	claspart.getVt(row)		);
+			part[multiplicity].setBeta		( 	claspart.getBeta(row)		);
+			part[multiplicity].setChi2		(	claspart.getChi2pid(row)	);
+			part[multiplicity].setPindex		(	row				); // mapping pindex for other DST banks
+			part[multiplicity].setVtx		(	vertex.X()			);
+			part[multiplicity].setVty		(	vertex.Y()			);
+			part[multiplicity].setVtz		(	vertex.Z()			);
+			part[multiplicity].setMomentum		(	momentum.Mag()			);
+			part[multiplicity].setTheta		(	momentum.Theta()		);
+			part[multiplicity].setPhi		(	momentum.Phi()			);
+			++multiplicity;
+		}// end if for +/-
+	}// end loop over particle bank
+
+	// Loop over scintillator bank to get mapped info
+	for( int partidx = 0 ; partidx < multiplicity ; ++partidx ){
+		std::vector<int>    indexes	;
+		std::vector<int>    dets	;
+		std::vector<int>    secs	;
+		std::vector<int>    lays	;
+		std::vector<int>    comps	;
+		std::vector<int>    statuses	;
+		std::vector<double> edeps	;
+		std::vector<double> times	;
+		std::vector<double> paths	;
+		std::vector<double> chi2s	;
+		std::vector<double> xs		;
+		std::vector<double> ys		;
+		std::vector<double> zs		;
+		for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
+			int sci_pindex		= scintillator.getInt(1,sci_rows);
+			if( sci_pindex == partidx ){ 
+				int sci_index		= scintillator.getInt(0,sci_rows);
+				int sci_det		= scintillator.getInt(2,sci_rows);
+				int sci_sec		= scintillator.getInt(3,sci_rows);
+				int sci_lay		= scintillator.getInt(4,sci_rows);
+				int sci_comp		= scintillator.getInt(5,sci_rows);
+
+				double sci_edep = scintillator.getFloat(6,sci_rows);
+				double sci_time = scintillator.getFloat(7,sci_rows);
+				double sci_path = scintillator.getFloat(8,sci_rows);
+				double sci_chi2 = scintillator.getFloat(9,sci_rows);
+
+				double sci_x	= scintillator.getFloat(10,sci_rows);
+				double sci_y	= scintillator.getFloat(11,sci_rows);
+				double sci_z	= scintillator.getFloat(12,sci_rows);
+
+				int sci_status	= scintillator.getFloat(16,sci_rows);
+
+				indexes		.push_back(	sci_index	);
+				dets		.push_back(	sci_det		);
+				secs		.push_back(	sci_sec		);
+				lays		.push_back(	sci_lay		);
+				comps		.push_back(	sci_comp	);
+				statuses	.push_back(	sci_status	);
+				edeps		.push_back(	sci_edep	);
+				times		.push_back(	sci_time	);
+				paths		.push_back(	sci_path	);
+				chi2s		.push_back(	sci_chi2	);
+				xs		.push_back(	sci_x		);
+				ys		.push_back(	sci_y		);
+				zs		.push_back(	sci_z		);
+
+			}
+		}// end loop over sci rows for 	this particle index
+		part[partidx].setScint_detector		( dets		);
+		part[partidx].setScint_status  	 	( statuses	);
+		part[partidx].setScint_sector  	 	( secs		);
+		part[partidx].setScint_layer   	 	( lays		);
+		part[partidx].setScint_component	( comps		);
+		part[partidx].setScint_Edep		( edeps		);
+		part[partidx].setScint_time		( times		);
+		part[partidx].setScint_path		( paths		);
+		part[partidx].setScint_chi2		( chi2s		);
+		part[partidx].setScint_x		( xs		);
+		part[partidx].setScint_y		( ys		);
+		part[partidx].setScint_z		( zs		);
+
+	}// end loop over particles
 }
 
 

@@ -78,6 +78,10 @@ int main(int argc, char** argv) {
 	clashit eHit;
 	//Smeared info
 	clashit eHit_smeared;
+	//	Charged particle info:
+	int charged_mult 	= 0;
+	TClonesArray * charged_particles = new TClonesArray("particles");
+	TClonesArray &saveCharged_particles = *charged_particles;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -103,60 +107,9 @@ int main(int argc, char** argv) {
 		//	Smeared Electron branches:
 		outTree->Branch("eHit_smeared"		,&eHit_smeared			);
 	}
-
-
-	// 	Positive Particles info:
-	int pMult		= 0;
-	int pIndex		[maxParticles]= {0};
-	int pPid		[maxParticles]= {0}; // to int
-	int pCharge		[maxParticles]= {0}; //to int
-	int pStatus		[maxParticles]= {0}; //to int
-	double pTime		[maxParticles]= {0.};
-	double pBeta		[maxParticles]= {0.};
-	double pChi2pid		[maxParticles]= {0.};
-	double p_vtx		[maxParticles]= {0.};
-	double p_vty		[maxParticles]= {0.};
-	double p_vtz		[maxParticles]= {0.};
-	double p_p		[maxParticles]= {0.};
-	double theta_p		[maxParticles]= {0.};
-	double phi_p		[maxParticles]= {0.};
-	// Information from REC::Scintillator for positive Particles
-	int scinHits = 0;
-	int hit_pindex [maxScinHits]= {0};//needs to be int //pPid of associated positive particle
-	int hit_detid [maxScinHits]= {0}; //needs to be int
-	double hit_energy [maxScinHits]= {0.};
-	double hit_time [maxScinHits]= {0.};
-	double hit_x [maxScinHits]= {0.};
-	double hit_y [maxScinHits]= {0.};
-	double hit_z [maxScinHits]= {0.};
-	double hit_path [maxScinHits]= {0.};
-	int hit_status [maxScinHits]= {0};//needs to be int
-	//Positive Particles
-	outTree->Branch("pMult"		,&pMult			);
-	outTree->Branch("pIndex"		,&pIndex			,"pIndex[pMult]/I"	);
-	outTree->Branch("pPid"		,&pPid			,"pPid[pMult]/I"	);
-	outTree->Branch("pCharge"	,&pCharge		,"pCharge[pMult]/I"	);
-	outTree->Branch("pStatus"	,&pStatus		,"pStatus[pMult]/I"	);
-	outTree->Branch("pTime"		,&pTime			,"pTime[pMult]/D"	);
-	outTree->Branch("pBeta"		,&pBeta			,"pBeta[pMult]/D"	);
-	outTree->Branch("pChi2pid",&pChi2pid		,"pChi2pid[pMult]/D"	);
-	outTree->Branch("p_vtx"		,&p_vtx			,"p_vtx[pMult]/D"	);
-	outTree->Branch("p_vty"		,&p_vty			,"p_vty[pMult]/D"	);
-	outTree->Branch("p_vtz"		,&p_vtz			,"p_vtz[pMult]/D"	);
-	outTree->Branch("p_p"		,&p_p			,"p_p[pMult]/D"		);
-	outTree->Branch("theta_p"	,&theta_p		,"theta_p[pMult]/D"	);
-	outTree->Branch("phi_p"		,&phi_p			,"phi_p[pMult]/D"	);
-	//Scintillators
-	outTree->Branch("scinHits"		,&scinHits	);
-	outTree->Branch("hit_pindex"	,&hit_pindex		,"hit_pindex[scinHits]/I"	);
-	outTree->Branch("hit_detid"	,&hit_detid		,"hit_detid[scinHits]/I"	);
-	outTree->Branch("hit_energy"	,&hit_energy		,"hit_energy[scinHits]/D"	);
-	outTree->Branch("hit_time"	,&hit_time		,"hit_time[scinHits]/D"	);
-	outTree->Branch("hit_x"	,&hit_x		,"hit_x[scinHits]/D"	);
-	outTree->Branch("hit_y"	,&hit_y		,"hit_y[scinHits]/D"	);
-	outTree->Branch("hit_z"	,&hit_z		,"hit_z[scinHits]/D"	);
-	outTree->Branch("hit_path"	,&hit_path		,"hit_path[scinHits]/D"	);
-	outTree->Branch("hit_status"	,&hit_status		,"hit_status[scinHits]/I"	);
+	//	Charged particle branches:
+	outTree->Branch("charged_mult"		,&charged_mult		);
+	outTree->Branch("charged_particles"	,&charged_particles	);
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -215,7 +168,7 @@ int main(int argc, char** argv) {
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		BParticle	particles		(factory.getSchema("REC::Particle"	));
+		BParticle	clas_particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
@@ -252,34 +205,10 @@ int main(int argc, char** argv) {
 				//Clear output smear branches
 				eHit_smeared.Clear();
 			}
-
-
-			pMult		= 0;
-			memset(	pIndex		,0	,sizeof(pIndex		)	);
-			memset(	pPid		,0	,sizeof(pPid		)	);
-			memset(	pCharge		,0	,sizeof(pCharge		)	);
-			memset(	pStatus		,0	,sizeof(pStatus		)	);
-			memset(	pTime		,0	,sizeof(pTime		)	);
-			memset(	pBeta		,0	,sizeof(pBeta		)	);
-			memset(	pChi2pid	,0	,sizeof(pChi2pid	)	);
-			memset(	p_vtx		,0	,sizeof(p_vtx		)	);
-			memset(	p_vty		,0	,sizeof(p_vty		)	);
-			memset(	p_vtz		,0	,sizeof(p_vtz		)	);
-			memset(	p_p		,0	,sizeof(p_p		)	);
-			memset(	theta_p		,0	,sizeof(theta_p		)	);
-			memset(	phi_p		,0	,sizeof(phi_p		)	);
-
-			scinHits = 0;
-			memset(	hit_pindex	,0	,sizeof(hit_pindex		)	);
-			memset(	hit_detid		,0	,sizeof(hit_detid		)	);
-			memset(	hit_energy		,0	,sizeof(hit_energy		)	);
-			memset( hit_time	,0	,sizeof(hit_time	)	);
-			memset( hit_x	,0	,sizeof(hit_x	)	);
-			memset( hit_y	,0	,sizeof(hit_y	)	);
-			memset( hit_z	,0	,sizeof(hit_z	)	);
-			memset( hit_path	,0	,sizeof(hit_path	)	);
-			memset( hit_status	,0	,sizeof(hit_status	)	);
-
+			// Charged particles
+			particles charged_particle[maxParticles];
+			charged_mult	 = 0;
+			charged_particles->Clear();
 
 
 			// Count events
@@ -298,7 +227,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
 			// electron struct
-			readevent.getStructure(particles);
+			readevent.getStructure(clas_particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
@@ -387,7 +316,7 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
@@ -436,7 +365,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -450,26 +379,13 @@ int main(int argc, char** argv) {
 			}
 
 			// Grab the information for other charged particle:
-			TVector3 pVertex[maxParticles], pMomentum[maxParticles];
-			getParticleInfo( particles, pPid, pMomentum, pVertex, pTime ,pCharge, pBeta, pChi2pid, pStatus, pIndex, pMult);
-			//Fill the information for other charged particles
-			for( int p = 0 ; p < pMult ; p++ ){
-				p_vtx[p]		= pVertex[p].X();
-				p_vty[p]		= pVertex[p].Y();
-				p_vtz[p]		= pVertex[p].Z();
-				p_p[p]			= pMomentum[p].Mag();
-				theta_p[p]	= pMomentum[p].Theta();
-				phi_p[p]		= pMomentum[p].Phi();
+			getParticleInfo( clas_particles, charged_particle, scintillator, charged_mult );
 
+			// Store the charged particles in TClonesArray
+			for( int n = 0 ; n < charged_mult ; n++ ){
+				new(saveCharged_particles[n]) particles;
+				saveCharged_particles[n] = &charged_particle[n];
 			}
-			TVector3 hitVector[maxScinHits];
-			//getScinHits( scintillator, hit_pindex, hit_detid, hit_energy, hit_time, hitVector, hit_path, hit_status, pIndex, pMult, scinHits);
-			for( int hit = 0 ; hit < scinHits ; hit++ ){
-				hit_x[hit] = hitVector[hit].X();
-				hit_y[hit] = hitVector[hit].Y();
-				hit_z[hit] = hitVector[hit].Z();
-			}
-
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
