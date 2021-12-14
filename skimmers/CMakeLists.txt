@@ -72,7 +72,7 @@ install( TARGETS ncalibration_newbandclass
 
 
 #################################################################################################
-add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp )
+add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
 target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree
 				clas12fiducial e_pid DC_fiducial

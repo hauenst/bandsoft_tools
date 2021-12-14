@@ -160,7 +160,6 @@ int main(int argc, char** argv) {
 		hipo::reader reader;
 		reader.open(inputFile);
 		hipo::dictionary  factory;
-		hipo::schema	  schema;
 		reader.readDictionary(factory);
 		hipo::bank	event_info		(factory.getSchema("REC::Event"		));
 		BBand		band_hits		(factory.getSchema("BAND::hits"		));
