@@ -405,14 +405,6 @@ int main(int argc, char** argv) {
 				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, passed );
 			}
 
-			// Fill tree based on d(e,e'n)X for data
-			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
-				outTree->Fill();
-			} // else fill tree on d(e,e')nX for MC
-			else if( MC_DATA_OPT == 0 ||  MC_DATA_OPT == 2 ){
-				outTree->Fill();
-			}
-
 
 			// Fill tree based on d(e,e') for data with all neutron and other particle information
 			outTree->Fill();
