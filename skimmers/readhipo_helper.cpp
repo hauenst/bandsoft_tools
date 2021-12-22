@@ -1,185 +1,8 @@
 #include "readhipo_helper.h"
 
 
-void getNeutronInfo( BBand band_hits, hipo::bank band_rawhits, hipo::bank band_adc, hipo::bank band_tdc,
-			int& mult, bandhit hits[maxNeutrons],
-			double starttime , int thisRun, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z,
-			std::map<int,double> &bar_edep, int hotfix, double* s6200_fadc_lroffset , double* s6200_tdc_lroffset,
-			double* s6291_fadc_lroffset,	double* s6291_tdc_lroffset,
-			double* s6200_fadc_effvel,	double* s6200_tdc_effvel,
-	       		double* s6291_fadc_effvel,	double* s6291_tdc_effvel 	){
-
-	if( band_hits.getRows() > maxNeutrons ) return; // not interested in events with more than max # BAND hits for now
-	for( int hit = 0 ; hit < band_hits.getRows() ; hit++ ){
-		//if( band_hits.getStatus(hit) != 0 ) continue;	// not interested in an event that has a veto hit
-
-		// Set the hits information
-		hits[hit].setSector		(band_hits.getSector		(hit)			);
-		hits[hit].setLayer		(band_hits.getLayer		(hit)			);
-		hits[hit].setComponent		(band_hits.getComponent		(hit)			);
-		hits[hit].setBarID		(band_hits.getBarKey		(hit)			);
-		hits[hit].setEdep		(band_hits.getEnergy		(hit)			);
-		hits[hit].setTof		(band_hits.getTime		(hit) - starttime	);
-		hits[hit].setTofFadc		(band_hits.getTimeFadc		(hit) - starttime	);
-		hits[hit].setTdiff		(band_hits.getDifftimeTdc	(hit)			);
-		hits[hit].setTdiffFadc		(band_hits.getDifftimeFadc	(hit)			);
-		hits[hit].setX			(band_hits.getX			(hit)			);
-
-		//Standard calculation of y and z if maps for bars are empty
-		hits[hit].setY			(band_hits.getY			(hit)			);
-		//correct for offset of BAND compared to ideal position
-		hits[hit].setZ			(band_hits.getZ			(hit) + BAND_OFFSET	);
-		//correct for target offset
-		hits[hit].setZ			(band_hits.getZ			(hit) - VERTEX_OFFSET	);
-		// Fix for the Y position for layer 5 in case not fixed by bar geometry map below:
-		if( band_hits.getLayer(hit) == 5 && (band_hits.getSector(hit) == 3 || band_hits.getSector(hit) == 4 ) ){
-			hits[hit].setY		(band_hits.getY			(hit) + 7.2		);
-		}
-
-
-		//If maps for bar geometry are not empty, use it for y and z
-		if ( !bar_y.empty() ) {
-				hits[hit].setY			( bar_y[band_hits.getBarKey		(hit)	]		);
-		}
-		if ( !bar_z.empty() ) {
-		  	hits[hit].setZ			( bar_z[band_hits.getBarKey		(hit)	]	 + BAND_OFFSET	- VERTEX_OFFSET	);
-		}
-
-
-		// If layer == 6 and sector == 4, take the idxR, otherwise take idxL for the veto bars:
-		//Also modify x position for veto if x map is not empty
-		if( hits[hit].getLayer() == 6 ){
-			if ( !bar_x.empty() ) {
-			  	hits[hit].setX			( bar_x[band_hits.getBarKey		(hit)	]	);
-			}
-			int rawhit_idx = -1;
-			if( hits[hit].getSector() == 4 ) rawhit_idx = band_hits.getRpmtindex(hit);
-			else{ rawhit_idx = band_hits.getLpmtindex(hit); }
-
-			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
-			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
-			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
-			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
-			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
-
-			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idx ) 		);
-			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idx ) 		);
-			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idx ) 		);
-			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idx )		);
-			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idx )		);
-
-			//Use average Edep per channel for vetos (could be either RawLadc or RawRadc)
-			hits[hit].setEdep		(hits[hit].getRawLadc()	);
-
-			// Using the rawhit struct, get the raw PMT information to use later
-			int pmtTdc	= band_rawhits.getInt( 10 , rawhit_idx );
-			int pmtAdc	= band_rawhits.getInt( 11 , rawhit_idx );
-			//	Get the raw pmt information corresponding to the band hit above
-			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
-			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 	, pmtTdc )		);
-			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
-			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 	, pmtAdc )		);
-			hits[hit].setPmtLamp		(band_adc.getInt( 5 	, pmtAdc )		);
-			hits[hit].setPmtRamp		(band_adc.getInt( 5 	, pmtAdc )		);
-			hits[hit].setPmtLadc		(band_adc.getInt( 4 	, pmtAdc )		);
-			hits[hit].setPmtRadc		(band_adc.getInt( 4 	, pmtAdc )		);
-			hits[hit].setPmtLped		(band_adc.getInt( 7 	, pmtAdc )		);
-			hits[hit].setPmtRped		(band_adc.getInt( 7 	, pmtAdc )		);
-
-
-		}
-		else{
-			// Using the band hit struct, get the raw hit PMT information to use later
-			int rawhit_idxL = band_hits.getLpmtindex(hit);
-			int rawhit_idxR = band_hits.getRpmtindex(hit);
-			// 	Get the raw hit information corresponding to the band hit above
-			hits[hit].setRawLtdc		(band_rawhits.getFloat( 7 , rawhit_idxL ) 		);
-			hits[hit].setRawRtdc		(band_rawhits.getFloat( 7 , rawhit_idxR ) 		);
-			hits[hit].setRawLtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxL ) 		);
-			hits[hit].setRawRtdccorr	(band_rawhits.getFloat( 9 , rawhit_idxR ) 		);
-			hits[hit].setRawLtfadc		(band_rawhits.getFloat( 8 , rawhit_idxL ) 		);
-			hits[hit].setRawRtfadc		(band_rawhits.getFloat( 8 , rawhit_idxR ) 		);
-			hits[hit].setRawLamp		(band_rawhits.getFloat( 6 , rawhit_idxL )		);
-			hits[hit].setRawRamp		(band_rawhits.getFloat( 6 , rawhit_idxR )		);
-			hits[hit].setRawLadc		(band_rawhits.getFloat( 5 , rawhit_idxL )		);
-			hits[hit].setRawRadc		(band_rawhits.getFloat( 5 , rawhit_idxR )		);
-
-			// Using the rawhit struct, get the raw PMT information to use later
-			int pmtTdcL	= band_rawhits.getInt( 10 , rawhit_idxL );
-			int pmtAdcL	= band_rawhits.getInt( 11 , rawhit_idxL );
-			int pmtTdcR	= band_rawhits.getInt( 10 , rawhit_idxR );
-			int pmtAdcR	= band_rawhits.getInt( 11 , rawhit_idxR );
-			//	Get the raw pmt information corresponding to the band hit above
-			hits[hit].setPmtLtdc		(band_tdc.getInt( 4 , pmtTdcL )		);
-			hits[hit].setPmtRtdc		(band_tdc.getInt( 4 , pmtTdcR )		);
-			hits[hit].setPmtLtfadc		(band_adc.getFloat( 6 , pmtAdcL )	);
-			hits[hit].setPmtRtfadc		(band_adc.getFloat( 6 , pmtAdcR )	);
-			hits[hit].setPmtLamp		(band_adc.getInt( 5 , pmtAdcL )		);
-			hits[hit].setPmtRamp		(band_adc.getInt( 5 , pmtAdcR )		);
-			hits[hit].setPmtLadc		(band_adc.getInt( 4 , pmtAdcL )		);
-			hits[hit].setPmtRadc		(band_adc.getInt( 4 , pmtAdcR )		);
-			hits[hit].setPmtLped		(band_adc.getInt( 7 , pmtAdcL )		);
-			hits[hit].setPmtRped		(band_adc.getInt( 7 , pmtAdcR )		);
-		}
-
-		// calculate x- to do a hot fix for position using fadc time due to TDC shift in our 10.2 runs, dont do it for vetos
-		int id 			= band_hits.getBarKey(hit);
-		if( hotfix == 1 && hits[hit].getLayer() != 6){
-			double old_tdiff_fadc 	= band_hits.getDifftimeFadc(hit);
-			double old_tdiff_tdc	= band_hits.getDifftimeTdc(hit);
-
-
-			// Shift the TDIFF_TDC by the residual correction for 10.2 GeV data
-			// and recalculate x-position to get the global offset corrections.
-			// Then we can use NEW effective velocity tables to calculate a correct x-position,
-			// only for data and only for 10.2 GeV data
-			double old_x_fadc 		= (-1./2) * old_tdiff_fadc * s6200_fadc_effvel[id];
-			double old_x_tdc		= (-1./2) * old_tdiff_tdc  * s6200_tdc_effvel[id];
-
-			// recoX = x_tdc + globX
-			// reco_offset = recoX - x_tdc = globX
-			double fadc_reco_offset	= band_hits.getX(hit) - old_x_fadc;
-			double tdc_reco_offset	= band_hits.getX(hit) - old_x_tdc;
-
-			// Now calculate the real x-position with better FADC/TDC effective velocity
-			// newX = x_tdc + reco_offset
-			double new_tdiff_fadc 	= band_hits.getDifftimeFadc(hit) + s6200_fadc_lroffset[id] - s6291_fadc_lroffset[id];
-			double new_tdiff_tdc	= band_hits.getDifftimeTdc(hit)	 + s6200_tdc_lroffset[id]  - s6291_tdc_lroffset[id];
-			double new_x_fadc 	= (-1./2) * new_tdiff_fadc * s6291_fadc_effvel[id];
-			double new_x_tdc	= (-1./2) * new_tdiff_tdc  * s6291_tdc_effvel[id];
-
-			new_x_fadc 	= new_x_fadc 	+ fadc_reco_offset;
-			new_x_tdc 	= new_x_tdc 	+ tdc_reco_offset;
-			hits[hit].setXFadc	( new_x_fadc );
-			hits[hit].setX		( new_x_tdc );
-
-			//cout << "old tdc diff:\t" << old_tdiff_tdc << "\n";
-			//cout << "old tdc xpos:\t" << old_x_tdc << "\n";
-			//cout << "tdc reco off:\t" << tdc_reco_offset << "\n";
-			//cout << "new tdc diff:\t" << new_tdiff_tdc << "\n";
-			//cout << "new tdc xpos:\t" << new_x_tdc << "\n";
-		}
-
-		//If Edep maps are not empty, use them to calibrate Edep in MeV for each bar
-		//For MC Edep other file is used with constants
-		if ( !bar_edep.empty() ) {
-			//Calibration values are in channel/MeV
-			//cout << "applying energycorrection before value: " << hits[hit].getEdep() << endl;
-				hits[hit].setEdep		(band_hits.getEnergy	(hit)	/ bar_edep[band_hits.getBarKey	(hit)	]		);
-			//		cout << "applying energycorrection after value: " << hits[hit].getEdep() << endl;
-		}
-
-		// After all corrections to positions, set the pathlength and status:
-		hits[hit].setStatus		(band_hits.getStatus		(hit)			);
-		hits[hit].setDL			( TVector3(hits[hit].getX(),hits[hit].getY(),hits[hit].getZ()) );
-		// Save how many neutron hits we have
-		mult++;
-	}
-
-}
-
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect, int& nPass ){
-	
+
 	if( nMult > maxNeutrons ){
 		cerr << "readhipo_helper::Multiplicity larger than storage container.\n\t...exiting...\n";
 		exit(-1);
@@ -196,7 +19,7 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			passed[i1]=false;
 			continue; 
 		}// this hit cannot be blocked by anyone since it's in layer 6 but we don't want to count it as a good hit
-		
+
 		passed[i1] = true;
 		//cout << "i1 information: \n";
 		//checkMe.Print();
@@ -206,10 +29,10 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			//cout << "i2 information: \n";
 			//checkAgainst.Print();
 			//cout << "\n";
-			
+
 			if( checkAgainst.getLayer() - checkMe.getLayer() != 1 ) continue; 
 			// this means i2 is not DIRECTLY in front of i1 
-			
+
 			// if checkAgainst is a VETO, then we have some special rules:
 			if( checkAgainst.getLayer() == 6 ){
 				if( fabs( checkMe.getDL().Y() - checkAgainst.getDL().Y() ) > 8 ) continue; 
@@ -218,11 +41,11 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 				if( fabs( checkAgainst.getTof() - checkMe.getTof() ) > 15 ) continue; 	
 				// this means i2 does not have a similar time as i1, so it does not block i1.
 			}
-			
+
 			else{
 				if( fabs( checkMe.getDL().Y() - checkAgainst.getDL().Y() ) > 8 ) continue; 	
 				// this means i2 is DIRECTLY in front of i1 -- BUT it is NOT +/- 1 bar of i1 (i.e. i2 is not blocking i1)
-				
+
 				if( fabs( checkAgainst.getDL().X() - checkMe.getDL().X() ) > 15 ) continue;  
 				// this means i2 is DIRECTLY in front of i1 AND it is +/- 1 bar of i2, but it is NOT a similar x (i.e. i2 is not blocking i1)
 
@@ -259,7 +82,7 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 				// if checkAgainst is in the SAME layer as checkMe, then let's see if all the blocking conditions are
 				// true, and if they are, let's CLUSTER them and take the one that is earliest in time
 				if( this_hit.getLayer() - other_hit.getLayer() == 0 ){
-					
+
 					if( fabs( this_hit.getDL().Y()  - other_hit.getDL().Y() ) > 8 	) 	continue; 	
 					if( fabs( this_hit.getDL().X()  - other_hit.getDL().X() ) > 15 ) 	continue;  
 					if( fabs( this_hit.getTof() 	- other_hit.getTof() ) > 3 	) 	continue;
@@ -279,7 +102,7 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 					}
 
 					continue;
-					
+
 				} // end if on layer
 			} // end loop over i2
 		} // end loop over i1
@@ -298,135 +121,60 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 		}
 	}
 	else{ std::cerr << "unexpected nalgorithm issue\n\t...exiting...\n"; exit(-1); }
-	
+
 	//cout <<"wtf\n";
 	return false;
 
 
-	/*
-	// Loop over all hits in BAND and get the earliest hit in time and the closest hit to the target
-	double fastestTime = 1E5;
-	int fastestTimeIdx = -1;
-	double closestHit = 1E5;
-	int closestHitIdx = -1;
-	for( int thishit = 0; thishit < nMult ; thishit++){
-		bandhit neutron = hits[thishit];
-
-		// If this is a veto hit, ignore it as it cannot be the fastest hit
-		if( neutron.getLayer() == 6 ) continue;
-
-		if( neutron.getTof() < fastestTime ){
-			fastestTime = neutron.getTof();
-			fastestTimeIdx = thishit;
-		}
-
-		if( neutron.getDL().Mag() < closestHit ){
-			closestHit = neutron.getDL().Mag();
-			closestHitIdx = thishit;
-		}
-	}
-
-
-
-
-	// Once we have the fastest hit, ask how many other hits there
-	// are in the same event and flag how far in time they are,
-	// but keep this earliest hit.
-	// Accept the event based on if there is another hit > 300ps
-	if( fastestTimeIdx != -1 ){
-		accept = true;
-		for( int thishit = 0; thishit < nMult ; thishit++){
-			bandhit neutron = hits[thishit];
-			// if we have a veto bar hit and if the Edep is > 0.25MeVee,  need to use getPmtLADC because no Edep
-			//Edep is assumed to be calibrated to MeV for each bar
-			if( neutron.getLayer() == 6 && neutron.getEdep() > 0.5 ) vetoHit = true;
-
-			//if this bar does not have > 2MeVee, do not count the hit
-			//MC
-			if (mcdataselect == 0 && neutron.getEdep() < 2 ) continue;
-			//Data
-			if( mcdataselect != 0 && neutron.getEdep() < 2 ) continue;
-
-			double tdiff = neutron.getTof() - fastestTime;
-			if( tdiff == 0 ){
-				continue;
-			}
-			bool adjLayer = false;
-			bool adjComp = false;
-			bool adjSpace = false;
-			bandhit lead = hits[thishit];
-
-			int layerDiff = lead.getLayer() - neutron.getLayer();
-			if( fabs(layerDiff) <= 1 ) adjLayer = true;
-			if( lead.getSector() == neutron.getSector() ){
-			// if hits are in the same sector, then just ask for comp diff
-				int compDiff = lead.getComponent() - neutron.getComponent();
-				if( fabs(compDiff) <= 1 ) adjComp = true;
-			}
-			else{
-			// have to implement some fancy component check due to sec comp differences
-				int yDiff = lead.getY() - neutron.getY();
-				if( fabs(yDiff) <= 10 ) adjComp = true;
-			}
-			if( adjComp && adjLayer ) adjSpace = true;
-
-			if( tdiff < time_thres && tdiff != 0 ) accept = false;
-			if( tdiff < time_thres && tdiff != 0 && adjSpace ) accept = true;
-		}
-	}
-
-	leadindex = fastestTimeIdx ;
-
-	return accept && !vetoHit;
-	*/
 }
 
 
 int getRunNumber( string filename ){
-        //string parsed = filename.substr( filename.find("inc_") );
-        string parsed;
-        string moreparse;
-        if ( filename.find("inc_") <= filename.length() )
-        {
-                cout << "Parsed file and found position for string inc_ at " << filename.find("inc_") << endl;
-                parsed = filename.substr( filename.find("inc_") );
-                moreparse = parsed.substr(4,6);
-        }
-        else if (filename.find("band_") <= filename.length() )
-        {
-                cout << "Parsed file and found position for string band_ at " << filename.find("band_") << endl;
-                parsed = filename.substr( filename.find("band_") );
-                moreparse = parsed.substr(5,6);
-        }
-        else if (filename.find("rec_clas_") <= filename.length() )
-        {
-                cout << "Parsed file and found position for string rec_clas_ at " << filename.find("rec_clas_") << endl;
-                parsed = filename.substr( filename.find("rec_clas_") );
-                moreparse = parsed.substr(9,6);
-        }
-				else if (filename.find("gmn_") <= filename.length() )
-        {
-                cout << "Parsed file and found position for string gmn_ at " << filename.find("gmn_") << endl;
-                parsed = filename.substr( filename.find("gmn_") );
-                moreparse = parsed.substr(4,6);
-        }
-        else {
-                cout << "Could not parse runnumber from inputfile. Return 0 runnumber " << endl;
-                return 0;
-        }
-        cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
-        return stoi(moreparse);
+	//string parsed = filename.substr( filename.find("inc_") );
+	string parsed;
+	string moreparse;
+	if ( filename.find("inc_") <= filename.length() )
+	{
+		cout << "Parsed file and found position for string inc_ at " << filename.find("inc_") << endl;
+		parsed = filename.substr( filename.find("inc_") );
+		moreparse = parsed.substr(4,6);
+	}
+	else if (filename.find("band_") <= filename.length() )
+	{
+		cout << "Parsed file and found position for string band_ at " << filename.find("band_") << endl;
+		parsed = filename.substr( filename.find("band_") );
+		moreparse = parsed.substr(5,6);
+	}
+	else if (filename.find("rec_clas_") <= filename.length() )
+	{
+		cout << "Parsed file and found position for string rec_clas_ at " << filename.find("rec_clas_") << endl;
+		parsed = filename.substr( filename.find("rec_clas_") );
+		moreparse = parsed.substr(9,6);
+	}
+	else if (filename.find("gmn_") <= filename.length() )
+	{
+		cout << "Parsed file and found position for string gmn_ at " << filename.find("gmn_") << endl;
+		parsed = filename.substr( filename.find("gmn_") );
+		moreparse = parsed.substr(4,6);
+	}
+	else {
+		cout << "Could not parse runnumber from inputfile. Return 0 runnumber " << endl;
+		return 0;
+	}
+	cout << "\t*Intepreted run number from file name: " << stoi(moreparse) << "\n";
+	return stoi(moreparse);
 }
 
 
-void getEventInfo( BEvent eventInfo, double &integrated_charge, double &livetime, double &starttime ){
+void getEventInfo( hipo::bank eventInfo, double &integrated_charge, double &livetime, double &starttime ){
 	if( eventInfo.getRows() != 1 ){
 		cerr << "getEventInfo::NotImplementedFunction\n";
 		exit(-1);
 	}
-	integrated_charge       = (double)eventInfo.getBCG(0); 	// not calibrated currently
-	livetime 		= (double)eventInfo.getLT(0);		// not calibrated currently
-	starttime		= (double)eventInfo.getSTTime(0);
+	livetime 		= eventInfo.getDouble(3,0);
+	integrated_charge 	= eventInfo.getFloat(2,0);
+	starttime 		= eventInfo.getFloat(4,0);
+
 	return;
 }
 
@@ -515,19 +263,20 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 }
 
 
-void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillator scintillator, hipo::bank DC_Track, hipo::bank DC_Traj,
-			int pbankIndex,
-			clashit &electron,
-			double starttime , int thisRun , double Ebeam ){
+void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank scintillator, hipo::bank DC_Track, hipo::bank DC_Traj, hipo::bank cherenkov,
+		int pbankIndex,
+		clashit &electron,
+		double starttime , int thisRun , double Ebeam ){
 
 	TVector3	momentum = particles.getV3P(pbankIndex);
 	TVector3	vertex	 = particles.getV3v(pbankIndex);
+	if( particles.getPid(pbankIndex) != 11 || particles.getCharge(pbankIndex) != -1 ) 	return;
 
 	TVector3 	beamVec(0,0,Ebeam);
 	TVector3	qVec; qVec = beamVec - momentum;
 
-//for Calorimeter information it is the Particle bank index for the first particle (usually electron)
-//for Particle bank it is bank index 0
+	//for Calorimeter information it is the Particle bank index for the first particle (usually electron)
+	//for Particle bank it is bank index 0
 	electron.setSector		(	calorimeter.getElectronSector(pbankIndex)				);
 	electron.setPID			  (	particles.getPid(pbankIndex)					);
 	electron.setCharge		(	particles.getCharge(pbankIndex)					);
@@ -564,28 +313,28 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	electron.setW2			(	mP*mP - electron.getQ2() + 2.*electron.getOmega()*mP	);
 
 
-  //Adding Tracking bank
+	//Adding Tracking bank
 
 	int Ntrack = DC_Track.getRows();
 	int index = -1;
 	int count =0;
 	for(int i =0; i < Ntrack; i++){
-	  int pindex   = DC_Track.getInt(1,i);
-	  int detector = DC_Track.getInt(2,i);
+		int pindex   = DC_Track.getInt(1,i);
+		int detector = DC_Track.getInt(2,i);
 
-	  if (pindex == pbankIndex && detector ==6 )
-	    {index = i;
-	     count ++;
-	   }
+		if (pindex == pbankIndex && detector ==6 )
+		{index = i;
+			count ++;
+		}
 	}
 
 	//At this point I only use 1 track event
 	//The check show around 4% mul_track events
 
 	if (index != -1 && count ==1) {
-	  electron.setDC_chi2             (       DC_Track.getFloat(6, index)                                 );
-	  electron.setDC_NDF              (       DC_Track.getInt(7, index)                                   );
-	  electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
+		electron.setDC_chi2             (       DC_Track.getFloat(6, index)                                 );
+		electron.setDC_NDF              (       DC_Track.getInt(7, index)                                   );
+		electron.setDC_sector           (       DC_Track.getInt(3, index)                                   );
 
 	}
 	else {
@@ -608,53 +357,138 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, BScintillat
 	int index_traj = -1;
 
 	for(int i =0; i <NTraj; i++){
-    int pindex   = DC_Traj.getInt(0, i);
-	  int detector = DC_Traj.getInt(2,i);
-	  int layer    = DC_Traj.getInt(3,i);
+		int pindex   = DC_Traj.getInt(0, i);
+		int detector = DC_Traj.getInt(2,i);
+		int layer    = DC_Traj.getInt(3,i);
 
-	  if(pindex == pbankIndex && detector ==6 && layer ==6 && count ==1)
+		if(pindex == pbankIndex && detector ==6 && layer ==6 && count ==1)
 
-	     {
-	       electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
-	       electron.setDC_y1        (  DC_Traj.getFloat(5, i)                                           );
-	       electron.setDC_z1        (  DC_Traj.getFloat(6, i)                                           );
+		{
+			electron.setDC_x1        (  DC_Traj.getFloat(4, i)                                           );
+			electron.setDC_y1        (  DC_Traj.getFloat(5, i)                                           );
+			electron.setDC_z1        (  DC_Traj.getFloat(6, i)                                           );
 
-	     }
+		}
 
-	  if(pindex == pbankIndex && detector == 6 && layer ==18 && count ==1)
+		if(pindex == pbankIndex && detector == 6 && layer ==18 && count ==1)
 
-	    {
-	       electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
-	       electron.setDC_y2        (  DC_Traj.getFloat(5, i)                                           );
-	       electron.setDC_z2        (  DC_Traj.getFloat(6, i)                                           );
+		{
+			electron.setDC_x2        (  DC_Traj.getFloat(4, i)                                           );
+			electron.setDC_y2        (  DC_Traj.getFloat(5, i)                                           );
+			electron.setDC_z2        (  DC_Traj.getFloat(6, i)                                           );
 
 
-	    }
+		}
 
-	  if(pindex == pbankIndex && detector == 6 && layer ==36 && count ==1)
+		if(pindex == pbankIndex && detector == 6 && layer ==36 && count ==1)
 
-	    {
-	       electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );
-	       electron.setDC_y3        (  DC_Traj.getFloat(5, i)                                           );
-	       electron.setDC_z3        (  DC_Traj.getFloat(6, i)                                           );
+		{
+			electron.setDC_x3        (  DC_Traj.getFloat(4, i)                                           );
+			electron.setDC_y3        (  DC_Traj.getFloat(5, i)                                           );
+			electron.setDC_z3        (  DC_Traj.getFloat(6, i)                                           );
 
-	    }
+		}
 
 
 	}
 
+	// Cherenkov banks
+	int cher_ectr = 0;
+	for( int cher_rows = 0 ; cher_rows < cherenkov.getRows() ; ++cher_rows ){
+		int cher_index 	= cherenkov.getInt(0,cher_rows);
+		int cher_pindex	= cherenkov.getInt(1,cher_rows);
+		int cher_det		= cherenkov.getInt(2,cher_rows);
+		if( cher_pindex == pbankIndex && cher_det == 15){ // our electron information with the HTCC
+			++cher_ectr;
+			int cher_sec		= cherenkov.getInt(3,cher_rows);
+			double cher_nphe	= cherenkov.getFloat(4,cher_rows);
+			double cher_time	= cherenkov.getFloat(5,cher_rows);
+			double cher_path	= cherenkov.getFloat(6,cher_rows);
+			double cher_chi2	= cherenkov.getFloat(7,cher_rows);
+			double cher_x	= cherenkov.getFloat(8,cher_rows);
+			double cher_y	= cherenkov.getFloat(9,cher_rows);
+			double cher_z	= cherenkov.getFloat(10,cher_rows);
+			int cher_status	= cherenkov.getInt(13,cher_rows);
 
-	//if( pid != 11 || charge != -1 ) return false;
-	//if( lV < 2 || lW < 2 ) return false;
-	//if( momentum.Mag() < 1 || momentum.Mag() > 4.2 ) return false;
-	//if( chi2pid == 0 || chi2pid > 1 ) return false;
-	//if( E_tot/momentum.Mag() > 0.4 || E_tot/momentum.Mag() < 0.1 ) return false;
-	//if( vertex.X() < -2 || vertex.X() > 2) return false;
-	//if( vertex.Y() < -2 || vertex.Y() > 2) return false;
-	//if( vertex.Z() < -7 || vertex.Z() > 2) return false;
-	//if( time < 15 ) return false;
-	//if( momentum.Mag() < 2 || momentum.Mag() > 10.6 ) return false;
-	//if( E_tot / momentum.Mag() < 0.15 || E_tot / momentum.Mag() > 0.3 ) return false;
+			electron.setNphe	( cher_nphe 	);
+			electron.setKov_x	( cher_x	);
+			electron.setKov_y	( cher_y	);
+			electron.setKov_z	( cher_z	);
+			electron.setKov_chi2	( cher_chi2	);
+			electron.setKov_time	( cher_time	);
+			electron.setKov_path	( cher_path	);
+			electron.setKov_det	( cher_det	);
+			electron.setKov_sector	( cher_sec	);
+			electron.setKov_status	( cher_status	);
+		}
+	}
+	if( cher_ectr > 1 ){ cout << "ERROR in readhipo_helper::getElectronInfo with cherenkov having more than one entry\n"; exit(-1); }
+
+	// Scntillator banks for electron
+	for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
+		int sci_index		= scintillator.getInt(0,sci_rows);
+		int sci_pindex		= scintillator.getInt(1,sci_rows);
+		int sci_det		= scintillator.getInt(2,sci_rows);
+		if( sci_pindex == pbankIndex && sci_det == 12 ){ // our electron information in FTOF
+			int sci_sec	= scintillator.getInt(3,sci_rows);
+			int sci_lay	= scintillator.getInt(4,sci_rows);
+			int sci_comp	= scintillator.getInt(5,sci_rows);
+
+			double sci_edep = scintillator.getFloat(6,sci_rows);
+			double sci_time = scintillator.getFloat(7,sci_rows);
+			double sci_path = scintillator.getFloat(8,sci_rows);
+			double sci_chi2 = scintillator.getFloat(9,sci_rows);
+
+			double sci_x	= scintillator.getFloat(10,sci_rows);
+			double sci_y	= scintillator.getFloat(11,sci_rows);
+			double sci_z	= scintillator.getFloat(12,sci_rows);
+
+			int sci_status	= scintillator.getFloat(16,sci_rows);
+
+			electron.setScint_status	( sci_status	);
+			electron.setScint_sector	( sci_sec	);
+			electron.setScint_layer		( sci_lay	);
+			electron.setScint_component	( sci_comp	);
+			electron.setScint_Edep		( sci_edep	);
+			electron.setScint_time		( sci_time	);
+			electron.setScint_path		( sci_path	);
+			electron.setScint_chi2		( sci_chi2	);
+			electron.setScint_x		( sci_x		);
+			electron.setScint_y		( sci_y		);
+			electron.setScint_z		( sci_z		);
+		}
+	}
+
+	if( electron.getScint_sector().size() == 0 ){ // if we don't have any FTOF info, skip the event
+		electron.Clear();
+		return;
+	}
+
+	if( electron.getScint_sector()[0] == -999 || electron.getSector() == -999 || electron.getSector() == -1 ){ // if scint sector != pcal sector
+		electron.Clear();
+		return;
+	}
+
+	// If the sectors do not match, do not store:
+	if( 	electron.getScint_sector()[0] 	!= electron.getSector() 	||	// scint sector != pcal sector
+			electron.getScint_sector()[0] 	!= electron.getDC_sector() 	||	// scint sector != DC sector
+			electron.getScint_sector()[0] 	!= electron.getKov_sector() 	||	// scint sector != htcc sector
+
+			electron.getDC_sector()		!= electron.getSector()		||	// DC sector != pcal sector
+			electron.getDC_sector()		!= electron.getKov_sector()	||	// DC sector != htcc sector
+
+			electron.getSector()		!= electron.getKov_sector()	){	// pcal sector != htcc sector
+
+
+		//particles.show();
+		//calorimeter.show();
+		//scintillator.show();
+		//cherenkov.show();
+
+		electron.Clear(); // do not store an electron
+		return;
+	}
+
 
 	return;
 }
@@ -690,7 +524,7 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 			phi_nq *= (-1);
 		}
 
-		double beta = nHit[hit].getDL().Mag() / (nHit[hit].getTofFadc()*cAir);
+		double beta = nHit[hit].getDL().Mag() / (nHit[hit].getTof()*cAir);
 		double p_n = mN / sqrt( 1./pow(beta,2) - 1. );
 		nVec.SetMagThetaPhi(p_n,nHit[hit].getDL().Theta(),nHit[hit].getDL().Phi());
 
@@ -736,371 +570,160 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 		tag[hit].setXp_PRC	(Xp_PRC		);
 	}
 
-	//beta = dL / (ToF*cAir);
-	//p_n = mN / sqrt( 1./pow(beta,2) - 1. );
-	//nVec.SetMagThetaPhi(p_n,theta_n,phi_n);
-	//E_n 	= sqrt( mN*mN + p_n*p_n );
-	//double W_primeSq = mD*mD - Q2 + mN*mN + 2.*mD*(nu-E_n) - 2.*nu*E_n + 2.*q*p_n*cos(theta_nq);
-	//Wp = sqrt(W_primeSq);
-	//Xp = Q2/(2.*( nu*(mD-E_n) + p_n*q*CosTheta_nq));
-	//As = (E_n - p_n*CosTheta_nq)/mN;
-
-
 	return;
 }
 
 
+void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
 
-void getScinHits( BScintillator scintillator, int pindex[maxScinHits], int detid[maxScinHits], double energy[maxScinHits], double time[maxScinHits],
-	 TVector3 posVector[maxScinHits], double path[maxScinHits], int status[maxScinHits], int posIndex[maxParticles], int posMult, int &scinHits) {
-	scinHits = 0;
-	for( int row = 0 ; row < scintillator.getRows() ; row++ ){
-		for ( int i = 0 ; i < posMult ; i++) { //loop over all other particles
-      if (scintillator.getPindex(row) == posIndex[i]) { //check if hit Pindex corresponds to particle index = row from REC::Particles bank
-				pindex[scinHits ] 		= scintillator.getPindex(row); //int
-			  detid[scinHits ] 		= scintillator.getDetector(row); //int
-				energy[scinHits ] 		= scintillator.getEnergy(row); //float
-				time[scinHits ] 		= scintillator.getTime(row);//float
-				path[scinHits ] 		= scintillator.getPath(row);//float
-				posVector[scinHits].SetXYZ(	scintillator.getX(row), scintillator.getY(row), scintillator.getZ(row) 	);
-				status		[scinHits]	= scintillator.getStatus(row); //int
-				scinHits ++;
-			}
-		}
-	}
-}
-
-void getParticleInfo( BParticle particles, int pid[maxParticles], TVector3 momentum[maxParticles], TVector3 vertex[maxParticles],	double time[maxParticles],
-	int charge[maxParticles], double beta[maxParticles], double chi2pid[maxParticles], int status[maxParticles] , int index[maxParticles], int& multiplicity ){
-	// Takes all particles in REC::Particles other than leading particle
 	multiplicity = 0;
-	for( int row = 1 ; row < particles.getRows() ; row++ ){ // start after electron information
-			if( particles.getCharge(row) == 1 || particles.getCharge(row) == -1 ){ //checks for positive and negative charge
-			pid[multiplicity] 		= particles.getPid(row); //int
-			charge[multiplicity]		= particles.getCharge(row); //int
-			momentum 	[multiplicity]	= particles.getV3P(row); //TVector3
-			vertex		[multiplicity]	= particles.getV3v(row);//TVector3
-			time		[multiplicity]	= particles.getVt(row);//float
-			beta		[multiplicity]	= particles.getBeta(row);//float
-			chi2pid		[multiplicity]	= particles.getChi2pid(row);//float
-			status		[multiplicity]	= particles.getStatus(row); //int
-			index [multiplicity] = row;
-			multiplicity ++;
-		}
-	}
+	// Loop over particle bank and store info in particle class:
+	for( int row = 1; row < claspart.getRows() ; ++row ){
+		// Only look at +/- particles (no neutrals):
+		if( claspart.getCharge(row) == 1 || claspart.getCharge(row) == -1 ){
+			TVector3	momentum = claspart.getV3P(row);
+			TVector3	vertex	 = claspart.getV3v(row);
+
+			part[multiplicity].setPID		(	claspart.getPid(row)		);
+			part[multiplicity].setCharge		(	claspart.getCharge(row)	);
+			part[multiplicity].setStatus		(	claspart.getStatus(row)	);
+			part[multiplicity].setTime		(	claspart.getVt(row)		);
+			part[multiplicity].setBeta		( 	claspart.getBeta(row)		);
+			part[multiplicity].setChi2		(	claspart.getChi2pid(row)	);
+			part[multiplicity].setPindex		(	row				); // mapping pindex for other DST banks
+			part[multiplicity].setVtx		(	vertex.X()			);
+			part[multiplicity].setVty		(	vertex.Y()			);
+			part[multiplicity].setVtz		(	vertex.Z()			);
+			part[multiplicity].setMomentum		(	momentum.Mag()			);
+			part[multiplicity].setTheta		(	momentum.Theta()		);
+			part[multiplicity].setPhi		(	momentum.Phi()			);
+			++multiplicity;
+		}// end if for +/-
+	}// end loop over particle bank
+
+	// Loop over scintillator bank to get mapped info
+	for( int partidx = 0 ; partidx < multiplicity ; ++partidx ){
+		std::vector<int>    indexes	;
+		std::vector<int>    dets	;
+		std::vector<int>    secs	;
+		std::vector<int>    lays	;
+		std::vector<int>    comps	;
+		std::vector<int>    statuses	;
+		std::vector<double> edeps	;
+		std::vector<double> times	;
+		std::vector<double> paths	;
+		std::vector<double> chi2s	;
+		std::vector<double> xs		;
+		std::vector<double> ys		;
+		std::vector<double> zs		;
+		for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
+			int sci_pindex		= scintillator.getInt(1,sci_rows);
+			if( sci_pindex == partidx ){ 
+				int sci_index		= scintillator.getInt(0,sci_rows);
+				int sci_det		= scintillator.getInt(2,sci_rows);
+				int sci_sec		= scintillator.getInt(3,sci_rows);
+				int sci_lay		= scintillator.getInt(4,sci_rows);
+				int sci_comp		= scintillator.getInt(5,sci_rows);
+
+				double sci_edep = scintillator.getFloat(6,sci_rows);
+				double sci_time = scintillator.getFloat(7,sci_rows);
+				double sci_path = scintillator.getFloat(8,sci_rows);
+				double sci_chi2 = scintillator.getFloat(9,sci_rows);
+
+				double sci_x	= scintillator.getFloat(10,sci_rows);
+				double sci_y	= scintillator.getFloat(11,sci_rows);
+				double sci_z	= scintillator.getFloat(12,sci_rows);
+
+				int sci_status	= scintillator.getFloat(16,sci_rows);
+
+				indexes		.push_back(	sci_index	);
+				dets		.push_back(	sci_det		);
+				secs		.push_back(	sci_sec		);
+				lays		.push_back(	sci_lay		);
+				comps		.push_back(	sci_comp	);
+				statuses	.push_back(	sci_status	);
+				edeps		.push_back(	sci_edep	);
+				times		.push_back(	sci_time	);
+				paths		.push_back(	sci_path	);
+				chi2s		.push_back(	sci_chi2	);
+				xs		.push_back(	sci_x		);
+				ys		.push_back(	sci_y		);
+				zs		.push_back(	sci_z		);
+
+			}
+		}// end loop over sci rows for 	this particle index
+		part[partidx].setScint_detector		( dets		);
+		part[partidx].setScint_status  	 	( statuses	);
+		part[partidx].setScint_sector  	 	( secs		);
+		part[partidx].setScint_layer   	 	( lays		);
+		part[partidx].setScint_component	( comps		);
+		part[partidx].setScint_Edep		( edeps		);
+		part[partidx].setScint_time		( times		);
+		part[partidx].setScint_path		( paths		);
+		part[partidx].setScint_chi2		( chi2s		);
+		part[partidx].setScint_x		( xs		);
+		part[partidx].setScint_y		( ys		);
+		part[partidx].setScint_z		( zs		);
+
+	}// end loop over particles
 }
 
 
 
-
-
-
-void getBANDBarGeometry(string filename, std::map<int,double> &bar_x, std::map<int,double> &bar_y, std::map<int,double> &bar_z) {
-	ifstream f;
-	int sector, layer, component, barId;
-	double x, y, z;
-	f.open(filename);
-	if (!f.is_open()) {
-		cout << "ERROR BAND Bar geometry file could not be read " << endl;
-		exit(-1);
-	}
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		barId = 100*sector + 10*layer + component;
-		f >> x; //units are in cm
-		f >> y; //units are in cm
-		f >> z; //units are in cm
-		bar_x.insert(std::pair<int,double>(barId,x));
-		bar_y.insert(std::pair<int,double>(barId,y));
-		bar_z.insert(std::pair<int,double>(barId,z));
-	}
-	//140 is number of bars. Just check y (x and z should be similar)
-	if (bar_y.size() != 140) {
-		cout << "ERROR BAND Geometry y map length is not 140. Length is  " << bar_y.size() << endl;
-		exit(-1);
-	}
-	f.close();
-}
-
-void getBANDEdepCalibration(string filename, std::map<int,double> &bar_edep) {
-	ifstream f;
-	int sector, layer, component, barId;
-	double edep;
-	f.open(filename);
-	if (!f.is_open()) {
-		cout << "ERROR BAND Edep file could not be read " << endl;
-		exit(-1);
-	}
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		barId = 100*sector + 10*layer + component;
-		f >> edep; //units are in cm
-		bar_edep.insert(std::pair<int,double>(barId,edep));
-	//	cout << "BAND Edep " << sector << " " << layer << " " << component << " " << edep << endl;
-	}
-	f.close();
-	//140 is number of bars
-	if (bar_edep.size() != 140) {
-		cout << "ERROR BAND Edep map length is not 140. Length is  " << bar_edep.size() << endl;
-		exit(-1);
-	}
-}
-
-void shiftsReader::LoadInitBar( string filename ){
-	ifstream f;
-	int sector, layer, component, barId;
-	double pol0, height, mean, sig, temp;
-
-	f.open(filename);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		barId = 100*sector + 10*layer + component;
-		f >> pol0;
-		f >> height;
-		f >> mean;
-		f >> sig;
-		InitBar[barId] = mean;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-void shiftsReader::LoadInitBarFadc( string filename ){
-	ifstream f;
-	int sector, layer, component, barId;
-	double pol0, height, mean, sig, temp;
-
-	f.open(filename);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		barId = 100*sector + 10*layer + component;
-		f >> pol0;
-		f >> height;
-		f >> mean;
-		f >> sig;
-		InitBarFadc[barId] = mean;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-void shiftsReader::LoadInitRun( string filename ){
-	ifstream f;
-	int runno;
-	double pol0, height, mean, sig, temp;
-
-	f.open(filename);
-	while(!f.eof()){
-		f >> runno;
-		f >> pol0;
-		f >> height;
-		f >> mean;
-		f >> sig;
-		InitRun[runno] = mean;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-void shiftsReader::LoadInitRunFadc( string filename ){
-	ifstream f;
-	int runno;
-	double pol0, height, mean, sig, temp;
-
-	f.open(filename);
-	while(!f.eof()){
-		f >> runno;
-		f >> pol0;
-		f >> height;
-		f >> mean;
-		f >> sig;
-		InitRunFadc[runno] = mean;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-void shiftsReader::LoadEffVel( string filename_S6200 , string filename_S6291 ){
-	ifstream f;
-	int sector, layer, component, barId;
-	double tdc_ev, fadc_ev, temp;
-
-	// Load Spring 2019 6200-6290 constants
-	f.open(filename_S6200);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		f >> tdc_ev;
-		f >> fadc_ev;
-		barId = sector*100 + layer*10 + component;
-		S6200FadcEffVel[barId] 	= fadc_ev;
-		S6200TdcEffVel[barId] 	= tdc_ev;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-
-	// Load Spring 2019 6291-INF constants
-	f.open(filename_S6291);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		f >> tdc_ev;
-		f >> fadc_ev;
-		barId = sector*100 + layer*10 + component;
-		S6291FadcEffVel[barId] 	= fadc_ev;
-		S6291TdcEffVel[barId] 	= tdc_ev;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-void shiftsReader::LoadLrOff( string filename_S6200 , string filename_S6291 ){
-	ifstream f;
-	int sector, layer, component, barId;
-	double tdc_lr, fadc_lr, temp;
-
-	// Load Spring 2019 6200-6290 constants
-	f.open(filename_S6200);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		f >> tdc_lr;
-		f >> fadc_lr;
-		barId = sector*100 + layer*10 + component;
-		S6200FadcLrOffsets[barId] 	= fadc_lr;
-		S6200TdcLrOffsets[barId] 	= tdc_lr;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-
-	// Load Spring 2019 6291-INF constants
-	f.open(filename_S6291);
-	while(!f.eof()){
-		f >> sector;
-		f >> layer;
-		f >> component;
-		f >> tdc_lr;
-		f >> fadc_lr;
-		barId = sector*100 + layer*10 + component;
-		S6291FadcLrOffsets[barId] 	= fadc_lr;
-		S6291TdcLrOffsets[barId] 	= tdc_lr;
-		f >> temp;
-		f >> temp;
-	}
-	f.close();
-}
-
-double * shiftsReader::getInitBar(void){
-	return InitBar;
-}
-double * shiftsReader::getInitBarFadc(void){
-	return InitBarFadc;
-}
-double * shiftsReader::getInitRun(void){
-	return InitRun;
-}
-double * shiftsReader::getInitRunFadc(void){
-	return InitRunFadc;
-}
-double * shiftsReader::getFadcEffVel(int Runno){
-	if( Runno < 6291 ){
-		return S6200FadcEffVel;
-	}
-	else{
-		return S6291FadcEffVel;
-	}
-}
-double * shiftsReader::getTdcEffVel(int Runno){
-	if( Runno < 6291 ){
-		return S6200TdcEffVel;
-	}
-	else{
-		return S6291TdcEffVel;
-	}
-}
-double * shiftsReader::getFadcLrOff(int Runno){
-	if( Runno < 6291 ){
-		return S6200FadcLrOffsets;
-	}
-	else{
-		return S6291FadcLrOffsets;
-	}
-}
-double * shiftsReader::getTdcLrOff(int Runno){
-	if( Runno < 6291 ){
-		return S6200TdcLrOffsets;
-	}
-	else{
-		return S6291TdcLrOffsets;
-	}
-}
 
 
 //Parametrization from Giovanni (GWU) and FX based on double pion analysis in RGA
 
 void smearRGA(TVector3 &vpar){
 
-  TRandom3 myRand(0);
+	TRandom3 myRand(0);
 
-  double mom = vpar.Mag(); // GeV
-  double theta = vpar.Theta(); //radians
-  double theta_deg = theta * 180 / M_PI; //degree
-  double phi = vpar.Phi(); //radians
+	double mom = vpar.Mag(); // GeV
+	double theta = vpar.Theta(); //radians
+	double theta_deg = theta * 180 / M_PI; //degree
+	double phi = vpar.Phi(); //radians
 
-  //Determine mom resolution value dependent on theta
-  double mom_S1 = 0.0184291 -0.0110083*theta_deg + 0.00227667*theta_deg*theta_deg -0.000140152*theta_deg*theta_deg*theta_deg + 3.07424e-06*theta_deg*theta_deg*theta_deg*theta_deg;
-  double mom_S2 = 0.02*theta_deg;
-  double mom_R = 0.01 * sqrt( pow(mom_S1*mom, 2) + pow(mom_S2, 2));
-  mom_R *= 2.0; // <- to match data resolution, value on % of momentum
+	//Determine mom resolution value dependent on theta
+	double mom_S1 = 0.0184291 -0.0110083*theta_deg + 0.00227667*theta_deg*theta_deg -0.000140152*theta_deg*theta_deg*theta_deg + 3.07424e-06*theta_deg*theta_deg*theta_deg*theta_deg;
+	double mom_S2 = 0.02*theta_deg;
+	double mom_R = 0.01 * sqrt( pow(mom_S1*mom, 2) + pow(mom_S2, 2));
+	mom_R *= 2.0; // <- to match data resolution, value on % of momentum
 
-  //Determine theta resolution dependent on mom
-  double theta_S1 = 0.004*theta_deg + 0.1;
-  double theta_S2 = 0;
-  double theta_R = sqrt(pow(theta_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(theta_S2,2));
-  theta_R *= 2.5; // <- to match data resolution. value in Degree
+	//Determine theta resolution dependent on mom
+	double theta_S1 = 0.004*theta_deg + 0.1;
+	double theta_S2 = 0;
+	double theta_R = sqrt(pow(theta_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(theta_S2,2));
+	theta_R *= 2.5; // <- to match data resolution. value in Degree
 
-  //Determine phi resolution dependent on theta and momentum
-  double phi_S1 = 0.85-0.015*theta_deg;
-  double phi_S2 = 0.17-0.003*theta_deg;
-  double phi_R = sqrt(pow(phi_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(phi_S2,2) );
-  phi_R *= 3.5; // <- to match data resolution, value in degree
+	//Determine phi resolution dependent on theta and momentum
+	double phi_S1 = 0.85-0.015*theta_deg;
+	double phi_S2 = 0.17-0.003*theta_deg;
+	double phi_R = sqrt(pow(phi_S1*sqrt(mom*mom+0.13957*0.13957)/(mom*mom),2) + pow(phi_S2,2) );
+	phi_R *= 3.5; // <- to match data resolution, value in degree
 
-  //Add smearing to mom, theta and phi values based on Gaussian distributions
-  mom += myRand.Gaus(0,mom_R * mom);
-  theta += myRand.Gaus(0,theta_R * (M_PI / 180));
-  phi += myRand.Gaus(0,phi_R * (M_PI / 180));
-  vpar.SetMagThetaPhi(mom,theta,phi);
+	//Add smearing to mom, theta and phi values based on Gaussian distributions
+	mom += myRand.Gaus(0,mom_R * mom);
+	theta += myRand.Gaus(0,theta_R * (M_PI / 180));
+	phi += myRand.Gaus(0,phi_R * (M_PI / 180));
+	vpar.SetMagThetaPhi(mom,theta,phi);
 }
 
 void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron) {
 
-  TVector3 	beamVec(0,0,Ebeam);
-  TVector3	qVec; qVec = beamVec - smeared_electron;
+	TVector3 	beamVec(0,0,Ebeam);
+	TVector3	qVec; qVec = beamVec - smeared_electron;
 
-  input_ehit.setMomentum		(	smeared_electron.Mag()						);
-  input_ehit.setTheta		  (	smeared_electron.Theta()					);
-  input_ehit.setPhi			  (	smeared_electron.Phi()						);
+	input_ehit.setMomentum		(	smeared_electron.Mag()						);
+	input_ehit.setTheta		  (	smeared_electron.Theta()					);
+	input_ehit.setPhi			  (	smeared_electron.Phi()						);
 
-  input_ehit.setQ			  (	qVec.Mag()						);
-  input_ehit.setThetaQ		(	qVec.Theta()						);
-  input_ehit.setPhiQ		  (	qVec.Phi()						);
+	input_ehit.setQ			  (	qVec.Mag()						);
+	input_ehit.setThetaQ		(	qVec.Theta()						);
+	input_ehit.setPhiQ		  (	qVec.Phi()						);
 
-  input_ehit.setOmega		(	Ebeam - sqrt( pow(smeared_electron.Mag(),2) + mE*mE )		);
-  input_ehit.setQ2			  (	qVec.Mag()*qVec.Mag() - pow(input_ehit.getOmega(),2)	);
-  input_ehit.setXb			  (	input_ehit.getQ2()/(2.*mP*input_ehit.getOmega())		);
-  input_ehit.setW2		  	(	mP*mP - input_ehit.getQ2() + 2.*input_ehit.getOmega()*mP	);
+	input_ehit.setOmega		(	Ebeam - sqrt( pow(smeared_electron.Mag(),2) + mE*mE )		);
+	input_ehit.setQ2			  (	qVec.Mag()*qVec.Mag() - pow(input_ehit.getOmega(),2)	);
+	input_ehit.setXb			  (	input_ehit.getQ2()/(2.*mP*input_ehit.getOmega())		);
+	input_ehit.setW2		  	(	mP*mP - input_ehit.getQ2() + 2.*input_ehit.getOmega()*mP	);
 
 }

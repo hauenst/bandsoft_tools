@@ -57,6 +57,40 @@ void clashit::Clear(){
 	DC_x3           = -999;
 	DC_y3           = -999;
 	DC_z3           = -999;
+
+	Nphe		= -999;
+	Kov_x		= -999;
+	Kov_y		= -999;
+	Kov_z		= -999;
+	Kov_chi2	= -999;
+	Kov_time	= -999;
+	Kov_path	= -999;
+	Kov_det		= -999;
+	Kov_sec		= -999;
+	Kov_status	= -999;
+
+	Scint_status	.clear();
+	Scint_sector	.clear();
+	Scint_layer	.clear();
+	Scint_component	.clear();
+	Scint_Edep	.clear();
+	Scint_time	.clear();
+	Scint_path	.clear();
+	Scint_chi2	.clear();
+	Scint_x		.clear();
+	Scint_y		.clear();
+	Scint_z		.clear();
+
+
+
+
+
+
+
+
+
+
+
 }
 
 

@@ -117,12 +117,13 @@ int main(int argc, char** argv) {
 		hipo::bank  run_config 			(factory.getSchema("RUN::config"));
 		hipo::bank      DC_Track                (factory.getSchema("REC::Track"         ));
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
+		hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		hipo::event 	readevent;
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
 		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
-		BScintillator	scintillator		(factory.getSchema("REC::Scintillator"	));
+		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 
 
 		// Loop over all events in file
@@ -167,6 +168,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
 			readevent.getStructure(DC_Traj);
+			readevent.getStructure(cherenkov);
 
 			if( event_counter == 1 ){
 				int period = -1;
@@ -225,7 +227,7 @@ int main(int argc, char** argv) {
 
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
@@ -239,7 +241,7 @@ int main(int argc, char** argv) {
 			clashit temp_eHit;
 			for( int part = 1 ; part < particles.getRows() ; part++ ){
 				temp_eHit.Clear();
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, part, temp_eHit , starttime , Runno , Ebeam );
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, part, temp_eHit , starttime , Runno , Ebeam );
 				if ( ePID.isElectron(&temp_eHit) ) 	nElectrons++;
 			}
 			temp_eHit.Clear();
