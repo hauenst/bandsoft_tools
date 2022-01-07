@@ -186,9 +186,11 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 	// Grab the beam energy for this generated file:
 	double file_Ebeam = gen_info.getFloat(6,0);
 	if( file_Ebeam == 0 ) return; // don't do anything if there is no event information
-	if( fabs(Ebeam - file_Ebeam)>0.001 ) 
+	if( fabs(Ebeam - file_Ebeam)>0.001 && file_Ebeam != -99 ) 
 		std::cerr << "---WARNING-- getMcInfo shows different beam energy than the expected period energy!\n";
-	Ebeam = file_Ebeam;
+	if( file_Ebeam > 0 ){
+		Ebeam = file_Ebeam;
+	}
 
 	// using the header Ebeam, create the beamvector:
 	TVector3 	beamVec(0,0,Ebeam);
