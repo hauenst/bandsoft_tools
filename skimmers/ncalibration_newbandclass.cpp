@@ -295,17 +295,12 @@ int main(int argc, char** argv) {
 				saveHit[n] = &nHit[n];
 			}
 
-			if (nMult > 0) {
-				//cout << nMult << " ";
-				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				int passed = 0;
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, 1, passed );
-			}
-
-			// Fill tree based on d(e,e'n)X for data
-			if(  (nMult > 0 && goodneutron)  ){
+			if( nMult == 1 ){
+				goodneutron = true;
+				nleadindex = 0;
 				outTree->Fill();
-			} // else fill tree on d(e,e')nX for MC
+			}
+				
 
 
 
