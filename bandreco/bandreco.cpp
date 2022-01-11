@@ -308,6 +308,7 @@ void BANDReco::readGlobalOffset(){
 
 	if( !MONTECARLO && Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
+	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 11286 && Runno <= 11300 ) tdc_path = path + "/global_offsets_tdc_ler.txt"; // LER shifts
 	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << tdc_path << "\n";
@@ -338,6 +339,7 @@ void BANDReco::readGlobalOffset(){
 
 	if( !MONTECARLO && Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
+	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 11286 && Runno <= 11300 ) ftdc_path = path + "/global_offsets_fadc_ler.txt"; // LER shifts
 	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << ftdc_path << "\n";
