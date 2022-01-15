@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Peroid] [load shifts] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[MC,DATA, MC generated info for each event] = 0, 1, 2 \n";
-		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1] = 0,1,2,3,4\n";
 		cerr << "\t\t[load shifts N,Y] = 0, 1 \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
 			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
+			if( PERIOD == 4 ) Ebeam = 2.07; 
 		}
 		else if( MC_DATA_OPT == 1){ //Data
 			int runNum = getRunNumber(argv[i]);
@@ -259,6 +260,11 @@ int main(int argc, char** argv) {
 				}	
 				else if (Runno >= 11286 && Runno < 11304) { //LER runs
 					period = 3;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
+					period = 4;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}

@@ -40,7 +40,7 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int mcdataselect, int& nPass );
 void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts[maxGens] ,
 		double &starttime, double &weight, double &Ebeam , int &genMult );
-void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity );
+void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity );
 //Parametrization from Giovanni (GWU) and FX based on double pion analysis in RGA
 void smearRGA(TVector3 &vpar);
 void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron);

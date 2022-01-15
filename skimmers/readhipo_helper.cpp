@@ -576,22 +576,33 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 }
 
 
-void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
-
+void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
 	multiplicity = 0;
 	// Loop over particle bank and store info in particle class:
 	for( int row = 1; row < claspart.getRows() ; ++row ){
+		int charge = claspart.getInt(8,row);
 		// Only look at +/- particles (no neutrals):
-		if( claspart.getCharge(row) == 1 || claspart.getCharge(row) == -1 ){
-			TVector3	momentum = claspart.getV3P(row);
-			TVector3	vertex	 = claspart.getV3v(row);
+		if( charge == 1 || charge == -1 ){
+			int pid = claspart.getInt(0,row);
+			double px = claspart.getFloat(1,row);
+			double py = claspart.getFloat(2,row);
+			double pz = claspart.getFloat(3,row);
+			double vx = claspart.getFloat(4,row);
+			double vy = claspart.getFloat(5,row);
+			double vz = claspart.getFloat(6,row);
+			double vt = claspart.getFloat(7,row);
+			double beta = claspart.getFloat(9,row);
+			double chi2 = claspart.getFloat(10,row);
+			double status = claspart.getInt(11,row);
+			TVector3	momentum(px,py,pz);
+			TVector3	vertex(vx,vy,vz);
 
-			part[multiplicity].setPID		(	claspart.getPid(row)		);
-			part[multiplicity].setCharge		(	claspart.getCharge(row)	);
-			part[multiplicity].setStatus		(	claspart.getStatus(row)	);
-			part[multiplicity].setTime		(	claspart.getVt(row)		);
-			part[multiplicity].setBeta		( 	claspart.getBeta(row)		);
-			part[multiplicity].setChi2		(	claspart.getChi2pid(row)	);
+			part[multiplicity].setPID		(	pid 	);
+			part[multiplicity].setCharge		(	charge	);
+			part[multiplicity].setStatus		(	status	);
+			part[multiplicity].setTime		(	vt 	);
+			part[multiplicity].setBeta		( 	beta 	);
+			part[multiplicity].setChi2		(	chi2	);
 			part[multiplicity].setPindex		(	row				); // mapping pindex for other DST banks
 			part[multiplicity].setVtx		(	vertex.X()			);
 			part[multiplicity].setVty		(	vertex.Y()			);
