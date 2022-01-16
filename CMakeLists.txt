@@ -3,6 +3,7 @@ project(tools)
 
 # Set up
 cmake_minimum_required (VERSION 3.0)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_EXE_LINKER_FLAGS "-L/usr/lib64/openssl-1.0")
 set(CMAKE_SHARED_LINKER_FLAGS "-L/usr/lib64/openssl-1.0")

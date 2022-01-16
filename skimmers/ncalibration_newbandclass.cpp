@@ -190,6 +190,10 @@ int main(int argc, char** argv) {
 					period = 3;
 					BAND->setPeriod(period);
 				}
+				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
+					period = 4;
+					BAND->setPeriod(period);
+				}
 				else {
 					cout << "No bar by bar offsets loaded " << endl;
 					cout << "Check shift option when starting program. Exit " << endl;
