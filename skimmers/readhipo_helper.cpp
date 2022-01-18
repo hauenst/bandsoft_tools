@@ -629,9 +629,10 @@ void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::b
 		std::vector<double> xs		;
 		std::vector<double> ys		;
 		std::vector<double> zs		;
+		int MATCH_PINDEX = part[partidx].getPindex();
 		for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
 			int sci_pindex		= scintillator.getInt(1,sci_rows);
-			if( sci_pindex == partidx ){ 
+			if( sci_pindex == MATCH_PINDEX ){ 
 				int sci_index		= scintillator.getInt(0,sci_rows);
 				int sci_det		= scintillator.getInt(2,sci_rows);
 				int sci_sec		= scintillator.getInt(3,sci_rows);
