@@ -36,7 +36,7 @@ install( TARGETS layer_class
 add_executable(initial_bar initial_bar.cpp ../../bandreco/bandreco.cpp )
 target_link_libraries(initial_bar ${ROOT_LIBRARIES} Hipo4 Banks4 
 				clashit_tree bandhit_tree taghit_tree genpart_tree 
-				clas12fiducial e_pid DC_fiducial
+				e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS initial_bar
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin/calibration )

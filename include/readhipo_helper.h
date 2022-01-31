@@ -17,6 +17,7 @@
 #include "taghit.h"
 #include "genpart.h"
 #include "TRandom3.h"
+#include "QADB.h"
 
 using namespace std;
 

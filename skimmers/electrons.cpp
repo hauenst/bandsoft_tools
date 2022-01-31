@@ -26,6 +26,7 @@
 #include "readhipo_helper.h"
 
 using namespace std;
+using namespace QA;
 
 
 int main(int argc, char** argv) {
@@ -53,6 +54,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	double current		= 0;
 	int eventnumber = 0;
+	int runnumber = 0;
 	double weight		= 0;
 	//	MC info:
 	int genMult		= 0;
@@ -69,7 +71,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
-	outTree->Branch("eventnumber",&eventnumber);
+	outTree->Branch("eventnumber"	,&eventnumber		);
 	outTree->Branch("weight"	,&weight		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
@@ -90,6 +92,9 @@ int main(int argc, char** argv) {
 	e_pid ePID;
 	// Load the DC fiducial class for electrons;
 	DCFiducial DCfid_electrons;
+
+	// Load the QADB
+	QADB * qa = new QADB();
 
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
@@ -155,6 +160,7 @@ int main(int argc, char** argv) {
 			starttime 	= 0;
 			weight		= 1;
 			eventnumber = 0;
+			runnumber = 0;
 			eHit.Clear();
 			// MC
 			genMult 	= 0;
@@ -164,6 +170,7 @@ int main(int argc, char** argv) {
 				//Clear output smear branches
 				eHit_smeared.Clear();
 			}
+
 
 			// Count events
 			if(event_counter%1000000==0) cout << "event: " << event_counter << endl;
@@ -187,6 +194,12 @@ int main(int argc, char** argv) {
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
+			runnumber = run_config.getInt( 0 , 0 );
+			if( runnumber == 0 ) continue; // skip empty header events
+			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
+
+			// Do QADB cut
+			if( !qa->Golden(runnumber,eventnumber) ) continue;
 
 			//from first event get RUN::config torus Setting
 		 		// inbending = negative torussetting, outbending = torusseting
@@ -261,15 +274,23 @@ int main(int argc, char** argv) {
 				new(saveMC[n]) genpart;
 				saveMC[n] = &mcPart[n];
 			}
-
+		
+			// Accumulate charge for event
+			qa->AccumulateCharge();
 			outTree->Fill();
 
 
 		} // end loop over events
+		cout << "Charge analyzed in file: " << argv[i] << " " << qa->GetAccumulatedCharge() << " [nC]\n";
 	}// end loop over files
+	
+
+	TVector3 charged_analyzed;
+	charged_analyzed.SetXYZ( qa->GetAccumulatedCharge() , 0 , 0 );
 
 	outFile->cd();
 	outTree->Write();
+	charged_analyzed.Write("charge_analyzed");
 	outFile->Close();
 
 	return 0;
