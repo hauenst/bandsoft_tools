@@ -30,6 +30,7 @@
 #include "bandreco.h"
 
 using namespace std;
+using namespace QA;
 
 
 int main(int argc, char** argv) {
@@ -62,6 +63,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	double current		= 0;
 	int eventnumber = 0;
+	int runnumber = 0;
 	bool goodneutron = false;
 	int nleadindex = -1;
 	double weight		= 0;
@@ -123,6 +125,8 @@ int main(int argc, char** argv) {
 	// Load the DC fiducial class for electrons;
 	DCFiducial DCfid_electrons;
 
+	// Load the QADB
+	QADB * qa = new QADB();
 
 	// Load input file
 	for( int i = 5 ; i < argc ; i++ ){
@@ -192,6 +196,7 @@ int main(int argc, char** argv) {
 			livetime	= 0;
 			starttime 	= 0;
 			eventnumber = 0;
+			runnumber = 0;
 			// Neutron
 			nMult		= 0;
 			passed		= 0;
@@ -297,6 +302,12 @@ int main(int argc, char** argv) {
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
+			runnumber = run_config.getInt( 0 , 0 );
+			if( runnumber == 0 ) continue; // skip empty header events
+			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
+
+			// Do QADB cut
+			if( !qa->Golden(runnumber,eventnumber) ) continue;
 
 			//from first event get RUN::config torus Setting
 		 	// inbending = negative torussetting, outbending = torusseting
@@ -432,6 +443,7 @@ int main(int argc, char** argv) {
 
 			// Fill tree based on d(e,e'n)X for data
 			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
+				qa->AccumulateCharge();
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
 			else if( MC_DATA_OPT == 0 ||  MC_DATA_OPT == 2 ){
@@ -441,10 +453,15 @@ int main(int argc, char** argv) {
 
 
 		} // end loop over events
+		cout << "Charge analyzed in file: " << argv[i] << " " << qa->GetAccumulatedCharge() << " [nC]\n";
 	}// end loop over files
+
+	TVector3 charged_analyzed;
+	charged_analyzed.SetXYZ( qa->GetAccumulatedCharge() , 0 , 0 );
 
 	outFile->cd();
 	outTree->Write();
+	charged_analyzed.Write("charge_analyzed");
 	outFile->Close();
 
 	return 0;
