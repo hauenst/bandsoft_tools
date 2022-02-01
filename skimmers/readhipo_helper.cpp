@@ -741,3 +741,49 @@ void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 
 	input_ehit.setW2		  	(	mP*mP - input_ehit.getQ2() + 2.*input_ehit.getOmega()*mP	);
 
 }
+
+bool electron_fiducials( const int period , clashit * const eHit ){
+	int sector 	= eHit->getSector();
+	double v	= eHit->getV();
+	double w	= eHit->getW();
+	//double vtz	= eHit->getVtz();
+	//double pe	= eHit->getMomentum();
+	//double Q2	= eHit->getQ2();
+	//double W2	= eHit->getW2();
+	//double EoP	= eHit->getEoP();
+	//double Epcal	= eHit->getEpcal();
+	std::vector<int>	scint_sec = eHit->getScint_sector();
+	std::vector<int>	scint_lay = eHit->getScint_layer();
+	std::vector<int>	scint_com = eHit->getScint_component();
+	
+	// Lose final cuts to pare down file size:
+	//if( v < 10 || w < 10 ) 					return false;
+	//if( vtz < -8 || vtz > 2 )				return false;
+	//if( pe < 2 )						return false;
+	//if( Q2 < 1.5 )						return false;
+	//if( W2 < 1.6*1.6 )					return false;
+	//if( EoP < 0.12 || EoP > 0.35 )				return false;
+	//if( Epcal < 0.05 )					return false;
+
+
+	if( period == 1 ){	// 10.2 fiducial checks
+
+		if( sector == 2 && ( (v > 30 && v < 55) || (v>95 && v < 120) ) ) 	return false;
+		if( sector == 1 && w > 70 && w < 100 ) 					return false;
+
+		bool sector2_layer2_hit = false;
+		for( int scint_hit = 0 ; scint_hit < scint_sec.size() ; ++scint_hit ){
+			if( scint_sec[scint_hit] == 2 && scint_lay[scint_hit] == 2 ) sector2_layer2_hit = true;
+		}
+		for( int scint_hit = 0 ; scint_hit < scint_sec.size() ; ++scint_hit ){
+			if( scint_sec[scint_hit] == 2 && scint_lay[scint_hit] == 1 && (scint_com[scint_hit] == 6 || scint_com[scint_hit] == 10) && !sector2_layer2_hit ){
+				return false;
+			}
+			if( scint_sec[scint_hit] == 5 && scint_lay[scint_hit] == 2 && (scint_com[scint_hit] == 12 || scint_com[scint_hit] == 13) ){
+				return false;
+			}
+		}
+	}
+
+	return true;
+}

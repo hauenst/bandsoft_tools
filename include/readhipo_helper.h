@@ -45,5 +45,6 @@ void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::b
 //Parametrization from Giovanni (GWU) and FX based on double pion analysis in RGA
 void smearRGA(TVector3 &vpar);
 void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron);
+bool electron_fiducials( const int period , clashit * const eHit );
 
 #endif
