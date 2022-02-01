@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
 			bool accept_event = false;
 			if( MC_DATA_OPT == 0 ) accept_event = electron_fiducials(PERIOD , &eHit_smeared	);
 			if( MC_DATA_OPT == 1 ) accept_event = electron_fiducials(PERIOD , &eHit		);
-			if( accept_event == false ) continue;
+			//if( accept_event == false ) continue;
 		
 			// Accumulate charge for event
 			qa->AccumulateCharge();

@@ -296,6 +296,9 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank 
 		electron.setU			(	calorimeter.getLU(calorimeter.getPcalRow(pbankIndex))					);
 		electron.setV			(	calorimeter.getLV(calorimeter.getPcalRow(pbankIndex))					);
 		electron.setW			(	calorimeter.getLW(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_X		(	calorimeter.getX( calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_Y		(	calorimeter.getY( calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_Z		(	calorimeter.getZ( calorimeter.getPcalRow(pbankIndex))					);
 	}
 	electron.setVtx			(	vertex.X()						);
 	electron.setVty			(	vertex.Y()						);
