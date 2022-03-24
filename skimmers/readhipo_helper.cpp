@@ -186,9 +186,11 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 	// Grab the beam energy for this generated file:
 	double file_Ebeam = gen_info.getFloat(6,0);
 	if( file_Ebeam == 0 ) return; // don't do anything if there is no event information
-	if( fabs(Ebeam - file_Ebeam)>0.001 ) 
+	if( fabs(Ebeam - file_Ebeam)>0.001 && file_Ebeam != -99 ) 
 		std::cerr << "---WARNING-- getMcInfo shows different beam energy than the expected period energy!\n";
-	Ebeam = file_Ebeam;
+	if( file_Ebeam > 0 ){
+		Ebeam = file_Ebeam;
+	}
 
 	// using the header Ebeam, create the beamvector:
 	TVector3 	beamVec(0,0,Ebeam);
@@ -294,6 +296,9 @@ void getElectronInfo( BParticle particles, BCalorimeter calorimeter, hipo::bank 
 		electron.setU			(	calorimeter.getLU(calorimeter.getPcalRow(pbankIndex))					);
 		electron.setV			(	calorimeter.getLV(calorimeter.getPcalRow(pbankIndex))					);
 		electron.setW			(	calorimeter.getLW(calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_X		(	calorimeter.getX( calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_Y		(	calorimeter.getY( calorimeter.getPcalRow(pbankIndex))					);
+		electron.setPCal_Z		(	calorimeter.getZ( calorimeter.getPcalRow(pbankIndex))					);
 	}
 	electron.setVtx			(	vertex.X()						);
 	electron.setVty			(	vertex.Y()						);
@@ -574,22 +579,33 @@ void getTaggedInfo( clashit eHit, bandhit nHit[maxNeutrons], taghit tag[maxNeutr
 }
 
 
-void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
-
+void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::bank scintillator ,int& multiplicity ){
 	multiplicity = 0;
 	// Loop over particle bank and store info in particle class:
 	for( int row = 1; row < claspart.getRows() ; ++row ){
+		int charge = claspart.getInt(8,row);
 		// Only look at +/- particles (no neutrals):
-		if( claspart.getCharge(row) == 1 || claspart.getCharge(row) == -1 ){
-			TVector3	momentum = claspart.getV3P(row);
-			TVector3	vertex	 = claspart.getV3v(row);
+		if( charge == 1 || charge == -1 ){
+			int pid = claspart.getInt(0,row);
+			double px = claspart.getFloat(1,row);
+			double py = claspart.getFloat(2,row);
+			double pz = claspart.getFloat(3,row);
+			double vx = claspart.getFloat(4,row);
+			double vy = claspart.getFloat(5,row);
+			double vz = claspart.getFloat(6,row);
+			double vt = claspart.getFloat(7,row);
+			double beta = claspart.getFloat(9,row);
+			double chi2 = claspart.getFloat(10,row);
+			double status = claspart.getInt(11,row);
+			TVector3	momentum(px,py,pz);
+			TVector3	vertex(vx,vy,vz);
 
-			part[multiplicity].setPID		(	claspart.getPid(row)		);
-			part[multiplicity].setCharge		(	claspart.getCharge(row)	);
-			part[multiplicity].setStatus		(	claspart.getStatus(row)	);
-			part[multiplicity].setTime		(	claspart.getVt(row)		);
-			part[multiplicity].setBeta		( 	claspart.getBeta(row)		);
-			part[multiplicity].setChi2		(	claspart.getChi2pid(row)	);
+			part[multiplicity].setPID		(	pid 	);
+			part[multiplicity].setCharge		(	charge	);
+			part[multiplicity].setStatus		(	status	);
+			part[multiplicity].setTime		(	vt 	);
+			part[multiplicity].setBeta		( 	beta 	);
+			part[multiplicity].setChi2		(	chi2	);
 			part[multiplicity].setPindex		(	row				); // mapping pindex for other DST banks
 			part[multiplicity].setVtx		(	vertex.X()			);
 			part[multiplicity].setVty		(	vertex.Y()			);
@@ -616,9 +632,10 @@ void getParticleInfo( BParticle claspart, particles part[maxParticles], hipo::ba
 		std::vector<double> xs		;
 		std::vector<double> ys		;
 		std::vector<double> zs		;
+		int MATCH_PINDEX = part[partidx].getPindex();
 		for( int sci_rows = 0 ; sci_rows < scintillator.getRows() ; ++sci_rows ){
 			int sci_pindex		= scintillator.getInt(1,sci_rows);
-			if( sci_pindex == partidx ){ 
+			if( sci_pindex == MATCH_PINDEX ){ 
 				int sci_index		= scintillator.getInt(0,sci_rows);
 				int sci_det		= scintillator.getInt(2,sci_rows);
 				int sci_sec		= scintillator.getInt(3,sci_rows);
@@ -726,4 +743,50 @@ void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 
 	input_ehit.setXb			  (	input_ehit.getQ2()/(2.*mP*input_ehit.getOmega())		);
 	input_ehit.setW2		  	(	mP*mP - input_ehit.getQ2() + 2.*input_ehit.getOmega()*mP	);
 
+}
+
+bool electron_fiducials( const int period , clashit * const eHit ){
+	int sector 	= eHit->getSector();
+	double v	= eHit->getV();
+	double w	= eHit->getW();
+	//double vtz	= eHit->getVtz();
+	//double pe	= eHit->getMomentum();
+	//double Q2	= eHit->getQ2();
+	//double W2	= eHit->getW2();
+	//double EoP	= eHit->getEoP();
+	//double Epcal	= eHit->getEpcal();
+	std::vector<int>	scint_sec = eHit->getScint_sector();
+	std::vector<int>	scint_lay = eHit->getScint_layer();
+	std::vector<int>	scint_com = eHit->getScint_component();
+	
+	// Lose final cuts to pare down file size:
+	//if( v < 10 || w < 10 ) 					return false;
+	//if( vtz < -8 || vtz > 2 )				return false;
+	//if( pe < 2 )						return false;
+	//if( Q2 < 1.5 )						return false;
+	//if( W2 < 1.6*1.6 )					return false;
+	//if( EoP < 0.12 || EoP > 0.35 )				return false;
+	//if( Epcal < 0.05 )					return false;
+
+
+	if( period == 1 ){	// 10.2 fiducial checks
+
+		if( sector == 2 && ( (v > 30 && v < 55) || (v>95 && v < 120) ) ) 	return false;
+		if( sector == 1 && w > 70 && w < 100 ) 					return false;
+
+		bool sector2_layer2_hit = false;
+		for( int scint_hit = 0 ; scint_hit < scint_sec.size() ; ++scint_hit ){
+			if( scint_sec[scint_hit] == 2 && scint_lay[scint_hit] == 2 ) sector2_layer2_hit = true;
+		}
+		for( int scint_hit = 0 ; scint_hit < scint_sec.size() ; ++scint_hit ){
+			if( scint_sec[scint_hit] == 2 && scint_lay[scint_hit] == 1 && (scint_com[scint_hit] == 6 || scint_com[scint_hit] == 10) && !sector2_layer2_hit ){
+				return false;
+			}
+			if( scint_sec[scint_hit] == 5 && scint_lay[scint_hit] == 2 && (scint_com[scint_hit] == 12 || scint_com[scint_hit] == 13) ){
+				return false;
+			}
+		}
+	}
+
+	return true;
 }

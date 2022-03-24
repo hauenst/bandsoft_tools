@@ -25,6 +25,9 @@ void clashit::Clear(){
 	U		= 0;
 	V		= 0;
 	W		= 0;
+	PCal_X		= 0;
+	PCal_Y		= 0;
+	PCal_Z		= 0;
 	Vtx		= 0;
 	Vty		= 0;
 	Vtz		= 0;

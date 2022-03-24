@@ -79,6 +79,10 @@ void e_pid::setParamsRGB(double Ebeam){
 		sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
 		sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());
 	}
+	else if(std::fabs(Ebeam-2.07) < 0.2){//10.2 default for RGM 2.1 deuterium run at the moment
+		sprintf(paramFileNameEpcal,"%s/SFvEpcal_Params_102_RGB.dat",std::string(PID_DIR).c_str());
+		sprintf(paramFileNameMom,"%s/SFvMom_Params_102_RGB.dat",std::string(PID_DIR).c_str());
+	}
 	else{
 		std::cout<<"Attempting to set a beam energy "<< Ebeam <<" GeV\n"
 			<<"without a defined RGB fiducal cut\n"

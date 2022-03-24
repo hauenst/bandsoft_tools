@@ -190,6 +190,10 @@ int main(int argc, char** argv) {
 					period = 3;
 					BAND->setPeriod(period);
 				}
+				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
+					period = 4;
+					BAND->setPeriod(period);
+				}
 				else {
 					cout << "No bar by bar offsets loaded " << endl;
 					cout << "Check shift option when starting program. Exit " << endl;
@@ -232,9 +236,9 @@ int main(int argc, char** argv) {
 			if( !(ePID.isElectron(&eHit)) ) continue;
 
 			//Skip sector 4 events for LER runs
-			if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{
-				continue;
-			}
+			//if (Runno >= 11286 && Runno < 11304 && eHit.getSector() == 4)	{
+			//	continue;
+			//}
 
 			// Check the event so we only have a single electron and NO other particles:
 			int nElectrons = 1;
@@ -287,7 +291,7 @@ int main(int argc, char** argv) {
 				// Form the PMTs and Bars for BAND:
 			BAND->createPMTs( &band_adc, &band_tdc, &run_config );
 			BAND->createBars();
-			BAND->storeHits( nMult , nHit , starttime , eHit.getVtz() ); // use event-by-event electron vertex for pathlength-z
+			BAND->storeHits( nMult , nHit , starttime , BAND->getRGBVertexOffset() ); // use average z-offset of the target for pathlength-z
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
@@ -295,21 +299,12 @@ int main(int argc, char** argv) {
 				saveHit[n] = &nHit[n];
 			}
 
-			if (nMult == 1) {
-				goodneutron =  true;
+			if( nMult == 1 ){
+				goodneutron = true;
 				nleadindex = 0;
-			}
-			//If nMult > 1: Take nHit and check if good event and give back leading hit index and boolean
-			if (nMult > 1) {
-				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
-				int test =0;
-				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, 1,test);
-			}
-
-			// Fill tree based on d(e,e'n)X for data
-			if( (nMult == 1 || (nMult > 1 && goodneutron) ) ){
 				outTree->Fill();
-			} // else fill tree on d(e,e')nX for MC
+			}
+				
 
 
 

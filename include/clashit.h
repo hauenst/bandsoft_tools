@@ -31,6 +31,9 @@ class clashit : public TObject {
 		void setU		(double	iU		)		{U		= iU		; return;}
 		void setV		(double	iV		)		{V		= iV		; return;}
 		void setW		(double	iW		)		{W		= iW		; return;}
+		void setPCal_X		(double	iX		)		{PCal_X		= iX		; return;}
+		void setPCal_Y		(double	iY		)		{PCal_Y		= iY		; return;}
+		void setPCal_Z		(double	iZ		)		{PCal_Z		= iZ		; return;}
 		void setVtx		(double	iVtx		)		{Vtx		= iVtx		; return;}
 		void setVty		(double	iVty		)		{Vty		= iVty		; return;}
 		void setVtz		(double	iVtz		)		{Vtz		= iVtz		; return;}
@@ -107,6 +110,9 @@ class clashit : public TObject {
 		double	getU		(void)		{return U		;}
 		double	getV		(void)		{return V		;}
 		double	getW		(void)		{return W		;}
+		double	getPCal_X	(void)		{return PCal_X		;}
+		double	getPCal_Y	(void)		{return PCal_Y		;}
+		double	getPCal_Z	(void)		{return PCal_Z		;}
 		double	getVtx		(void)		{return Vtx		;}
 		double	getVty		(void)		{return Vty		;}
 		double	getVtz		(void)		{return Vtz		;}
@@ -164,7 +170,7 @@ class clashit : public TObject {
 		std::vector<double> getScint_y			(void)		{return Scint_y		;}
 		std::vector<double> getScint_z			(void)		{return Scint_z		;}
 
-		ClassDef(clashit,6);
+		ClassDef(clashit,7);
 
 	private:
 		int	Sector		;
@@ -185,6 +191,9 @@ class clashit : public TObject {
 		double 	U		;
 		double	V		;
 		double  W		;
+		double 	PCal_X		;
+		double	PCal_Y		;
+		double  PCal_Z		;
 		double	Vtx		;
 		double 	Vty		;
 		double 	Vtz		;

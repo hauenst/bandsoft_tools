@@ -26,6 +26,7 @@
 #include "readhipo_helper.h"
 
 using namespace std;
+using namespace QA;
 
 
 int main(int argc, char** argv) {
@@ -34,7 +35,7 @@ int main(int argc, char** argv) {
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
-		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1] = 0,1,2,3,4\n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
@@ -53,6 +54,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	double current		= 0;
 	int eventnumber = 0;
+	int runnumber = 0;
 	double weight		= 0;
 	//	MC info:
 	int genMult		= 0;
@@ -69,7 +71,7 @@ int main(int argc, char** argv) {
 	outTree->Branch("livetime"	,&livetime		);
 	outTree->Branch("starttime"	,&starttime		);
 	outTree->Branch("current"	,&current		);
-	outTree->Branch("eventnumber",&eventnumber);
+	outTree->Branch("eventnumber"	,&eventnumber		);
 	outTree->Branch("weight"	,&weight		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
@@ -91,6 +93,9 @@ int main(int argc, char** argv) {
 	// Load the DC fiducial class for electrons;
 	DCFiducial DCfid_electrons;
 
+	// Load the QADB
+	QADB * qa = new QADB();
+
 	// Load input file
 	for( int i = 4 ; i < argc ; i++ ){
 
@@ -102,6 +107,7 @@ int main(int argc, char** argv) {
 			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
 			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
+			if( PERIOD == 4 ) Ebeam = 2.07; 
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -154,6 +160,7 @@ int main(int argc, char** argv) {
 			starttime 	= 0;
 			weight		= 1;
 			eventnumber = 0;
+			runnumber = 0;
 			eHit.Clear();
 			// MC
 			genMult 	= 0;
@@ -163,6 +170,7 @@ int main(int argc, char** argv) {
 				//Clear output smear branches
 				eHit_smeared.Clear();
 			}
+
 
 			// Count events
 			if(event_counter%1000000==0) cout << "event: " << event_counter << endl;
@@ -186,6 +194,12 @@ int main(int argc, char** argv) {
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
+			runnumber = run_config.getInt( 0 , 0 );
+			if( runnumber == 0 ) continue; // skip empty header events
+			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
+
+			// Do QADB cut
+			if( MC_DATA_OPT == 1 && !qa->Golden(runnumber,eventnumber) ) continue;
 
 			//from first event get RUN::config torus Setting
 		 		// inbending = negative torussetting, outbending = torusseting
@@ -261,14 +275,28 @@ int main(int argc, char** argv) {
 				saveMC[n] = &mcPart[n];
 			}
 
+			// Do cuts to trim out problematic regions
+			bool accept_event = false;
+			if( MC_DATA_OPT == 0 ) accept_event = electron_fiducials(PERIOD , &eHit_smeared	);
+			if( MC_DATA_OPT == 1 ) accept_event = electron_fiducials(PERIOD , &eHit		);
+			//if( accept_event == false ) continue;
+		
+			// Accumulate charge for event
+			qa->AccumulateCharge();
 			outTree->Fill();
 
 
 		} // end loop over events
+		cout << "Charge analyzed in file: " << argv[i] << " " << qa->GetAccumulatedCharge() << " [nC]\n";
 	}// end loop over files
+	
+
+	TVector3 charged_analyzed;
+	charged_analyzed.SetXYZ( qa->GetAccumulatedCharge() , 0 , 0 );
 
 	outFile->cd();
 	outTree->Write();
+	charged_analyzed.Write("charge_analyzed");
 	outFile->Close();
 
 	return 0;

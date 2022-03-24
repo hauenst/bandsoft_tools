@@ -30,6 +30,7 @@
 #include "bandreco.h"
 
 using namespace std;
+using namespace QA;
 
 
 int main(int argc, char** argv) {
@@ -38,7 +39,7 @@ int main(int argc, char** argv) {
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Peroid] [load shifts] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[MC,DATA, MC generated info for each event] = 0, 1, 2 \n";
-		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER] = 0,1,2,3\n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1] = 0,1,2,3,4\n";
 		cerr << "\t\t[load shifts N,Y] = 0, 1 \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
@@ -62,6 +63,7 @@ int main(int argc, char** argv) {
 	double starttime	= 0;
 	double current		= 0;
 	int eventnumber = 0;
+	int runnumber = 0;
 	bool goodneutron = false;
 	int nleadindex = -1;
 	double weight		= 0;
@@ -123,6 +125,8 @@ int main(int argc, char** argv) {
 	// Load the DC fiducial class for electrons;
 	DCFiducial DCfid_electrons;
 
+	// Load the QADB
+	QADB * qa = new QADB();
 
 	// Load input file
 	for( int i = 5 ; i < argc ; i++ ){
@@ -134,6 +138,7 @@ int main(int argc, char** argv) {
 			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
 			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
+			if( PERIOD == 4 ) Ebeam = 2.07; 
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -191,6 +196,7 @@ int main(int argc, char** argv) {
 			livetime	= 0;
 			starttime 	= 0;
 			eventnumber = 0;
+			runnumber = 0;
 			// Neutron
 			nMult		= 0;
 			passed		= 0;
@@ -266,6 +272,11 @@ int main(int argc, char** argv) {
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
+				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
+					period = 4;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
 				else if( Runno == 11 ){
 					// already set the beam energy for MC runs and the period is the user input period
 					period = PERIOD;
@@ -291,6 +302,12 @@ int main(int argc, char** argv) {
 
 			//Get Event number from RUN::config
 			eventnumber = run_config.getInt( 1 , 0 );
+			runnumber = run_config.getInt( 0 , 0 );
+			if( runnumber == 0 ) continue; // skip empty header events
+			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
+
+			// Do QADB cut
+			if( !qa->Golden(runnumber,eventnumber) ) continue;
 
 			//from first event get RUN::config torus Setting
 		 	// inbending = negative torussetting, outbending = torusseting
@@ -426,6 +443,7 @@ int main(int argc, char** argv) {
 
 			// Fill tree based on d(e,e'n)X for data
 			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
+				qa->AccumulateCharge();
 				outTree->Fill();
 			} // else fill tree on d(e,e')nX for MC
 			else if( MC_DATA_OPT == 0 ||  MC_DATA_OPT == 2 ){
@@ -435,10 +453,15 @@ int main(int argc, char** argv) {
 
 
 		} // end loop over events
+		cout << "Charge analyzed in file: " << argv[i] << " " << qa->GetAccumulatedCharge() << " [nC]\n";
 	}// end loop over files
+
+	TVector3 charged_analyzed;
+	charged_analyzed.SetXYZ( qa->GetAccumulatedCharge() , 0 , 0 );
 
 	outFile->cd();
 	outTree->Write();
+	charged_analyzed.Write("charge_analyzed");
 	outFile->Close();
 
 	return 0;

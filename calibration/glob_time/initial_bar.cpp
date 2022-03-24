@@ -52,15 +52,19 @@ int main(int argc, char ** argv){
 				if( TDCorFADC == 0 ){
 					if( layer == 5 )
 						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,240,320);
+						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
 					else{
 						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,260,300);
+						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-10,30);
 					}
 				}
 				else{
 					if( layer == 5 )
 						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,0,80);
+						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
 					else{
 						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,20,60);
+						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-10,30);
 					}
 
 				}
@@ -128,6 +132,7 @@ int main(int argc, char ** argv){
 			int layer 	= this_photon->getLayer();
 			int component 	= this_photon->getComponent();
 
+
 			ToF_spec[sector-1][layer-1][component-1]->Fill(tof);
 		} // end loop over events
 
@@ -173,7 +178,7 @@ int main(int argc, char ** argv){
 					}
 					background_lvl /= 10;
 					
-					double edge_height = background_lvl*2;
+					double edge_height = background_lvl*5;
 					double edge_pos = ToF_spec[sector][layer][component]->GetXaxis()->GetBinCenter( ToF_spec[sector][layer][component]->FindFirstBinAbove(edge_height) );
 					double max = ToF_spec[sector][layer][component]->GetMaximum();
 					TLine * line = new TLine(edge_pos,0,edge_pos,max);
