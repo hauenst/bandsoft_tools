@@ -29,8 +29,16 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			//cout << "i2 information: \n";
 			//checkAgainst.Print();
 			//cout << "\n";
+			
+			int layerDiff = 1;
+			if( checkMe.getLayer() == 4 && 
+				( (checkMe.getSector() == 3 || checkMe.getSector()==4) && checkMe.getComponent() == 6) 	||
+				( checkMe.getSector() == 5 ) 								){
+				// there is no layer 5 to block it, only layer 6
+				layerDiff = 2;
+			}
 
-			if( checkAgainst.getLayer() - checkMe.getLayer() != 1 ) continue; 
+			if( checkAgainst.getLayer() - checkMe.getLayer() != layerDiff ) continue; 
 			// this means i2 is not DIRECTLY in front of i1 
 
 			// if checkAgainst is a VETO, then we have some special rules:
@@ -186,7 +194,10 @@ void getMcInfo( hipo::bank gen_particles , hipo::bank gen_info , genpart mcParts
 	// Grab the beam energy for this generated file:
 	double file_Ebeam = gen_info.getFloat(6,0);
 	if( file_Ebeam == 0 ) return; // don't do anything if there is no event information
-	if( fabs(Ebeam - file_Ebeam)>0.001 && file_Ebeam != -99 ) 
+	if( fabs(file_Ebeam- 4.2)<0.01 && Ebeam == 4.247 ){
+		file_Ebeam = Ebeam;
+	}
+	else if( fabs(Ebeam - file_Ebeam)>0.001 && file_Ebeam != -99 ) 
 		std::cerr << "---WARNING-- getMcInfo shows different beam energy than the expected period energy!\n";
 	if( file_Ebeam > 0 ){
 		Ebeam = file_Ebeam;
