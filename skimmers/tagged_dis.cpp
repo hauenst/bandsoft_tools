@@ -307,7 +307,9 @@ int main(int argc, char** argv) {
 			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
 
 			// Do QADB cut
-			if( !qa->Golden(runnumber,eventnumber) ) continue;
+			if(MC_DATA_OPT == 1) {
+				if( !qa->Golden(runnumber,eventnumber) ) continue;
+			}
 
 			//from first event get RUN::config torus Setting
 		 	// inbending = negative torussetting, outbending = torusseting
