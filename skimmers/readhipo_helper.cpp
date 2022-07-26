@@ -30,7 +30,21 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			//checkAgainst.Print();
 			//cout << "\n";
 
-			if( checkAgainst.getLayer() - checkMe.getLayer() != 1 ) continue; 
+			// Get sector, layer, component of hit in question
+			int myLayer = checkMe.getLayer();
+			int mySector = checkMe.getSector();
+			int myComponent = checkMe.getComponent();
+
+			// For most bars, the adjacent downstream bar has a layer index difference of 1
+			int layerDiff = 1;
+		
+			// Sector 5 and the bottom component of sectors 3 & 4 do not have a fifth scintillator layer
+			// Therefore the veto (layer 6) is adjacent to layer 4, and the layer index difference is 2 
+			if(myLayer == 4 && ( ( (mySector == 3 || mySector == 4) && myComponent == 6) || mySector == 5) ) {
+				layerDiff = 2;
+			} 
+				
+			if( checkAgainst.getLayer() - myLayer != layerDiff ) continue; 
 			// this means i2 is not DIRECTLY in front of i1 
 
 			// if checkAgainst is a VETO, then we have some special rules:
@@ -790,3 +804,4 @@ bool electron_fiducials( const int period , clashit * const eHit ){
 
 	return true;
 }
+
