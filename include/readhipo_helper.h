@@ -46,6 +46,5 @@ void getParticleInfo( hipo::bank claspart, particles part[maxParticles], hipo::b
 void smearRGA(TVector3 &vpar);
 void recalculate_clashit_kinematics(clashit &input_ehit, double Ebeam, TVector3 &smeared_electron);
 bool electron_fiducials( const int period , clashit * const eHit );
-bool pointsToBand(double theta,double phi,double z_m);
 
 #endif
