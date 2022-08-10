@@ -30,14 +30,6 @@ bool goodNeutronEvent(bandhit hits[maxNeutrons], int nMult, int& leadindex, int 
 			//checkAgainst.Print();
 			//cout << "\n";
 			
-			int layerDiff = 1;
-			if( checkMe.getLayer() == 4 && 
-				( (checkMe.getSector() == 3 || checkMe.getSector()==4) && checkMe.getComponent() == 6) 	||
-				( checkMe.getSector() == 5 ) 								){
-				// there is no layer 5 to block it, only layer 6
-				layerDiff = 2;
-			}
-
 			// Get sector, layer, component of hit in question
 			int myLayer = checkMe.getLayer();
 			int mySector = checkMe.getSector();
