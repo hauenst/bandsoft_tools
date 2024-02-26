@@ -21,7 +21,7 @@ install( TARGETS neutrons
 #################################################################################################
 add_executable(electrons electrons.cpp readhipo_helper.cpp )
 target_link_libraries(electrons ${ROOT_LIBRARIES} Hipo4 Banks4
-				clashit_tree bandhit_tree taghit_tree genpart_tree
+				clashit_tree bandhit_tree taghit_tree genpart_tree particles_tree
 				e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS electrons
@@ -42,10 +42,30 @@ install( TARGETS electrons
 #################################################################################################
 add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
 target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4
-				clashit_tree bandhit_tree taghit_tree genpart_tree
+				clashit_tree bandhit_tree taghit_tree genpart_tree particles_tree
 				e_pid DC_fiducial
 				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
 install( TARGETS tagged_dis
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+#################################################################################################
+
+#################################################################################################
+add_executable(tagged_dis_acceptance tagged_dis_acceptance.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
+target_link_libraries(tagged_dis_acceptance ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree
+				e_pid DC_fiducial
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS tagged_dis_acceptance
+		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
+#################################################################################################
+
+#################################################################################################
+add_executable(tagged_qe tagged_qe.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
+target_link_libraries(tagged_qe ${ROOT_LIBRARIES} Hipo4 Banks4
+				clashit_tree bandhit_tree taghit_tree genpart_tree particles_tree
+				e_pid DC_fiducial
+				-lmysqlclient -lpthread -lz -lm -ldl -lssl -lcrypto )
+install( TARGETS tagged_qe
 		DESTINATION ${CMAKE_SOURCE_DIR}/bin )
 #################################################################################################
 
@@ -61,7 +81,7 @@ install( TARGETS tagged_dis
 
 
 #################################################################################################
-add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ../../bandreco/bandreco.cpp )
+add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
 target_link_libraries(ncalibration_newbandclass ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree
 				e_pid DC_fiducial
