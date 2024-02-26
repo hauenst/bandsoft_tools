@@ -86,6 +86,10 @@ int main(int argc, char** argv) {
 	//	Smeared Tagged info:
 	TClonesArray * tags_smeared = new TClonesArray("taghit");
 	TClonesArray &saveTags_smeared = *tags_smeared;
+	// 	Charged particles
+	int charged_mult        = 0;
+        TClonesArray * charged_particles = new TClonesArray("particles");
+        TClonesArray &saveCharged_particles = *charged_particles;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -115,7 +119,9 @@ int main(int argc, char** argv) {
 		//	Smeared Tagged branches:
 		outTree->Branch("tag_smeared"		,&tags_smeared			);
 	}
-
+	//	Charged particle branches:
+	outTree->Branch("charged_mult"		,&charged_mult		);
+	outTree->Branch("charged_particles"	,&charged_particles	);
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -177,7 +183,7 @@ int main(int argc, char** argv) {
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		BParticle	particles		(factory.getSchema("REC::Particle"	));
+		BParticle	clas_particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
@@ -203,23 +209,31 @@ int main(int argc, char** argv) {
 			nleadindex = -1;
 			goodneutron = false;
 			bandhit nHit[maxNeutrons];
-			nHits->Clear();
+			nHits->Clear("C");
+			saveHit.Clear("C");
 			// Tag
 			taghit tag[maxNeutrons];
 			taghit tag_smeared[maxNeutrons];
-			tags->Clear();
+			tags->Clear("C");
+			saveTags.Clear("C");
 			// Electron
 			eHit.Clear();
 			// MC
 			genMult = 0;
 			weight = 1;
 			genpart mcPart[maxGens];
-			mcParts->Clear();
+			mcParts->Clear("C");
+			saveMC.Clear("C");
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, clear smeared and input branches
 				//Clear output smear branches
 				eHit_smeared.Clear();
 				tags_smeared->Clear();
 			}
+
+			// Charged particles
+			particles charged_particle[maxParticles];
+			charged_mult	 = 0;
+			charged_particles->Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -237,7 +251,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
 			// electron struct
-			readevent.getStructure(particles);
+			readevent.getStructure(clas_particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
@@ -343,7 +357,7 @@ int main(int argc, char** argv) {
 
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
@@ -394,7 +408,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -413,6 +427,15 @@ int main(int argc, char** argv) {
 					saveTags_smeared[n] = &tag_smeared[n];
 					}
 			}
+			
+			 // Grab the information for other charged particle:
+                        getParticleInfo( clas_particles, charged_particle, scintillator, charged_mult );
+
+                        // Store the charged particles in TClonesArray
+                        for( int n = 0 ; n < charged_mult ; n++ ){
+                                new(saveCharged_particles[n]) particles;
+                                saveCharged_particles[n] = &charged_particle[n];
+                        }
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
@@ -442,7 +465,7 @@ int main(int argc, char** argv) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
 				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, passed );
 			}
-
+			
 			// Fill tree based on d(e,e'n)X for data
 			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
 				qa->AccumulateCharge();
