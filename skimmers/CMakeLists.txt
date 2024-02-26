@@ -8,7 +8,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 #################################################################################################
-add_executable(neutrons neutrons.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp  )
+add_executable(neutrons neutrons.cpp readhipo_helper.cpp ${CMAKE_SOURCE_DIR}/bandreco/bandreco.cpp  )
 target_link_libraries(neutrons ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree
 				e_pid DC_fiducial
@@ -30,7 +30,7 @@ install( TARGETS electrons
 
 
 #################################################################################################
-#add_executable(tagged_dis_newclass tagged_dis_newclass.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp)
+#add_executable(tagged_dis_newclass tagged_dis_newclass.cpp readhipo_helper.cpp ${CMAKE_SOURCE_DIR}/bandreco/bandreco.cpp)
 #target_link_libraries(tagged_dis_newclass ${ROOT_LIBRARIES} Hipo4 Banks4 
 #				clashit_tree bandhit_tree taghit_tree genpart_tree
 #				e_pid DC_fiducial
@@ -40,7 +40,7 @@ install( TARGETS electrons
 #################################################################################################
 
 #################################################################################################
-add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
+add_executable(tagged_dis tagged_dis.cpp readhipo_helper.cpp ${CMAKE_SOURCE_DIR}/bandreco/bandreco.cpp )
 target_link_libraries(tagged_dis ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree particles_tree
 				e_pid DC_fiducial
@@ -81,7 +81,7 @@ install( TARGETS tagged_qe
 
 
 #################################################################################################
-add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
+add_executable(ncalibration_newbandclass ncalibration_newbandclass.cpp readhipo_helper.cpp ${CMAKE_SOURCE_DIR}/bandreco/bandreco.cpp )
 target_link_libraries(ncalibration_newbandclass ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree
 				e_pid DC_fiducial
@@ -92,7 +92,7 @@ install( TARGETS ncalibration_newbandclass
 
 
 #################################################################################################
-add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp ../bandreco/bandreco.cpp )
+add_executable(quasielastic quasielastic.cpp readhipo_helper.cpp ${CMAKE_SOURCE_DIR}/bandreco/bandreco.cpp )
 target_link_libraries(quasielastic ${ROOT_LIBRARIES} Hipo4 Banks4
 				clashit_tree bandhit_tree taghit_tree genpart_tree particles_tree
 				e_pid DC_fiducial
