@@ -3,6 +3,8 @@ bool pointsToBand(double theta,double phi,double z_m){
   double inset = 5;//inset distance from edges of BAND in [cm]
   double z = z_m;
 
+  if(theta < TMath::Pi()/2. ) return false;
+
   // Numbers taken from band/src/main/java/org/jlab/rec/band/constants/Parameters.java  
   double thickness  = 7.3;                                // thickness of each bar (cm)
   double layerGap[] = {7.94, 7.62, 7.94, 7.62, 7.3};      // gap between center of neig\
