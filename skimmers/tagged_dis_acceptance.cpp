@@ -32,6 +32,7 @@
 using namespace std;
 using namespace QA;
 
+void calc_tag_kinematics(TVector3 fBeam, TVector3 fElectron, TVector3 fNeutron, clashit &feHit, taghit &ftag);
 
 int main(int argc, char** argv) {
 	// check number of arguments
@@ -65,6 +66,7 @@ int main(int argc, char** argv) {
 	int eventnumber = 0;
 	int runnumber = 0;
 	bool goodneutron = false;
+	bool goodelectron = false;
 	int nleadindex = -1;
 	double weight		= 0;
 	//	MC info:
@@ -78,18 +80,16 @@ int main(int argc, char** argv) {
 	TClonesArray &saveHit = *nHits;
 	//	Electron info:
 	clashit eHit;
+	clashit eHitMC;
 	//	Tagged info:
 	TClonesArray * tags = new TClonesArray("taghit");
 	TClonesArray &saveTags = *tags;
+	taghit tagMC;
 	//Smeared info
 	clashit eHit_smeared;
 	//	Smeared Tagged info:
 	TClonesArray * tags_smeared = new TClonesArray("taghit");
 	TClonesArray &saveTags_smeared = *tags_smeared;
-	// 	Charged particles
-	int charged_mult        = 0;
-        TClonesArray * charged_particles = new TClonesArray("particles");
-        TClonesArray &saveCharged_particles = *charged_particles;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -105,45 +105,24 @@ int main(int argc, char** argv) {
 	outTree->Branch("nHits"		,&nHits			);
 	//Branches to store if good Neutron event and leadindex
 	outTree->Branch("goodneutron"		,&goodneutron	);
-	outTree->Branch("nleadindex"		,&nleadindex			);
+	outTree->Branch("nleadindex"		,&nleadindex	);
 	//	Electron branches:
+	outTree->Branch("goodelectron"	,&goodelectron		);
 	outTree->Branch("eHit"		,&eHit			);
+	outTree->Branch("eHitMC"	,&eHitMC		);
 	//	Tagged branches:
 	outTree->Branch("tag"		,&tags			);
+	outTree->Branch("tagMC"		,&tagMC			);
 	//	MC branches:
 	outTree->Branch("genMult"	,&genMult		);
 	outTree->Branch("mcParts"	,&mcParts		);
 	if( MC_DATA_OPT == 0 ){ // if this is a MC file, define smeared branches
-		//	Smeared Electron branches:
-		outTree->Branch("eHit_smeared"		,&eHit_smeared			);
-		//	Smeared Tagged branches:
-		outTree->Branch("tag_smeared"		,&tags_smeared			);
+	//	Smeared Electron branches:
+	outTree->Branch("eHit_smeared"		,&eHit_smeared			);
+	//	Smeared Tagged branches:
+	outTree->Branch("tag_smeared"		,&tags_smeared			);
 	}
-	//	Charged particle branches:
-	outTree->Branch("charged_mult"		,&charged_mult		);
-	outTree->Branch("charged_particles"	,&charged_particles	);
-	//	Central detector branches
-	const int MAX_CD_HIT = 100;
-	int ctofMult;
-	double ctofHitE[MAX_CD_HIT];
-	double ctofHitX[MAX_CD_HIT];
-	double ctofHitY[MAX_CD_HIT];
-	double ctofHitZ[MAX_CD_HIT];
-	int cndMult;
-	double cndHitE[MAX_CD_HIT];
-	double cndHitX[MAX_CD_HIT];
-	double cndHitY[MAX_CD_HIT];
-	double cndHitZ[MAX_CD_HIT];
-	outTree->Branch("ctofMult",	&ctofMult,	"ctofMult/I");
-	outTree->Branch("ctofHitE",	&ctofHitE,	"ctofHitE[ctofMult]/D");
-	outTree->Branch("ctofHitX",	&ctofHitX,	"ctofHitX[ctofMult]/D");
-	outTree->Branch("ctofHitY",	&ctofHitY,	"ctofHitY[ctofMult]/D");
-	outTree->Branch("ctofHitZ",	&ctofHitZ,	"ctofHitZ[ctofMult]/D");
-	outTree->Branch("cndMult",	&cndMult,	"cndMult/I");
-	outTree->Branch("cndHitE",	&cndHitE,	"cndHitE[cndMult]/D");
-	outTree->Branch("cndHitX",	&cndHitX,	"cndHitX[cndMult]/D");
-	outTree->Branch("cndHitY",	&cndHitY,	"cndHitY[cndMult]/D");
-	outTree->Branch("cndHitZ",	&cndHitZ,	"cndHitZ[cndMult]/D");
+
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -189,10 +168,9 @@ int main(int argc, char** argv) {
 		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
-//		const char* inputFile = argv[i];
-//		std::cout << inputFile << std::endl;
+		TString inputFile = argv[i];
 		hipo::reader reader;
-		reader.open(argv[i]);
+		reader.open(inputFile);
 		hipo::dictionary  factory;
 		reader.readDictionary(factory);
 		hipo::bank	event_info		(factory.getSchema("REC::Event"		));
@@ -206,13 +184,12 @@ int main(int argc, char** argv) {
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		BParticle	clas_particles		(factory.getSchema("REC::Particle"	));
+		BParticle	particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
-		hipo::bank	ctof_hits		(factory.getSchema("CTOF::hits"		));
-		hipo::bank	cnd_hits		(factory.getSchema("CND::hits"		));
+
 
 		// Loop over all events in file
 		int event_counter = 0;
@@ -232,6 +209,7 @@ int main(int argc, char** argv) {
 			passed		= 0;
 			nleadindex = -1;
 			goodneutron = false;
+			goodelectron = false;
 			bandhit nHit[maxNeutrons];
 			nHits->Clear("C");
 			saveHit.Clear("C");
@@ -253,12 +231,7 @@ int main(int argc, char** argv) {
 				eHit_smeared.Clear();
 				tags_smeared->Clear();
 			}
-
-			// Charged particles
-			particles charged_particle[maxParticles];
-			charged_mult	 = 0;
-			charged_particles->Clear();
-
+	
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
 			//if( event_counter > 30 ) break;
@@ -275,7 +248,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
 			// electron struct
-			readevent.getStructure(clas_particles);
+			readevent.getStructure(particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
@@ -284,10 +257,7 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
-			// central detector struct
-			readevent.getStructure(ctof_hits);
-			readevent.getStructure(cnd_hits);
-			
+
 			if( event_counter == 1 ){
 				//cout << Runno << "\n";
 				int period = -1;
@@ -356,6 +326,7 @@ int main(int argc, char** argv) {
 		 	// inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
 
+
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 				// For MC, the above Ebeam has already been set, but we will reset it based on 
@@ -374,20 +345,22 @@ int main(int argc, char** argv) {
 				continue;
 			}
 
-				//Till the end of the for loop is only executed for MC_DATA_OPT = 0 and 1
+			TVector3 beam = TVector3(0., 0., Ebeam);
+			TVector3 electron;
+			TVector3 neutron;
+			electron.SetMagThetaPhi(mcPart[0].getMomentum(), mcPart[0].getTheta(), mcPart[0].getPhi());
+			neutron.SetMagThetaPhi(mcPart[1].getMomentum(), mcPart[1].getTheta(), mcPart[1].getPhi());
+
+			calc_tag_kinematics(beam, electron, neutron, eHitMC, tagMC);
+
+			//Till the end of the for loop is only executed for MC_DATA_OPT = 0 and 1
 			// Get integrated charge, livetime and start-time from REC::Event
-			if( event_info.getRows() == 0 ) continue;
-			getEventInfo( event_info, gated_charge, livetime, starttime );
-
-
-
+			if( event_info.getRows() > 0 ) {
+				getEventInfo( event_info, gated_charge, livetime, starttime );
+			}
 
 			// Grab the electron information:
-			getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
-
-			//check electron PID in EC with Andrew's class
-			if( !(ePID.isElectron(&eHit)) ) continue;
-
+			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 
 			//bending field of torus for DC fiducial class ( 1 = inbeding, 0 = outbending	)
 			int bending;
@@ -401,24 +374,35 @@ int main(int argc, char** argv) {
 			else {
 				cout << "WARNING: Torus setting from RUN::config is " << torussetting << ". This is not defined for bending value for DC fiducials. Please check " << endl;
 			}
+			
+			/*
 			if (eHit.getDC_sector() == -999 || eHit.getDC_sector() == -1  ) {
 				cout << "Skimmer Error: DC sector is  " << eHit.getDC_sector() << " . Skipping event "<< event_counter << endl;
 				eHit.Print();
 				continue;
 			}
+			*/
+
+		
+			bool electron_PID = ePID.isElectron(&eHit);
+			
+			bool DC_fid_1 = false;
+			bool DC_fid_2 = false;
+			bool DC_fid_3 = false;
 
 			//checking DC Fiducials
-			//Region 1, true = pass DC Region 1
-			bool DC_fid_1  = DCfid_electrons.DC_e_fid(eHit.getDC_x1(),eHit.getDC_y1(),eHit.getDC_sector(), 1, bending);
-			//checking DC Fiducials
-			//Region 2, true = pass DC Region 2
-			bool DC_fid_2  = DCfid_electrons.DC_e_fid(eHit.getDC_x2(),eHit.getDC_y2(),eHit.getDC_sector(), 2, bending);
-			//checking DC Fiducials
-			//Region 3, true = pass DC Region 3
-			bool DC_fid_3  = DCfid_electrons.DC_e_fid(eHit.getDC_x3(),eHit.getDC_y3(),eHit.getDC_sector(), 3, bending);
+			if(electron_PID) {
+				//Region 1, true = pass DC Region 1
+				DC_fid_1  = DCfid_electrons.DC_e_fid(eHit.getDC_x1(),eHit.getDC_y1(),eHit.getDC_sector(), 1, bending);
+				//checking DC Fiducials
+				//Region 2, true = pass DC Region 2
+				DC_fid_2  = DCfid_electrons.DC_e_fid(eHit.getDC_x2(),eHit.getDC_y2(),eHit.getDC_sector(), 2, bending);
+				//checking DC Fiducials
+				//Region 3, true = pass DC Region 3
+				DC_fid_3  = DCfid_electrons.DC_e_fid(eHit.getDC_x3(),eHit.getDC_y3(),eHit.getDC_sector(), 3, bending);
+			}
 
-			//check if any of the fiducials is false i.e. electron does not pass all DC fiducials
-			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
+			if(electron_PID && DC_fid_1 && DC_fid_2 && DC_fid_3) goodelectron = true;
 
 			// Grab the neutron information:
 				// Form the PMTs and Bars for BAND:
@@ -434,7 +418,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -452,31 +436,6 @@ int main(int argc, char** argv) {
 					new(saveTags_smeared[n]) taghit;
 					saveTags_smeared[n] = &tag_smeared[n];
 					}
-			}
-			
-			 // Grab the information for other charged particle:
-                        getParticleInfo( clas_particles, charged_particle, scintillator, charged_mult );
-
-                        // Store the charged particles in TClonesArray
-                        for( int n = 0 ; n < charged_mult ; n++ ){
-                                new(saveCharged_particles[n]) particles;
-                                saveCharged_particles[n] = &charged_particle[n];
-                        }
-
-			// Fill the CD branches
-			ctofMult = (int)ctof_hits.getRows();
-			for( int row = 0 ; row < ctofMult ; ++row ) {
-				ctofHitE[row]	= (double) ctof_hits.getFloat(6, row); 
-				ctofHitX[row]	= (double) ctof_hits.getFloat(10, row); 
-				ctofHitY[row]	= (double) ctof_hits.getFloat(11, row); 
-				ctofHitZ[row]	= (double) ctof_hits.getFloat(12, row); 
-			}
-			cndMult = (int)cnd_hits.getRows();
-			for( int row = 0 ; row < cndMult ; ++row ) {
-				cndHitE[row]	= (double) cnd_hits.getFloat(6, row); 
-				cndHitX[row]	= (double) cnd_hits.getFloat(10, row); 
-				cndHitY[row]	= (double) cnd_hits.getFloat(11, row); 
-				cndHitZ[row]	= (double) cnd_hits.getFloat(12, row); 
 			}
 
 			// Store the neutrons in TClonesArray
@@ -507,7 +466,7 @@ int main(int argc, char** argv) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
 				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, passed );
 			}
-			
+		
 			// Fill tree based on d(e,e'n)X for data
 			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
 				qa->AccumulateCharge();
@@ -533,3 +492,90 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
+
+
+void calc_tag_kinematics(TVector3 fBeam, TVector3 fElectron, TVector3 fNeutron, clashit &feHit, taghit &ftag) {
+		
+		TVector3 qVec = fBeam - fElectron;
+
+		feHit.setMomentum            (       fElectron.Mag()                                          );
+		feHit.setTheta               (       fElectron.Theta()                                        );
+		feHit.setPhi                 (       fElectron.Phi()                                          );
+
+		feHit.setQ                   (       qVec.Mag()                                              );
+		feHit.setThetaQ              (       qVec.Theta()                                            );
+		feHit.setPhiQ                (       qVec.Phi()                                              );
+
+		feHit.setOmega               (       fBeam.Mag() - sqrt( pow(fElectron.Mag(),2) + mE*mE )           );
+		feHit.setQ2                  (       qVec.Mag()*qVec.Mag() - pow(feHit.getOmega(),2)      );
+		feHit.setXb                  (       feHit.getQ2()/(2.*mP*feHit.getOmega())            );
+		feHit.setW2                  (       mP*mP - feHit.getQ2() + 2.*feHit.getOmega()*mP    );
+
+
+
+		TVector3 norm_scatter = qVec.Cross( fBeam );
+                norm_scatter    = norm_scatter.Unit();
+
+                TVector3 norm_reaction = qVec.Cross( fNeutron );
+                norm_reaction   = norm_reaction.Unit();
+
+                double phi_nq           = norm_scatter.Angle( norm_reaction );
+                double theta_nq         = fNeutron.Angle( qVec );
+                double CosTheta_nq      = cos(theta_nq);
+
+                TVector3 direction = norm_scatter.Cross(norm_reaction);
+                if( direction.Z() > 0 ){ // this means the phi_rq should be between 0 and pi
+                }
+                else if( direction.Z() < 0 ){ // this means the phi_rq should be between -pi and 0
+                        phi_nq *= (-1);
+                }
+
+                double p_n = fNeutron.Mag();
+                double E_n      = sqrt( mN*mN + p_n*p_n );
+                double W_primeSq = mD*mD - feHit.getQ2() + mN*mN + 2.*mD*(feHit.getOmega()-E_n) - 2.*feHit.getOmega()*E_n + 2.*feHit.getQ()*p_n*cos(theta_nq);
+                double Wp = sqrt(W_primeSq);
+		double As = (E_n - p_n*CosTheta_nq)/mN;
+
+		TVector3 vi = -fNeutron;
+		double Ei = mD - E_n;
+
+		double Xp;
+		double Xp_Bj;
+		double Xp_WP;
+		double Xp_PRC;
+
+		Xp_Bj = feHit.getXb()/(2.-As);
+		Xp_WP = feHit.getQ2()/(W_primeSq - mN*mN + feHit.getQ2());
+		double virtuality = (Ei*Ei - fNeutron.Mag2() - mN*mN)/(mN*mN);
+//		 	double virtuality = (sq(Ei) - vi.Mag2() - sq(mN))/sq(mN);
+		double ps_plus = mD/2.*As;
+		double p_plus = mD - ps_plus;
+		double q_plus = feHit.getOmega() - qVec.Mag();
+		double tP = virtuality*mN*mN;
+		Xp_PRC = (feHit.getQ2() - q_plus/p_plus*tP)/(W_primeSq - mN*mN + feHit.getQ2() - q_plus/p_plus*tP);
+//			xP = (QSq - q_plus/p_plus*tP)/(WSq - sq(mN) + QSq - q_plus/p_plus*tP);
+		Xp = feHit.getQ2()/(2.*(Ei*feHit.getOmega() - vi.Dot(qVec)));
+
+                TVector3 Pt;
+                TVector3 pN_par_q = fNeutron.Dot(qVec) / (qVec.Mag2()) * qVec;
+                Pt = fNeutron - pN_par_q;
+
+                ftag.setMomentumE   (fElectron           );
+                ftag.setMomentumN   (fNeutron           );
+                ftag.setMomentumQ   (qVec           );
+                ftag.setMomentumB   (fBeam        );
+
+                ftag.setPhiNQ       (phi_nq         );
+                ftag.setThetaNQ     (theta_nq       );
+                ftag.setWp          (Wp             );
+	        ftag.setXp          (Xp             );
+                ftag.setXp_WP       (Xp_WP          );
+                ftag.setXp_Bj       (Xp_Bj          );
+                ftag.setXp_PRC      (Xp_PRC         );
+		ftag.setAs          (As             );
+                ftag.setPt          (Pt             );
+
+
+}
+
+
