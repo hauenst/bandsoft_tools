@@ -122,6 +122,28 @@ int main(int argc, char** argv) {
 	//	Charged particle branches:
 	outTree->Branch("charged_mult"		,&charged_mult		);
 	outTree->Branch("charged_particles"	,&charged_particles	);
+	//	Central detector branches
+	const int MAX_CD_HIT = 100;
+	int ctofMult;
+	double ctofHitE[MAX_CD_HIT];
+	double ctofHitX[MAX_CD_HIT];
+	double ctofHitY[MAX_CD_HIT];
+	double ctofHitZ[MAX_CD_HIT];
+	int cndMult;
+	double cndHitE[MAX_CD_HIT];
+	double cndHitX[MAX_CD_HIT];
+	double cndHitY[MAX_CD_HIT];
+	double cndHitZ[MAX_CD_HIT];
+	outTree->Branch("ctofMult",	&ctofMult,	"ctofMult/I");
+	outTree->Branch("ctofHitE",	&ctofHitE,	"ctofHitE[ctofMult]/D");
+	outTree->Branch("ctofHitX",	&ctofHitX,	"ctofHitX[ctofMult]/D");
+	outTree->Branch("ctofHitY",	&ctofHitY,	"ctofHitY[ctofMult]/D");
+	outTree->Branch("ctofHitZ",	&ctofHitZ,	"ctofHitZ[ctofMult]/D");
+	outTree->Branch("cndMult",	&cndMult,	"cndMult/I");
+	outTree->Branch("cndHitE",	&cndHitE,	"cndHitE[cndMult]/D");
+	outTree->Branch("cndHitX",	&cndHitX,	"cndHitX[cndMult]/D");
+	outTree->Branch("cndHitY",	&cndHitY,	"cndHitY[cndMult]/D");
+	outTree->Branch("cndHitZ",	&cndHitZ,	"cndHitZ[cndMult]/D");
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -167,9 +189,10 @@ int main(int argc, char** argv) {
 		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
-		TString inputFile = argv[i];
+//		const char* inputFile = argv[i];
+//		std::cout << inputFile << std::endl;
 		hipo::reader reader;
-		reader.open(inputFile);
+		reader.open(argv[i]);
 		hipo::dictionary  factory;
 		reader.readDictionary(factory);
 		hipo::bank	event_info		(factory.getSchema("REC::Event"		));
@@ -188,7 +211,8 @@ int main(int argc, char** argv) {
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
-
+		hipo::bank	ctof_hits		(factory.getSchema("CTOF::hits"		));
+		hipo::bank	cnd_hits		(factory.getSchema("CND::hits"		));
 
 		// Loop over all events in file
 		int event_counter = 0;
@@ -260,7 +284,10 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
-
+			// central detector struct
+			readevent.getStructure(ctof_hits);
+			readevent.getStructure(cnd_hits);
+			
 			if( event_counter == 1 ){
 				//cout << Runno << "\n";
 				int period = -1;
@@ -328,7 +355,6 @@ int main(int argc, char** argv) {
 			//from first event get RUN::config torus Setting
 		 	// inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
-
 
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
@@ -436,6 +462,22 @@ int main(int argc, char** argv) {
                                 new(saveCharged_particles[n]) particles;
                                 saveCharged_particles[n] = &charged_particle[n];
                         }
+
+			// Fill the CD branches
+			ctofMult = (int)ctof_hits.getRows();
+			for( int row = 0 ; row < ctofMult ; ++row ) {
+				ctofHitE[row]	= (double) ctof_hits.getFloat(6, row); 
+				ctofHitX[row]	= (double) ctof_hits.getFloat(10, row); 
+				ctofHitY[row]	= (double) ctof_hits.getFloat(11, row); 
+				ctofHitZ[row]	= (double) ctof_hits.getFloat(12, row); 
+			}
+			cndMult = (int)cnd_hits.getRows();
+			for( int row = 0 ; row < cndMult ; ++row ) {
+				cndHitE[row]	= (double) cnd_hits.getFloat(6, row); 
+				cndHitX[row]	= (double) cnd_hits.getFloat(10, row); 
+				cndHitY[row]	= (double) cnd_hits.getFloat(11, row); 
+				cndHitZ[row]	= (double) cnd_hits.getFloat(12, row); 
+			}
 
 			// Store the neutrons in TClonesArray
 			for( int n = 0 ; n < nMult ; n++ ){
