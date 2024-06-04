@@ -310,8 +310,11 @@ void BANDReco::readGlobalOffset(){
 
 	if( !MONTECARLO && Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) tdc_path = path + "/global_offsets_tdc_ler.txt"; // LER shifts
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15565 && Runno <= 15700 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM tentative shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) tdc_path = path + "/global_offsets_tdc_ler.txt"; // LER shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15539 && Runno <= 15727 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM 2 GeV (tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15731 && Runno <= 15784 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM 4 GeV (tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15014 && Runno <= 15491 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM 6 GeV pt1 (tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15787 && Runno <= 15884 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM 6 GeV pt2 (tentative shifts)
 	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << tdc_path << "\n";
@@ -342,8 +345,11 @@ void BANDReco::readGlobalOffset(){
 
 	if( !MONTECARLO && Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) ftdc_path = path + "/global_offsets_fadc_ler.txt"; // LER shifts
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15565 && Runno <= 15700 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM tentative shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) ftdc_path = path + "/global_offsets_fadc_ler.txt"; // LER shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15539 && Runno <= 15727 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM 2 GeV (tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15731 && Runno <= 15784 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM 4 GeV(tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15014 && Runno <= 15491 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM 6 GeV pt1 (tentative shifts)
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15787 && Runno <= 15884 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM 6 GeV pt2 (tentative shifts)
 	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
 
 	cout << "reading file: " << ftdc_path << "\n";

@@ -175,29 +175,33 @@ int main(int argc, char** argv) {
 				BAND->setRunno(Runno);
 				//Load of shifts depending on run number
 				if (Runno > 6100 && Runno < 6400) { //Spring 19 data - 10.6 data
-					period = 0;
-					BAND->setPeriod(period);
+				  period = 0;
+				  BAND->setPeriod(period);
 				}
 				else if (Runno >= 6400 && Runno < 6800) { //Spring 19 data - 10.2 data
-					period = 1;
-					BAND->setPeriod(period);
+				  period = 1;
+				  BAND->setPeriod(period);
 				}
 				else if (Runno > 11320 && Runno < 11580) { //Spring 20 data - 10.4 data
-					period = 2;
-					BAND->setPeriod(period);
+				  period = 2;
+				  BAND->setPeriod(period);
 				}	
 				else if (Runno >= 11286 && Runno < 11304) { //LER runs
-					period = 3;
-					BAND->setPeriod(period);
+				  period = 3;
+				  BAND->setPeriod(period);
 				}
-				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
-					period = 4;
-					BAND->setPeriod(period);
+				else if (Runno >= 15534 && Runno < 15728) { //RGM 2.1 runs
+				  period = 4;
+				  BAND->setPeriod(period);
 				}
+                                else if ((Runno >=15015  && Runno <15491) || (Runno >=15732  && Runno <15885)  ) { //RGM 4+6gev runs                
+				  period = 5;
+				  BAND->setPeriod(period);
+                                }
 				else {
-					cout << "No bar by bar offsets loaded " << endl;
-					cout << "Check shift option when starting program. Exit " << endl;
-					exit(-1);
+				  cout << "No bar by bar offsets loaded " << endl;
+				  cout << "Check shift option when starting program. Exit " << endl;
+				  exit(-1);
 				}
 				if( period == -1 ){ cerr << "invalid period\n"; exit(-1); }
 				BAND->readTW();			// TW calibration values for each PMT

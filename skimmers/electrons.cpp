@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
 		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
-		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1] = 0,1,2,3,4\n";
+		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1, RGM 6.0] = 0,1,2,3,4,5\n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
@@ -108,6 +108,7 @@ int main(int argc, char** argv) {
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
 			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
 			if( PERIOD == 4 ) Ebeam = 2.07; 
+			if( PERIOD == 5 ) Ebeam = 5.98636;
 		}
 		else if( MC_DATA_OPT == 1){
 			int runNum = getRunNumber(argv[i]);
@@ -199,9 +200,11 @@ int main(int argc, char** argv) {
 			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
 
 			// Do QADB cut
-			if(MC_DATA_OPT == 1) {
+			/*if(MC_DATA_OPT == 1) {
 				if( !qa->Golden(runnumber,eventnumber) ) continue;
 			}
+			*/
+			//commenting out until qadb working for rgm
 
 			//from first event get RUN::config torus Setting
 		 		// inbending = negative torussetting, outbending = torusseting
