@@ -31,18 +31,19 @@ using namespace QA;
 
 int main(int argc, char** argv) {
 	// check number of arguments
-	if( argc < 5 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [inputFile] \n\n";
+	if( argc < 6 ){
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [Nskip] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[<MC,DATA> = <0, 1> \n";
 		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1, RGM 6.0] = 0,1,2,3,4,5\n";
+		cerr << "\t\t[Nskip (e.g. Nskip = 3 reads every third event)]\n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
 	}
 
 	int MC_DATA_OPT = atoi(argv[2]);
 	int PERIOD = atoi(argv[3]);
-
+	int NSKIP = atoi(argv[4]);
 	// Create output tree
 	TFile * outFile = new TFile(argv[1],"RECREATE");
 	TTree * outTree = new TTree("electrons","CLAS Electrons");
@@ -75,7 +76,10 @@ int main(int argc, char** argv) {
 	outTree->Branch("weight"	,&weight		);
 	//	Electron branches:
 	outTree->Branch("eHit"		,&eHit			);
-
+	// 	Charged particles
+	int charged_mult        = 0;
+        TClonesArray * charged_particles = new TClonesArray("particles");
+        TClonesArray &saveCharged_particles = *charged_particles;
 	//	MC branches:
 	outTree->Branch("genMult"	,&genMult		);
 	outTree->Branch("mcParts"	,&mcParts		);
@@ -83,6 +87,9 @@ int main(int argc, char** argv) {
 		//	Smeared Electron branches:
 		outTree->Branch("eHit_smeared"		,&eHit_smeared			);
 	}
+	//	Charged particle branches:
+	outTree->Branch("charged_mult"		,&charged_mult		);
+	outTree->Branch("charged_particles"	,&charged_particles	);
 
 
 	// Connect to the RCDB
@@ -97,7 +104,7 @@ int main(int argc, char** argv) {
 	QADB * qa = new QADB();
 
 	// Load input file
-	for( int i = 4 ; i < argc ; i++ ){
+	for( int i = 5 ; i < argc ; i++ ){
 
 		if( MC_DATA_OPT == 0){
 			int runNum = 11;
@@ -143,7 +150,7 @@ int main(int argc, char** argv) {
 		hipo::bank      DC_Traj                 (factory.getSchema("REC::Traj"          ));
 		hipo::bank	cherenkov		(factory.getSchema("REC::Cherenkov"	));
 		hipo::event 	readevent;
-		BParticle	particles		(factory.getSchema("REC::Particle"	));
+		BParticle	clas_particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
@@ -172,11 +179,17 @@ int main(int argc, char** argv) {
 				eHit_smeared.Clear();
 			}
 
+			// Charged particles
+			particles charged_particle[maxParticles];
+			charged_mult	 = 0;
+			charged_particles->Clear();
 
 			// Count events
 			if(event_counter%1000000==0) cout << "event: " << event_counter << endl;
 			//if( event_counter > 100000 ) break;
 			event_counter++;
+			// Only read every Nth event
+			if(!(event_counter%NSKIP == 0)) continue;
 
 			// Load data structure for this event:
 			reader.read(readevent);
@@ -186,7 +199,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
 			// electron struct
-			readevent.getStructure(particles);
+			readevent.getStructure(clas_particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
@@ -199,12 +212,11 @@ int main(int argc, char** argv) {
 			if( runnumber == 0 ) continue; // skip empty header events
 			if( runnumber != Runno ){ cerr << "Run number mistmatch! Exiting\n"; exit(-1); }
 
+
 			// Do QADB cut
-			/*if(MC_DATA_OPT == 1) {
+			if(MC_DATA_OPT == 1 && (PERIOD != 3 && PERIOD != 4 && PERIOD != 5)) {
 				if( !qa->Golden(runnumber,eventnumber) ) continue;
 			}
-			*/
-			//commenting out until qadb working for rgm
 
 			//from first event get RUN::config torus Setting
 		 		// inbending = negative torussetting, outbending = torusseting
@@ -220,9 +232,10 @@ int main(int argc, char** argv) {
 			getEventInfo( event_info, gated_charge, livetime, starttime );
 			
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
+
 
 
 
@@ -244,6 +257,7 @@ int main(int argc, char** argv) {
 				continue;
 			}
 
+
 			//checking DC Fiducials
 			//Region 1, true = pass DC Region 1
 			bool DC_fid_1  = DCfid_electrons.DC_e_fid(eHit.getDC_x1(),eHit.getDC_y1(),eHit.getDC_sector(), 1, bending);
@@ -258,11 +272,12 @@ int main(int argc, char** argv) {
 			if (!DC_fid_1 || !DC_fid_2 || !DC_fid_3) continue;
 
 
+
 			//MC smearing
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -273,6 +288,15 @@ int main(int argc, char** argv) {
 				//Recalculate Electron Kinematics with smeared values
 				recalculate_clashit_kinematics(eHit_smeared, Ebeam, reco_electron);
 			}
+			 
+			// Grab the information for other charged particle:
+                        getParticleInfo( clas_particles, charged_particle, scintillator, charged_mult );
+
+                        // Store the charged particles in TClonesArray
+                        for( int n = 0 ; n < charged_mult ; n++ ){
+                                new(saveCharged_particles[n]) particles;
+                                saveCharged_particles[n] = &charged_particle[n];
+                        }
 
 			// Store the mc particles in TClonesArray
 			for( int n = 0 ; n < maxGens ; n++ ){
@@ -286,6 +310,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 1 ) accept_event = electron_fiducials(PERIOD , &eHit		);
 			//if( accept_event == false ) continue;
 		
+
 			// Accumulate charge for event
 			qa->AccumulateCharge();
 			outTree->Fill();

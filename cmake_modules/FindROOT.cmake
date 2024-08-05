@@ -52,18 +52,18 @@ IF (ROOT_CONFIG_EXECUTABLE)
 
   # we need at least version 5.00/00
   IF (NOT ROOT_MIN_VERSION)
-    SET(ROOT_MIN_VERSION "5.00/00")
+    SET(ROOT_MIN_VERSION "6.00.00")
   ENDIF (NOT ROOT_MIN_VERSION)
    
   # now parse the parts of the user given version string into variables
-  STRING(REGEX REPLACE "^([0-9]+)\\.[0-9][0-9]+\\/[0-9][0-9]+" "\\1" req_root_major_vers "${ROOT_MIN_VERSION}")
-  STRING(REGEX REPLACE "^[0-9]+\\.([0-9][0-9])+\\/[0-9][0-9]+.*" "\\1" req_root_minor_vers "${ROOT_MIN_VERSION}")
-  STRING(REGEX REPLACE "^[0-9]+\\.[0-9][0-9]+\\/([0-9][0-9]+)" "\\1" req_root_patch_vers "${ROOT_MIN_VERSION}")
+  STRING(REGEX REPLACE "^([0-9]+)\\.[0-9][0-9]+\\.[0-9][0-9]+" "\\1" req_root_major_vers "${ROOT_MIN_VERSION}")
+  STRING(REGEX REPLACE "^[0-9]+\\.([0-9][0-9])+\\.[0-9][0-9]+.*" "\\1" req_root_minor_vers "${ROOT_MIN_VERSION}")
+  STRING(REGEX REPLACE "^[0-9]+\\.[0-9][0-9]+\\.([0-9][0-9]+)" "\\1" req_root_patch_vers "${ROOT_MIN_VERSION}")
    
   # and now the version string given by qmake
-  STRING(REGEX REPLACE "^([0-9]+)\\.[0-9][0-9]+\\/[0-9][0-9]+.*" "\\1" found_root_major_vers "${ROOTVERSION}")
-  STRING(REGEX REPLACE "^[0-9]+\\.([0-9][0-9])+\\/[0-9][0-9]+.*" "\\1" found_root_minor_vers "${ROOTVERSION}")
-  STRING(REGEX REPLACE "^[0-9]+\\.[0-9][0-9]+\\/([0-9][0-9]+).*" "\\1" found_root_patch_vers "${ROOTVERSION}")
+  STRING(REGEX REPLACE "^([0-9]+)\\.[0-9][0-9]+\\.[0-9][0-9]+.*" "\\1" found_root_major_vers "${ROOTVERSION}")
+  STRING(REGEX REPLACE "^[0-9]+\\.([0-9][0-9])+\\.[0-9][0-9]+.*" "\\1" found_root_minor_vers "${ROOTVERSION}")
+  STRING(REGEX REPLACE "^[0-9]+\\.[0-9][0-9]+\\.([0-9][0-9]+).*" "\\1" found_root_patch_vers "${ROOTVERSION}")
 
   SET(ROOTVERSION_SHORT "${found_root_major_vers}${found_root_minor_vers}")
 
@@ -74,7 +74,7 @@ IF (ROOT_CONFIG_EXECUTABLE)
   # compute an overall version number which can be compared at once
   MATH(EXPR req_vers "${req_root_major_vers}*10000 + ${req_root_minor_vers}*100 + ${req_root_patch_vers}")
   MATH(EXPR found_vers "${found_root_major_vers}*10000 + ${found_root_minor_vers}*100 + ${found_root_patch_vers}")
-   
+  
   IF (found_vers LESS req_vers)
     SET(ROOT_FOUND FALSE)
     SET(ROOT_INSTALLED_VERSION_TOO_OLD TRUE)

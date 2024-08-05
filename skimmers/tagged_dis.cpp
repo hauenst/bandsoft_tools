@@ -86,6 +86,10 @@ int main(int argc, char** argv) {
 	//	Smeared Tagged info:
 	TClonesArray * tags_smeared = new TClonesArray("taghit");
 	TClonesArray &saveTags_smeared = *tags_smeared;
+	// 	Charged particles
+	int charged_mult        = 0;
+        TClonesArray * charged_particles = new TClonesArray("particles");
+        TClonesArray &saveCharged_particles = *charged_particles;
 	// 	Event branches:
 	outTree->Branch("Runno"		,&Runno			);
 	outTree->Branch("Ebeam"		,&Ebeam			);
@@ -115,7 +119,31 @@ int main(int argc, char** argv) {
 		//	Smeared Tagged branches:
 		outTree->Branch("tag_smeared"		,&tags_smeared			);
 	}
-
+	//	Charged particle branches:
+	outTree->Branch("charged_mult"		,&charged_mult		);
+	outTree->Branch("charged_particles"	,&charged_particles	);
+	//	Central detector branches
+	const int MAX_CD_HIT = 100;
+	int ctofMult;
+	double ctofHitE[MAX_CD_HIT];
+	double ctofHitX[MAX_CD_HIT];
+	double ctofHitY[MAX_CD_HIT];
+	double ctofHitZ[MAX_CD_HIT];
+	int cndMult;
+	double cndHitE[MAX_CD_HIT];
+	double cndHitX[MAX_CD_HIT];
+	double cndHitY[MAX_CD_HIT];
+	double cndHitZ[MAX_CD_HIT];
+	outTree->Branch("ctofMult",	&ctofMult,	"ctofMult/I");
+	outTree->Branch("ctofHitE",	&ctofHitE,	"ctofHitE[ctofMult]/D");
+	outTree->Branch("ctofHitX",	&ctofHitX,	"ctofHitX[ctofMult]/D");
+	outTree->Branch("ctofHitY",	&ctofHitY,	"ctofHitY[ctofMult]/D");
+	outTree->Branch("ctofHitZ",	&ctofHitZ,	"ctofHitZ[ctofMult]/D");
+	outTree->Branch("cndMult",	&cndMult,	"cndMult/I");
+	outTree->Branch("cndHitE",	&cndHitE,	"cndHitE[cndMult]/D");
+	outTree->Branch("cndHitX",	&cndHitX,	"cndHitX[cndMult]/D");
+	outTree->Branch("cndHitY",	&cndHitY,	"cndHitY[cndMult]/D");
+	outTree->Branch("cndHitZ",	&cndHitZ,	"cndHitZ[cndMult]/D");
 
 	// Connect to the RCDB
 	rcdb::Connection connection("mysql://rcdb@clasdb.jlab.org/rcdb");
@@ -162,9 +190,10 @@ int main(int argc, char** argv) {
 		ePID.setParamsRGB(Ebeam);
 
 		// Setup hipo reading for this file
-		TString inputFile = argv[i];
+//		const char* inputFile = argv[i];
+//		std::cout << inputFile << std::endl;
 		hipo::reader reader;
-		reader.open(inputFile);
+		reader.open(argv[i]);
 		hipo::dictionary  factory;
 		reader.readDictionary(factory);
 		hipo::bank	event_info		(factory.getSchema("REC::Event"		));
@@ -178,12 +207,13 @@ int main(int argc, char** argv) {
 		hipo::bank	band_rawhits		(factory.getSchema("BAND::rawhits"	));
 		hipo::bank	band_adc		(factory.getSchema("BAND::adc"		));
 		hipo::bank	band_tdc		(factory.getSchema("BAND::tdc"		));
-		BParticle	particles		(factory.getSchema("REC::Particle"	));
+		BParticle	clas_particles		(factory.getSchema("REC::Particle"	));
 		BCalorimeter	calorimeter		(factory.getSchema("REC::Calorimeter"	));
 		hipo::bank	scintillator		(factory.getSchema("REC::Scintillator"	));
 		hipo::bank	mc_event_info		(factory.getSchema("MC::Event"		));
 		hipo::bank	mc_particle		(factory.getSchema("MC::Particle"	));
-
+		hipo::bank	ctof_hits		(factory.getSchema("CTOF::hits"		));
+		hipo::bank	cnd_hits		(factory.getSchema("CND::hits"		));
 
 		// Loop over all events in file
 		int event_counter = 0;
@@ -204,23 +234,31 @@ int main(int argc, char** argv) {
 			nleadindex = -1;
 			goodneutron = false;
 			bandhit nHit[maxNeutrons];
-			nHits->Clear();
+			nHits->Clear("C");
+			saveHit.Clear("C");
 			// Tag
 			taghit tag[maxNeutrons];
 			taghit tag_smeared[maxNeutrons];
-			tags->Clear();
+			tags->Clear("C");
+			saveTags.Clear("C");
 			// Electron
 			eHit.Clear();
 			// MC
 			genMult = 0;
 			weight = 1;
 			genpart mcPart[maxGens];
-			mcParts->Clear();
+			mcParts->Clear("C");
+			saveMC.Clear("C");
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, clear smeared and input branches
 				//Clear output smear branches
 				eHit_smeared.Clear();
 				tags_smeared->Clear();
 			}
+
+			// Charged particles
+			particles charged_particle[maxParticles];
+			charged_mult	 = 0;
+			charged_particles->Clear();
 
 			// Count events
 			if(event_counter%10000==0) cout << "event: " << event_counter << endl;
@@ -238,7 +276,7 @@ int main(int argc, char** argv) {
 			readevent.getStructure(band_adc);
 			readevent.getStructure(band_tdc);
 			// electron struct
-			readevent.getStructure(particles);
+			readevent.getStructure(clas_particles);
 			readevent.getStructure(calorimeter);
 			readevent.getStructure(scintillator);
 			readevent.getStructure(DC_Track);
@@ -247,7 +285,10 @@ int main(int argc, char** argv) {
 			// monte carlo struct
 			readevent.getStructure(mc_event_info);
 			readevent.getStructure(mc_particle);
-
+			// central detector struct
+			readevent.getStructure(ctof_hits);
+			readevent.getStructure(cnd_hits);
+			
 			if( event_counter == 1 ){
 				//cout << Runno << "\n";
 				int period = -1;
@@ -323,7 +364,6 @@ int main(int argc, char** argv) {
 		 	// inbending = negative torussetting, outbending = torusseting
 			torussetting = run_config.getFloat( 7 , 0 );
 
-
 			// For simulated events, get the weight for the event
 			if( MC_DATA_OPT == 0 || MC_DATA_OPT == 2){
 				// For MC, the above Ebeam has already been set, but we will reset it based on 
@@ -351,7 +391,7 @@ int main(int argc, char** argv) {
 
 
 			// Grab the electron information:
-			getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
+			getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit , starttime , Runno , Ebeam );
 
 			//check electron PID in EC with Andrew's class
 			if( !(ePID.isElectron(&eHit)) ) continue;
@@ -402,7 +442,7 @@ int main(int argc, char** argv) {
 			if( MC_DATA_OPT == 0 ){ // if this is a MC file, do smearing and add values
 
 				// Grab the electron information for the smeared eHit Object
-				getElectronInfo( particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
+				getElectronInfo( clas_particles , calorimeter , scintillator , DC_Track, DC_Traj, cherenkov, 0, eHit_smeared , starttime , Runno , Ebeam );
 
 				//read electron vector
 				TVector3 reco_electron(0,0,0);
@@ -420,6 +460,31 @@ int main(int argc, char** argv) {
 					new(saveTags_smeared[n]) taghit;
 					saveTags_smeared[n] = &tag_smeared[n];
 					}
+			}
+			
+			 // Grab the information for other charged particle:
+                        getParticleInfo( clas_particles, charged_particle, scintillator, charged_mult );
+
+                        // Store the charged particles in TClonesArray
+                        for( int n = 0 ; n < charged_mult ; n++ ){
+                                new(saveCharged_particles[n]) particles;
+                                saveCharged_particles[n] = &charged_particle[n];
+                        }
+
+			// Fill the CD branches
+			ctofMult = (int)ctof_hits.getRows();
+			for( int row = 0 ; row < ctofMult ; ++row ) {
+				ctofHitE[row]	= (double) ctof_hits.getFloat(6, row); 
+				ctofHitX[row]	= (double) ctof_hits.getFloat(10, row); 
+				ctofHitY[row]	= (double) ctof_hits.getFloat(11, row); 
+				ctofHitZ[row]	= (double) ctof_hits.getFloat(12, row); 
+			}
+			cndMult = (int)cnd_hits.getRows();
+			for( int row = 0 ; row < cndMult ; ++row ) {
+				cndHitE[row]	= (double) cnd_hits.getFloat(6, row); 
+				cndHitX[row]	= (double) cnd_hits.getFloat(10, row); 
+				cndHitY[row]	= (double) cnd_hits.getFloat(11, row); 
+				cndHitZ[row]	= (double) cnd_hits.getFloat(12, row); 
 			}
 
 			// Store the neutrons in TClonesArray
@@ -450,7 +515,7 @@ int main(int argc, char** argv) {
 				//pass Nhit array, multiplicity and reference to leadindex which will be modified by function
 				goodneutron = goodNeutronEvent(nHit, nMult, nleadindex, MC_DATA_OPT, passed );
 			}
-
+			
 			// Fill tree based on d(e,e'n)X for data
 			if( ( (nMult > 0 && goodneutron) ) && MC_DATA_OPT == 1 ){
 			  //qa->AccumulateCharge(); 

@@ -1,8 +1,6 @@
 #ifndef __CONSTANTS_H__
 #define __CONSTANTS_H__
 
-#include <cmath>
-
 const double alpha=0.00729735253;
 
 // Units of GeV
