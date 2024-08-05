@@ -10,6 +10,9 @@ const double mP = 0.93827231;
 const double mPi = 0.139;
 const double mN = 0.93956536;
 const double mD = 1.8756;
+
+const double mH = 0.9383;
+
 const double mE = 0.0005109989;
 // // Units of cm / ns
 const double cAir = 29.9792458;
