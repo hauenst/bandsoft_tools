@@ -90,7 +90,8 @@ int main(int argc, char** argv) {
 
 	// Load input file
 	for( int i = 3 ; i < argc ; i++ ){
-		int runNum = getRunNumber(argv[i]);
+	        cout << "The input file is: " << argv[i] << endl;
+	        int runNum = getRunNumber(argv[i]);
 		Runno = runNum;
 		auto cnd = connection.GetCondition(runNum, "beam_energy");
 		Ebeam = cnd->ToDouble() / 1000.; // [GeV]
@@ -190,14 +191,48 @@ int main(int argc, char** argv) {
 				  period = 3;
 				  BAND->setPeriod(period);
 				}
-				else if (Runno >= 15534 && Runno < 15728) { //RGM 2.1 runs
+				else if (Runno >= 15534 && Runno <= 15727) { //RGM 2.1 runs                                   
 				  period = 4;
 				  BAND->setPeriod(period);
-				}
-                                else if ((Runno >=15015  && Runno <15491) || (Runno >=15732  && Runno <15885)  ) { //RGM 4+6gev runs                
+                                }
+                                else if (Runno >= 15731  && Runno <= 15784 ) { //RGM 4gev runs                                
 				  period = 5;
 				  BAND->setPeriod(period);
                                 }
+                                else if (Runno >= 15014  && Runno <= 15491 ) { //RGM 6gev pt1 runs                            
+				  period = 6;
+				  BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 15787  && Runno <= 15884 ) { //RGM 6gev pt2 runs                            
+				  period = 7;
+				  BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 18305 && Runno < 19131) { //RGD                                             
+				  period = 8;
+				  BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 20000 && Runno < 20525) { //RGE                                             
+				  period = 9;
+				  BAND->setPeriod(period);
+                                }
+                                else if ( (Runno >= 21278 && Runno < 21435) or (Runno >= 22709 && Runno <= 22791) or (Runno >\
+= 22981 && Runno <= 23015) ) { //RGL 2.2GeV                                                                                   
+				  period = 10;
+				  BAND->setPeriod(period);
+                                }
+                                else if ( (Runno >= 22793 && Runno < 22980) or (Runno >= 23016 && Runno <= 23065) ) { //RGL 6\
+.4GeV                                                                                                                         
+				  period = 11;
+				  BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 21437 && Runno < 22708) { //RGL 10.6GeV                                     
+				  period = 12;
+				  BAND->setPeriod(period);
+                                }
+				/*else if ( Runno >= 8021 && Runno <= 8047 ) { //RGD cal runs
+				  period = 6;
+				  BAND->setPeriod(period);
+				  }*/
 				else {
 				  cout << "No bar by bar offsets loaded " << endl;
 				  cout << "Check shift option when starting program. Exit " << endl;
