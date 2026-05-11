@@ -56,79 +56,85 @@ struct Bar{
 
 class BANDReco{
 	
-	public:
-		// Constructor
-		BANDReco(){};
-		// Destructor
-		~BANDReco(){};
-
-		void Clear();
-		void Print();
-
-		void setPeriod(const int period);
-		void setMC(void){ MONTECARLO=true; };
-		void setRunno(const int runnumber){ Runno = runnumber; };
-
-		map<int,Bar> getCandidateBars(void){return candidate_bars;};
-		map<int,PMT> getCandidatePMTs(void){return candidate_pmts;};
-
-		void createPMTs( const hipo::bank * band_adc , const hipo::bank * band_tdc , const hipo::bank * run_config  );
-		void createBars( );
-		void storeHits( int& mult , bandhit * hits , const double starttime , const double vtx_z );
-
-		double getRGBVertexOffset(void){ return RGB_VERTEX_OFFSET; };
-
-		void readTW();
-		void readLROffset();
-		void readPaddleOffset();
-		void readLayerOffset();
-		void readGlobalOffset();
-		void readGeometry();
-		void readEnergyCalib();
-		void readStatus();
-		
-		// Hard-coded parameters:
-		const double bar_lengths[5] = {163.7,201.9,51.2,51.2,201.9};
-		const int slc[6][5] = {{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,5,5,0},{3,7,6,6,2}};
-
-	private:
-		bool MONTECARLO = false;
-		bool SPRING2019 = false;
-		bool FALL2019_WINTER2020 = false;
-		int PERIOD = -1;
-		int Runno = -1;
-		double BAND_MOTHER_OFFSET = 0.; // [cm]
-		double RGB_VERTEX_OFFSET = 0.; // [cm]
-
-		bool loaded_TW = false;
-
-		double timewalk( const double *x , const double *p);
-		double getTriggerPhase( const long timeStamp ) ;
-		bool check_bar(const Bar * this_bar);
-		bool check_status( const Bar * this_bar);
-
-		map<int,vector<double>> TWParamsAMP;
-		map<int,double> TDCOffsets;
-		map<int,double> FTDCOffsets;
-		map<int,double> TDCVelocity;
-		map<int,double> FTDCVelocity;
-		map<int,double> TDCPaddle;
-		map<int,double> FTDCPaddle;
-		map<int,double> TDCLayer;
-		map<int,double> FTDCLayer;
-		map<int,double> GlobalX;
-		map<int,double> GlobalY;
-		map<int,double> GlobalZ;
-		map<int,double> ADCtoMEV;
-		map<int,int> STATUS;
-		map<int,double> TDCGlobal; 
-		map<int,double> FTDCGlobal; 
-		map<int,double> TDCToFRes; 
-		map<int,double> FTDCToFRes; 
-
-		// Storage containers for each event:
-		map<int,PMT> candidate_pmts;
-		map<int,Bar> candidate_bars;
-
+public:
+  // Constructor
+  BANDReco(){};
+  // Destructor
+  ~BANDReco(){};
+  
+  void Clear();
+  void Print();
+  void PrintPMT();
+  void PrintTest();
+  
+  void setPeriod(const int period);
+  void setMC(void){ MONTECARLO=true; };
+  void setRunno(const int runnumber){ Runno = runnumber; };
+  
+  map<int,Bar> getCandidateBars(void){return candidate_bars;};
+  map<int,PMT> getCandidatePMTs(void){return candidate_pmts;};
+  
+  void createPMTs( const hipo::bank * band_adc , const hipo::bank * band_tdc , const hipo::bank * run_config  );
+  void createBars( );
+  void storeHits( int& mult , bandhit * hits , const double starttime , const double vtx_z );
+  
+  double getRGBVertexOffset(void){ return RGB_VERTEX_OFFSET; };
+  
+  void readTW();
+  void readLROffset();
+  void readPaddleOffset();
+  void readLayerOffset();
+  void readGlobalOffset();
+  void readGeometry();
+  void readEnergyCalib();
+  void readStatus();
+  
+  // Hard-coded parameters:
+  const double bar_lengths[5] = {163.7,201.9,51.2,51.2,201.9};
+  const int slc[6][5] = {{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,6,6,2},{3,7,5,5,0},{3,7,6,6,2}};
+  
+private:
+  bool MONTECARLO = false;
+  bool SPRING2019 = false;
+  bool FALL2019_WINTER2020 = false;
+  bool RGM = false;
+  bool RGD = false;
+  bool RGE = false;
+  bool RGL = false;
+  int PERIOD = -1;
+  int Runno = -1;
+  double BAND_MOTHER_OFFSET = 0.; // [cm]
+  double RGB_VERTEX_OFFSET = 0.; // [cm]
+  
+  bool loaded_TW = false;
+  
+  double timewalk( const double *x , const double *p);
+  double getTriggerPhase( const long timeStamp ) ;
+  bool check_bar(const Bar * this_bar);
+  bool check_status( const Bar * this_bar);
+  
+  map<int,vector<double>> TWParamsAMP;
+  map<int,double> TDCOffsets;
+  map<int,double> FTDCOffsets;
+  map<int,double> TDCVelocity;
+  map<int,double> FTDCVelocity;
+  map<int,double> TDCPaddle;
+  map<int,double> FTDCPaddle;
+  map<int,double> TDCLayer;
+  map<int,double> FTDCLayer;
+  map<int,double> GlobalX;
+  map<int,double> GlobalY;
+  map<int,double> GlobalZ;
+  map<int,double> ADCtoMEV;
+  map<int,int> STATUS;
+  map<int,double> TDCGlobal; 
+  map<int,double> FTDCGlobal; 
+  map<int,double> TDCToFRes; 
+  map<int,double> FTDCToFRes; 
+  
+  // Storage containers for each event:
+  map<int,PMT> candidate_pmts;
+  map<int,Bar> candidate_bars;
+  
 };
 #endif
