@@ -42,6 +42,30 @@ void BANDReco::Print(){
 	return;
 }
 
+void BANDReco::PrintPMT(){
+  map<int,PMT>::const_iterator pmt_i;
+  for( pmt_i = candidate_pmts.begin() ; pmt_i != candidate_pmts.end() ; ++pmt_i ){
+    int PMT_ID = pmt_i->first;
+    PMT pmt = pmt_i->second;
+    
+    std::cout << "PMT ID: " << PMT_ID << " " << pmt.PMT_ID << "\n";
+    std::cout << "\t S L C O: " << pmt.sector << " " << pmt.layer << " " << pmt.component << " " << pmt.order << "\n";
+    std::cout << "\t adc: " << pmt.adc << "\n";
+    std::cout << "\t amp: " << pmt.amp << "\n";
+    std::cout << "\t ftdc: " << pmt.ftdc << "\n";
+    std::cout << "\t ftdc corr: " << pmt.ftdc_corr << "\n";
+    std::cout << "\t ped: " << pmt.ped << "\n";
+    std::cout << "\t tdc: " << pmt.tdc << "\n";
+    std::cout << "\t tdc corr: " << pmt.tdc_corr << "\n";
+    std::cout << "\t trigphase: " << pmt.trigphase << "\n";
+    std::cout << "\t idx ftdc: " << pmt.idx_ftdc << "\n";
+    std::cout << "\t idx tdc: " << pmt.idx_tdc << "\n";
+    }
+
+  return;
+
+  }
+
 void BANDReco::setPeriod( const int period ){
 	// Periods are:
 	// 	0 == 10.6
@@ -49,10 +73,38 @@ void BANDReco::setPeriod( const int period ){
 	// 	2 == 10.4
 	// 	3 == 4.2 / LER
 	// 	4 == 2.1 / RGM
-	//  (0,1) share folder for constants (spring2019)
+        //      5 == 4.0 / RGM
+        //      6 == 5.98 / RGM pt 1
+        //      7 == 5.98 / RGM pt 2
+        //      8 == 10.5 / RGD
+        //      9 == 10.5 / RGE
+        //      10 == 2.2 / RGL
+        //      11 == 6.4 / RGL
+        //      12 == 10.6 / RGL
+  
+        //  (0,1) share folder for constants (spring2019)
 	//  (2,3) share folder for constants (fall2019)
 	//  no calibrations for RGM yet, so copy them from fall2019
-	(period == 0 || period == 1) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
+	//(period == 0 || period == 1) ? SPRING2019 = true : FALL2019_WINTER2020 = true;
+
+	if ( period == 0 or period == 1){
+	  SPRING2019 = true;}
+
+	else if ( period == 2 or period == 3 ){
+	  FALL2019_WINTER2020 = true;}
+
+	else if ( period > 3 and period < 8 ){
+	  RGM = true;}
+	  
+	else if ( period == 8 ){
+	  RGD = true;}
+	
+	else if ( period == 9 ) {
+	  RGE = true;}
+
+	else{
+	  RGL = true;}
+	
 	
 	// Set the vertex offset of the target:
 	if( SPRING2019 ){
@@ -63,6 +115,27 @@ void BANDReco::setPeriod( const int period ){
 		BAND_MOTHER_OFFSET = -3; // [cm]
 		RGB_VERTEX_OFFSET = -3; // [cm]
 	}
+	
+	else if(RGM){
+	        BAND_MOTHER_OFFSET = -3; // [cm]
+		RGB_VERTEX_OFFSET = -3; // [cm]
+	}
+
+	else if(RGD){
+	        BAND_MOTHER_OFFSET = -3; // [cm]
+		RGB_VERTEX_OFFSET = -3; // [cm]
+	}
+
+	else if(RGE){
+	        BAND_MOTHER_OFFSET = -3; // [cm]
+		RGB_VERTEX_OFFSET = -3; // [cm]
+	}
+
+	else if(RGL){
+	        BAND_MOTHER_OFFSET = -3; // [cm]
+	        RGB_VERTEX_OFFSET = -3; // [cm]
+	}
+
 
 	// store period for reading global offset table
 	PERIOD = period;
@@ -73,6 +146,10 @@ void BANDReco::readTW(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( RGM ) path += "/rgm";
+	else if( RGD ) path += "/rgd";
+	else if( RGE ) path += "/rge";
+	else if( RGL ) path += "/rgl";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -154,6 +231,10 @@ void BANDReco::readLROffset(){
 	if( MONTECARLO ) path += "/simulation";
 	else if( !MONTECARLO && SPRING2019 ) path += "/spring2019";
 	else if( !MONTECARLO && FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";
+	else if( !MONTECARLO && RGD ) path += "/rgd";
+	else if( !MONTECARLO && RGE ) path += "/rge";
+	else if( !MONTECARLO && RGL ) path += "/rgl";
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -201,6 +282,10 @@ void BANDReco::readPaddleOffset(){
 	if( MONTECARLO ) path += "/simulation";
 	else if( !MONTECARLO && SPRING2019 ) path += "/spring2019";
 	else if( !MONTECARLO && FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";
+	else if( !MONTECARLO && RGD ) path += "/rgd"; 
+	else if( !MONTECARLO && RGE ) path += "/rge";
+	else if( !MONTECARLO && RGL ) path += "/rgl"; 
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -246,6 +331,10 @@ void BANDReco::readLayerOffset(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";
+	else if( !MONTECARLO && RGD ) path += "/rgd";
+	else if( !MONTECARLO && RGE ) path += "/rge";
+	else if( !MONTECARLO && RGL ) path += "/rgl"; 
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -304,16 +393,24 @@ void BANDReco::readGlobalOffset(){
 	std::string ftdc_path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";
+	else if( !MONTECARLO && RGD ) path += "/rgd"; 
+	else if( !MONTECARLO && RGE ) path += "/rge";
+	else if( !MONTECARLO && RGL ) path += "/rgl"; 
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
 
 	if( !MONTECARLO && Runno <= 6290 ) 		tdc_path = path + "/global_offsets_tdc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	tdc_path = path + "/global_offsets_tdc_006399_10pt6.txt";	// 10.6 post-jump
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) tdc_path = path + "/global_offsets_tdc_ler.txt"; // LER shifts
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15565 && Runno <= 15700 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM tentative shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) tdc_path = path + "/global_offsets_tdc_ler.txt"; // LER shifts
+	else if( RGM && !MONTECARLO && Runno > 15539 && Runno <= 15727 ) tdc_path = path + "/global_offsets_tdc_rgm_D2.1.txt"; // RGM 2 GeV using D data
+	else if( RGM && !MONTECARLO && Runno > 15731 && Runno <= 15784 ) tdc_path = path + "/global_offsets_tdc_rgm_4gev.txt"; // RGM 4 GeV using C data
+	else if( RGM && !MONTECARLO && Runno > 15014 && Runno <= 15491 ) tdc_path = path + "/global_offsets_tdc_rgm_6p1.txt"; // RGM 6 GeV pt1 using He data
+	else if( RGM && !MONTECARLO && Runno > 15787 && Runno <= 15884 ) tdc_path = path + "/global_offsets_tdc_rgm_6p2.txt"; // RGM 6 GeV pt2 using 48Ca data
 	else{ tdc_path = path + "/global_offsets_tdc.txt"; }						// 10.2 and 10.4
 
+	
 	cout << "reading file: " << tdc_path << "\n";
 	f.open(tdc_path);
 	if( f.is_open() ){
@@ -342,10 +439,14 @@ void BANDReco::readGlobalOffset(){
 
 	if( !MONTECARLO && Runno <= 6290 ) 		ftdc_path = path + "/global_offsets_fadc_006290_10pt6.txt";	// 10.6 pre-jump
 	else if( !MONTECARLO && Runno <= 6399 && Runno > 6290) 	ftdc_path = path + "/global_offsets_fadc_006399_10pt6.txt";	// 10.6 post-jump
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) ftdc_path = path + "/global_offsets_fadc_ler.txt"; // LER shifts
-	if( FALL2019_WINTER2020 && !MONTECARLO && Runno > 15565 && Runno <= 15700 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM tentative shifts
+	else if( FALL2019_WINTER2020 && !MONTECARLO && Runno >= 11286 && Runno <= 11300 ) ftdc_path = path + "/global_offsets_fadc_ler.txt"; // LER shifts
+	else if( RGM && !MONTECARLO && Runno > 15539 && Runno <= 15727 ) ftdc_path = path + "/global_offsets_fadc_rgm_D2.1.txt"; // RGM 2 GeV using D data
+	else if( RGM && !MONTECARLO && Runno > 15731 && Runno <= 15784 ) ftdc_path = path + "/global_offsets_fadc_rgm_4gev.txt"; // RGM 4 GeV using C data
+	else if( RGM && !MONTECARLO && Runno > 15014 && Runno <= 15491 ) ftdc_path = path + "/global_offsets_fadc_rgm_6p1.txt"; // RGM 6 GeV pt1
+	else if( RGM && !MONTECARLO && Runno > 15787 && Runno <= 15884 ) ftdc_path = path + "/global_offsets_fadc_rgm_6p2.txt"; // RGM 6 GeV pt2 using 48Ca data
 	else{ ftdc_path = path + "/global_offsets_fadc.txt"; }						// 10.2 and 10.4
-
+	
+	
 	cout << "reading file: " << ftdc_path << "\n";
 	f.open(ftdc_path);
 	if( f.is_open() ){
@@ -379,6 +480,10 @@ void BANDReco::readGeometry(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";  
+	else if( !MONTECARLO && RGD ) path += "/rgd";  
+	else if( !MONTECARLO && RGE ) path += "/rge";  
+	else if( !MONTECARLO && RGL ) path += "/rgl";  
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -415,6 +520,10 @@ void BANDReco::readEnergyCalib(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";  
+	else if( !MONTECARLO && RGD ) path += "/rgd";  
+	else if( !MONTECARLO && RGE ) path += "/rge";  
+	else if( !MONTECARLO && RGL ) path += "/rgl";  
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
@@ -451,11 +560,15 @@ void BANDReco::readStatus(){
 	std::string path = string(getenv("BANDSOFT_TOOLS_DIR"))+"/include/calibrations";
 	if( SPRING2019 ) path += "/spring2019";
 	else if( FALL2019_WINTER2020 ) path += "/fall2019";
+	else if( !MONTECARLO && RGM ) path += "/rgm";  
+	else if( !MONTECARLO && RGD ) path += "/rgd";  
+	else if( !MONTECARLO && RGE ) path += "/rge";  
+	else if( !MONTECARLO && RGL ) path += "/rgl";  
 	else{ cerr << "cannot load file\n"; exit(-1); }
 	std::string line;
 	std::ifstream f;
 
-	// Load the Edep calibration:
+	// Load the status list:
 	cout << "reading file: " << path+"/status_list.txt" << "\n";
 	f.open(path+"/status_list.txt");
 	if( f.is_open() ){
@@ -563,6 +676,9 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		double ftdc	= (double) band_adc->getFloat( 6, row );
 		int ped		= (int) band_adc->getInt( 7, row );
 
+
+		
+		
 		if( adc == 0 || ftdc == 0 ) continue; 		// don't store a hit that has no adc or timestamp
 		if( MONTECARLO && (adc/1E4 < 0.5 ) ) continue; 	// if in MC, don't take anything with an incredibly small Edep
 		
@@ -582,7 +698,11 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		this_pmt.ped		= ped;
 		this_pmt.idx_ftdc	= row;
 		raw_pmts_adc[PMT_ID].push_back(this_pmt);
+
+
 	}
+	
+	
 	// Loop over all the TDC hits to find a match:
 	for( int row = 0 ; row < band_tdc->getRows() ; ++row ){
 		int sector 	= (int) band_tdc->getInt( 0 , row );
@@ -595,6 +715,7 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		if( MONTECARLO ) tdc_raw /= 1E4;
 		double tdc	= tdc_raw * 0.02345 - phaseCorr;
 
+	
 		// If we do not have a matching FTDC hit for the PMT, we 
 		// skip this event completely
 		if( raw_pmts_adc[PMT_ID].size() == 0 ) continue;
@@ -609,6 +730,9 @@ void BANDReco::createPMTs( const hipo::bank * band_adc , const hipo::bank * band
 		this_pmt.trigphase	= phaseCorr;
 		this_pmt.idx_tdc	= row;
 		raw_pmts_tdc[PMT_ID].push_back(this_pmt);
+
+
+
 	}	
 	
 	// Now let's loop over all the FTDC PMT hits to do an additional filter.
@@ -752,6 +876,7 @@ void BANDReco::createBars(  ){
 		int order	= candidate1.order;
 		int Bar_ID	= sector*100 + layer*10 + component;
 
+		
 		// Loop over the remaining candidates and try to match the PMTs
 		for( pmt_j = pmt_i ; pmt_j != candidate_pmts.end() ; ++pmt_j ){
 			int PMT_ID2	= pmt_j->first;
@@ -823,6 +948,7 @@ void BANDReco::createBars(  ){
 			newbar.Z		= z;
 			candidate_bars[Bar_ID] = newbar;
 		}
+		
 	}
 	return;
 }

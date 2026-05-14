@@ -35,10 +35,11 @@ using namespace std;
 int main(int argc, char** argv) {
 	// check number of arguments
 	if( argc < 6 ){
-		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Peroid] [load shifts] [inputFile] \n\n";
+		cerr << "Incorrect number of arugments. Instead use:\n\t./code [outputFile] [MC/DATA] [Period] [load shifts] [inputFile] \n\n";
 		cerr << "\t\t[outputFile] = ____.root\n";
 		cerr << "\t\t[MC,DATA, MC generated info for each event] = 0, 1, 2 \n";
-		cerr << "\t\t[Period 10.6, 10.2, 10.4, LER, RGM 2.1] = 0,1,2,3,4\n";
+		                cerr << "\t\t[Periods are:\n";
+                cerr << "\t\t\t0 == 10.6,\n\t\t\t1 == 10.2,\n\t\t\t2 ==  10.4,\n\t\t\t3 == LER,\n\t\t\t4 == RGM 2.1,\n\t\t\t5 == RGM 4.0,\n\t\t\t6 == RGM 5.98 pt 1,\n\t\t\t7 == RGM 5.98 pt 2,\n\t\t\t8 == RGD,\n\t\t\t9 == RGE,\n\t\t\t10 == RGL 2.2,\n\t\t\t11 == RGL 6.4,\n\t\t\t12 == RGL 10.6]\n";
 		cerr << "\t\t[load shifts N,Y] = 0, 1 \n";
 		cerr << "\t\t[inputFile] = ____.hipo ____.hipo ____.hipo ...\n\n";
 		return -1;
@@ -130,7 +131,13 @@ int main(int argc, char** argv) {
 			if( PERIOD == 1 ) Ebeam = 10.200; // from RCDB: 10199.8
 			if( PERIOD == 2 ) Ebeam = 10.389; // from RCDB: 10389.4
 			if( PERIOD == 3 ) Ebeam = 4.247;  // current QE-MC value, RCDB value: 4171.79. Is about ~1.018 wrong due to issues with magnet settings
-			if( PERIOD == 4 ) Ebeam = 2.07; 
+                        if( PERIOD == 4 ) Ebeam = 2.07052;
+                        if( PERIOD == 5 ) Ebeam = 4.02962;
+                        if( PERIOD == 6 or PERIOD == 7 ) Ebeam = 5.98636;
+			if( PERIOD == 8 or PERIOD == 9) Ebeam = 10.547;
+                        if( PERIOD == 10 ) Ebeam = 2.239;
+                        if( PERIOD == 11 ) Ebeam = 6.473;
+                        if( PERIOD == 12 ) Ebeam = 10.676;
 		}
 		else if( MC_DATA_OPT == 1){ //Data
 			int runNum = getRunNumber(argv[i]);
@@ -263,11 +270,52 @@ int main(int argc, char** argv) {
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
-				else if (Runno >= 15566 && Runno < 15700) { //RGM deuterium 2.1 runs
-					period = 4;
+				else if (Runno >= 15534 && Runno <= 15727) { //RGM 2.1 runs                                                                     
+                                        period = 4;
+                                        if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+                                        BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 15731  && Runno <= 15784 ) { //RGM 4gev runs                                                                  
+                                        period = 5;
+                                        if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+                                        BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 15014  && Runno <= 15491 ) { //RGM 6gev pt1 runs                                                              
+                                        period = 6;
+                                        if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+                                        BAND->setPeriod(period);
+                                }
+                                else if (Runno >= 15787  && Runno <= 15884 ) { //RGM 6gev pt2 runs                                                              
+                                        period = 7;
+                                        if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+                                        BAND->setPeriod(period);
+				}
+				else if (Runno >= 18305 && Runno < 19131) { //RGD                                                                                   
+				        period = 8;
 					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
 					BAND->setPeriod(period);
 				}
+				else if (Runno >= 20000 && Runno < 20525) { //RGE    
+				        period = 9;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if ( (Runno >= 21278 && Runno < 21435) or (Runno >= 22709 && Runno <= 22791) or (Runno >= 22981 && Runno <= 23015) ) { //RGL 2.2GeV
+                                        period = 10;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if ( (Runno >= 22793 && Runno < 22980) or (Runno >= 23016 && Runno <= 23065) ) { //RGL 6.4GeV    
+                                        period = 11;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+				else if (Runno >= 21437 && Runno < 22708) { //RGL 10.6GeV      
+                                        period = 12;
+					if( period != PERIOD ){ cerr << "issue setting period\n...exiting\n"; exit(-1); }
+					BAND->setPeriod(period);
+				}
+
 				else if( Runno == 11 ){
 					// already set the beam energy for MC runs and the period is the user input period
 					period = PERIOD;

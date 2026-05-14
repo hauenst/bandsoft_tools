@@ -24,9 +24,9 @@ int main(int argc, char ** argv){
 	// Set style
 	gStyle->SetOptFit(1);
 
-	if (argc < 4){
+	if (argc < 6){
 		cerr << "Wrong number of arguments. Instead use\n"
-			<< "\t./code [TDC(0) or FADC(1)] [outputTxtfile] [outputPDFfile] [inputDatafiles]\n";
+			<< "\t./code [TDC(0) or FADC(1)] [outputTxtfile] [output root file] [outputPDFfile] [inputDatafiles]\n";
 		return -1;
 	}
 
@@ -51,20 +51,27 @@ int main(int argc, char ** argv){
 			for(int component = 0; component < slc[layer][sector]; component++){
 				if( TDCorFADC == 0 ){
 					if( layer == 5 )
-						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,240,320);
-						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),1600,240,420);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
+					  ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),900,-400,500);
 					else{
-						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,260,300);
-						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-10,30);
+					  // ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,150,400);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-20,80);
+					  ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),900,-400,500);
+
 					}
 				}
 				else{
 					if( layer == 5 )
-						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,0,80);
-						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),1600,0,170);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,-20,60);
+					ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),900,-400,500);
+					
 					else{
-						ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),400,20,60);
-						//ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-10,30);
+					  // ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),800,-70,150);
+					  //ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),200,-10,30);
+					  ToF_spec[sector][layer][component] = new TH1D(Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),Form("ToF_spec_%i_%i_%i",(sector+1),(layer+1),(component+1)),900,-400,500);
+
 					}
 
 				}
@@ -73,7 +80,7 @@ int main(int argc, char ** argv){
 	}
 
 	// Loop over all the files that are given to me to get the best statistics per bar
-	for( int i = 4 ; i < argc ; i++ ){
+	for( int i = 5 ; i < argc ; i++ ){
 		TFile * inFile = new TFile(argv[i]);
 		if (!(inFile->GetListOfKeys()->Contains("calib"))){
 			cerr << "File has no entries\n";
@@ -99,7 +106,7 @@ int main(int argc, char ** argv){
 		// Start working on one of the files, looping over all of the events
 		cout << "Working on file: " << argv[i] << "\n";
 		for( int ev = 0 ; ev < inTree->GetEntries() ; ev++ ){
-			if( ev % 1000000 == 0 ) cout << "\ton event " << ev << "\n";
+		  if( ev % 1000000 == 0 ) cout << "\ton event " << ev << "\n";
 
 			// Clear all branches before getting the entry from tree
 			Runno		= 0;
@@ -115,7 +122,7 @@ int main(int argc, char ** argv){
 			bandhit * this_photon = (bandhit*) nHits->At(0);
 			if( nMult 			!= 1 ) continue;
 			if( TDCorFADC == 0 )
-				if( this_photon->getTof() 	== 0 ) continue;
+			  if( this_photon->getTof() 	== 0 ) continue;
 			if( TDCorFADC == 1 )
 				if( this_photon->getTofFadc() 	== 0 ) continue;
 			if( this_photon->getEdep()	< 2 ) 	continue;
@@ -134,6 +141,9 @@ int main(int argc, char ** argv){
 
 
 			ToF_spec[sector-1][layer-1][component-1]->Fill(tof);
+			//if (sector == 4 and layer == 2 and component == 4){
+			//  cout << "for bar 424, time is " << time << " and tof is " << tof << "\n";
+			//}
 		} // end loop over events
 
 		inFile->Close();
@@ -144,8 +154,10 @@ int main(int argc, char ** argv){
 	ofstream out_file;
 	out_file.open(argv[2]);
 
+	TFile * out_rootfile = new TFile(argv[3], "RECREATE");
+
 	TCanvas * c0 = new TCanvas("c0","c0",900,900);
-	TString openname = string(argv[3]) + "(";
+	TString openname = string(argv[4]) + "(";
 	c0 -> Print(openname);
 	for( int sector = 0; sector < 5; sector++){
 		for( int layer = 0; layer < nLayers; layer++){
@@ -165,7 +177,7 @@ int main(int argc, char ** argv){
 
 					cSLC[sector][layer][component]->Update();
 					cSLC[sector][layer][component]->Modified();
-					cSLC[sector][layer][component] -> Print(argv[3]);
+					cSLC[sector][layer][component] -> Print(argv[4]);
 					continue;
 				}
 				else if( (layer+1)==6 ){
@@ -177,10 +189,11 @@ int main(int argc, char ** argv){
 						background_lvl += ToF_spec[sector][layer][component]->GetBinContent(i);
 					}
 					background_lvl /= 10;
-					
-					double edge_height = background_lvl*5;
-					double edge_pos = ToF_spec[sector][layer][component]->GetXaxis()->GetBinCenter( ToF_spec[sector][layer][component]->FindFirstBinAbove(edge_height) );
+
 					double max = ToF_spec[sector][layer][component]->GetMaximum();
+					double height_frac = 0.5;
+					double edge_height = (max-background_lvl)*height_frac+background_lvl;
+					double edge_pos = ToF_spec[sector][layer][component]->GetXaxis()->GetBinCenter( ToF_spec[sector][layer][component]->FindFirstBinAbove(edge_height) );
 					TLine * line = new TLine(edge_pos,0,edge_pos,max);
 					line->SetLineColor(8);
 					line->SetLineWidth(2);
@@ -198,13 +211,15 @@ int main(int argc, char ** argv){
 						<< edge_pos << " " << 0 << " "
 						<< 0 << " " << 1 << "\n";
 
+					
 					cSLC[sector][layer][component]->cd(1);
+					ToF_spec[sector][layer][component]->GetXaxis()->SetRangeUser(edge_pos-20,edge_pos+120);
 					ToF_spec[sector][layer][component]->Draw();
 					line->Draw("SAME");
 
 					cSLC[sector][layer][component]->Update();
 					cSLC[sector][layer][component]->Modified();
-					cSLC[sector][layer][component] -> Print(argv[3]);
+					cSLC[sector][layer][component] -> Print(argv[4]);
 					continue;
 				}
 
@@ -267,21 +282,33 @@ int main(int argc, char ** argv){
 				}
 
 				cSLC[sector][layer][component]->cd(1);
+				ToF_spec[sector][layer][component]->GetXaxis()->SetRangeUser(max_pos-20,max_pos+80);
 				ToF_spec[sector][layer][component]->Draw();
 				//ToF_fits[sector][layer][component]->Draw("SAME");
 
 				cSLC[sector][layer][component]->Update();
 				cSLC[sector][layer][component]->Modified();
-				cSLC[sector][layer][component] -> Print(argv[3]);
+				cSLC[sector][layer][component] -> Print(argv[4]);
 				//cSLC[sector][layer][component]->Write();
 			}
 		}
 	}
-	TString endname = string(argv[3]) + ")";
+	TString endname = string(argv[4]) + ")";
 	c0 -> Print(endname);
 
 	out_file.close();
 
+	out_rootfile->cd();
+	for( int sector = 0; sector < 5; sector++){
+	  for( int layer = 0; layer < nLayers; layer++){
+	    for(int component = 0; component < slc[layer][sector]; component++){
+	      ToF_spec[sector][layer][component]->Write();
+	    }
+	  }
+	}
+	out_rootfile->Close();
+	cout << "Finished making file: " << argv[3] << "\n";
+	
 
 	return 0;
 }
